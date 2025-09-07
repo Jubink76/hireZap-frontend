@@ -68,13 +68,17 @@ const VerifyOtp = () => {
         }
         try{
             if (action_type === "registration"){
-                const res = await dispatch(completeRegistration({email,role,otp})).unwrap();
-                if (res.meta.requestStatus === "fulfilled"){
-                    if(role === 'recuriter'){
-                        navigate('recruiter_dashboard')
-                    }else{
-                        navigate('candidate_dashbaord')
+                try {
+                    const userData = await dispatch(completeRegistration({ email, role, code: otp, action_type })).unwrap();
+                    // success path (no need to check meta)
+                    if (role === "recruiter") {
+                        navigate("/recruiter_dashboard");
+                    } else {
+                        navigate("/candidate_dashboard");
                     }
+                    } catch (err) {
+                    console.error("OTP verification failed", err);
+                    notify.error(err);
                 }
             }else{
                 const res = await dispatch(verifyOtp({email,code:otp, action_type})).unwrap()
@@ -106,7 +110,7 @@ const VerifyOtp = () => {
             notify.error(err || "Failed to resend OTP");
         }
     };
-    
+
   return (
     <div className='h-screen bg-gradient-to-br from-cyan-50 to-emerald-50 flex overflow-hidden'>
         <div  className='hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-teal-600 to-teal-800'>
