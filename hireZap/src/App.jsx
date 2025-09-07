@@ -9,7 +9,14 @@ import ForgotPassword from './pages/auth/ForgotPassword'
 import CandidateDashboard from './pages/candidate/CandidateDashboard'
 import RecruiterDashboard from './pages/recruiter/RecruiterDashboard'
 import AdminDashboard from './pages/admin/AdminDashboard'
+import axiosInstance from './api/axiosInstance'
+import { useEffect } from 'react'
 const App = () => {
+  useEffect(() => {
+    axiosInstance.get('/auth/csrf_cookie/')
+        .then(() => console.log('CSRF cookie set'))
+        .catch(err => console.error('CSRF cookie error', err));
+}, []);
   return (
     <div>
       <BrowserRouter>

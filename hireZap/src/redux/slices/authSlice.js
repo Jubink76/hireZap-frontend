@@ -2,6 +2,16 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import authService from "../../services/authService";
 import { notify } from "../../utils/toast";
 
+// csrf-cookie thunk
+export const getCsrfCookie = createAsyncThunk("auth/csrf_cookie", async(_,thunkAPI)=>{
+    try{
+        await authService.csrf_cookie()
+        return
+    }catch(err){
+        console.error("CSRF cookie error", err);
+        return thunkAPI.rejectWithValue(err.message)
+    }
+})
 // Login thunk
 export const loginUser = createAsyncThunk("auth/login", async(data, thunkAPI)=>{
     try{
@@ -37,6 +47,22 @@ export const registerUser = createAsyncThunk(
   }
 );
 
+// complete registration thunk
+export const completeRegistration = createAsyncThunk("auth/registerOtp", async(data, thunkAPI)=>{
+    try{
+        const res = await authService.registerOtp(data);
+        notify.success("Registration successfull");
+        return res;
+    }catch(err){
+        const message = 
+        err.response?.data?.detail || 
+        err.message || 
+        "Registration Failed";
+        notify.error(message)
+        return thunkAPI.rejectWithValue(message)
+    }
+});
+
 
 // Logout thunk
 export const logoutUser = createAsyncThunk("auth/logout", async(_, thunkAPI) => {
@@ -48,6 +74,44 @@ export const logoutUser = createAsyncThunk("auth/logout", async(_, thunkAPI) => 
         return thunkAPI.rejectWithValue(err.message);
     }
 })
+
+// resend otp thunk
+export const resendOtp = createAsyncThunk("auth/resend_otp",async(data, thunkAPI)=>{
+    try{
+        const res = await authService.resendOtp(data);
+        notify.success(res?.message || "OTP resent successfully")
+        return res;
+    }catch(err){
+        const message =
+        err.response?.data?.message || 
+        err.response?.data?.detail ||
+        err.message || 
+        "Resend OTP failed!!"
+        notify.error(message)
+        return thunkAPI.rejectWithValue(message);
+    }
+});
+
+// verify otp for general purpose
+export const verifyOtp = createAsyncThunk("auth/verify_otp",async(data,thunkApi)=>{
+    try{
+        const res = await authService.verifyOtp(data);
+        if(res.verified){
+            notify.success("Otp verification successful");
+        }else{
+            notify.error("Invalid OTP or expired")
+            return thunkApi.rejectWithValue("Invalid OTP or expired ") 
+        }
+        return res;
+    }catch(err){
+        const message =
+        err.response?.detail || 
+        err.message ||
+        "verification failed!!"
+        notify.error(message)
+        return thunkApi.rejectWithValue(message);
+    }
+});
 
 const initialState = {
     user: null,
@@ -95,6 +159,32 @@ const authSlice = createSlice({
             .addCase(registerUser.rejected, (state,action) => {
                 state.user = null;
                 state.loading = false;
+                state.error = action.payload;
+            })
+            .addCase(resendOtp.pending,(state)=>{
+                state.loading = true;
+            })
+            .addCase(resendOtp.fulfilled,(state,action)=>{
+                state.loading = false;
+                state.lastOtp = action.payload?.message;
+            })
+            .addCase(resendOtp.rejected,(state,action)=>{
+                state.loading = false;
+                state.error = action.payload;
+            })
+            .addCase(completeRegistration.pending,(state)=>{
+                state.loading = true;
+            })
+            .addCase(completeRegistration.fulfilled,(state,action)=>{
+                state.loading = false;
+                state.user = action.payload;
+                state.isAuthenticated = true;
+                state.isAdmin = action.payload?.is_admin || false
+            })
+            .addCase(completeRegistration.rejected,(state,action)=>{
+                state.loading = false;
+                state.user = null;
+                state.isAuthenticated = false;
                 state.error = action.payload;
             });
     }

@@ -1,7 +1,112 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { ArrowLeft, Shield, Clock } from "lucide-react";
 import verifyOtpImg from '../../assets/verify-otp.png';
+import {useDispatch, useSelector} from 'react-redux'
+import {useNavigate} from 'react-router-dom'
+import { useLocation } from 'react-router-dom';
+import { notify } from '../../utils/toast';
+import { completeRegistration, resendOtp, verifyOtp } from '../../redux/slices/authSlice';
+
 const VerifyOtp = () => {
+
+    const dispatch = useDispatch()
+    const navigate = useNavigate()
+    const location = useLocation()
+    const {user, loading} = useSelector((state)=>state.auth)
+    const [code,setCode] = useState(new Array(6).fill(""))
+    const [second, setSecond] = useState(() => {
+        const expiry = localStorage.getItem("otpExpiryTime");
+        if (expiry) {
+            const remaining = Math.floor((expiry - new Date().getTime()) / 1000);
+            return remaining > 0 ? remaining : 0;
+        }
+        return 60;
+    });
+
+    const {email, role, action_type} = location.state || {};
+
+    // countdown timer for otp
+    useEffect(()=>{
+        if (!second){
+            notify.error("OTP expired, Please resend the OTP")
+            return;
+        }
+        const timer = setInterval(()=>setSecond((s)=>s-1),1000)
+        return ()=>clearInterval(timer)
+    },[second])
+
+    // timer fomat
+    const formatTime = ()=>{
+        const m = String(Math.floor(second / 60)).padStart(2,'0')
+        const s = String(second % 60).padStart(2,'0')
+        return `${m}:${s}`
+    };
+
+    // otp input
+    const handleChange = (val,idx)=>{
+        const newCode = [...code];
+        if (/^\d?$/.test(val)){
+            const newCode = [...code];
+            newCode[idx] = val;
+            setCode(newCode);
+
+            if (val && idx < 5){
+                document.getElementById(`otp-${idx+1}`).focus();
+            }else if(!val && idx > 0){
+                document.getElementById(`otp-${idx-1}`).focus();
+            }
+        }
+    }
+
+    // verify code
+    const handleVerify = async()=>{
+        const otp = code.join("")
+
+        if (otp.length !== 6 ){
+            notify.error("please enter full code");
+            return 
+        }
+        try{
+            if (action_type === "registration"){
+                const res = await dispatch(completeRegistration({email,role,otp})).unwrap();
+                if (res.meta.requestStatus === "fulfilled"){
+                    if(role === 'recuriter'){
+                        navigate('recruiter_dashboard')
+                    }else{
+                        navigate('candidate_dashbaord')
+                    }
+                }
+            }else{
+                const res = await dispatch(verifyOtp({email,code:otp, action_type})).unwrap()
+                if (res.meta.requestStatus === "fulfilled"){
+                    navigate('/') // for temporary
+                }
+            }
+        }catch(err){
+            console.error("Otp verification error",err)
+        }
+    }
+    // handle resend otp
+    const handleResendOtp = async () => {
+        if (!email || !action_type) {
+            notify.error("Missing email or action type");
+            return;
+        }
+
+        try {
+            const res = await dispatch(resendOtp({ email, action_type })).unwrap();
+            notify.success(res?.message || "OTP resent successfully");
+
+            const otpExpiryTime = new Date().getTime() + 60 * 1000; // 60 seconds
+            localStorage.setItem("otpExpiryTime", otpExpiryTime);
+            setSecond(60);
+            setCode(new Array(6).fill(""));
+        } catch (err) {
+            console.error("Unexpected error", err);
+            notify.error(err || "Failed to resend OTP");
+        }
+    };
+    
   return (
     <div className='h-screen bg-gradient-to-br from-cyan-50 to-emerald-50 flex overflow-hidden'>
         <div  className='hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-teal-600 to-teal-800'>
@@ -44,7 +149,7 @@ const VerifyOtp = () => {
                                 <Clock className='w-6 h-6 text-teal-600 mb-1' />
                                 <div className='flex items-center gap-1'>   
                                     <span className='text-xs font-medium text-teal-600'>
-                                        01:00
+                                        {formatTime()}
                                     </span>
                                 </div>
                             </div>
@@ -55,7 +160,7 @@ const VerifyOtp = () => {
                                 We've sent a 6-digit verification code to
                             </p>
                             <p className='text-teal-700 font-medium text-sm'>
-                                test@gmail.com
+                                {email}
                             </p>
                         </div>
 
@@ -66,67 +171,44 @@ const VerifyOtp = () => {
                                     Enter Verification Code
                                 </label>
                                 <div className='flex gap-2 justify-center'>
-                                    <input
+                                    {code.map((c,idx)=>(
+                                        <input 
+                                        key={idx}
+                                        id={`otp-${idx}`} 
                                         type='text'
-                                        inputMode='numeric'
-                                        maxLength={1}
-                                        className='w-12 h-12 text-center text-lg font-semibold rounded-lg border-2 border-slate-200 bg-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500 focus:outline-none transition-colors'
-                                        readOnly
-                                    />
-                                    <input
-                                        type='text'
-                                        inputMode='numeric'
-                                        maxLength={1}
-                                        className='w-12 h-12 text-center text-lg font-semibold rounded-lg border-2 border-slate-200 bg-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500 focus:outline-none transition-colors'
-                                        readOnly
-                                    />
-                                    <input
-                                        type='text'
-                                        inputMode='numeric'
-                                        maxLength={1}
-                                        className='w-12 h-12 text-center text-lg font-semibold rounded-lg border-2 border-slate-200 bg-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500 focus:outline-none transition-colors'
-                                        readOnly
-                                    />
-                                    <input
-                                        type='text'
-                                        inputMode='numeric'
-                                        maxLength={1}
-                                        className='w-12 h-12 text-center text-lg font-semibold rounded-lg border-2 border-slate-200 bg-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500 focus:outline-none transition-colors'
-                                        readOnly
-                                    />
-                                    <input
-                                        type='text'
-                                        inputMode='numeric'
-                                        maxLength={1}
-                                        className='w-12 h-12 text-center text-lg font-semibold rounded-lg border-2 border-slate-200 bg-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500 focus:outline-none transition-colors'
-                                        readOnly
-                                    />
-                                    <input
-                                        type='text'
-                                        inputMode='numeric'
-                                        maxLength={1}
-                                        className='w-12 h-12 text-center text-lg font-semibold rounded-lg border-2 border-slate-200 bg-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500 focus:outline-none transition-colors'
-                                        readOnly
-                                    />
+                                        inputMode='numeric'  
+                                        maxLength={1} 
+                                        value={c}
+                                        onChange={(e)=>handleChange(e.target.value,idx)}
+                                        className='w-12 h-12 text-center text-lg font-semibold rounded-lg border-2 border-slate-200 bg-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500 focus:outline-none transition-colors '
+                                        />
+                                    ))}
                                 </div>
                             </div>
 
                             {/* Verify Button */}
-                            <button className='w-full h-10 rounded-lg font-semibold bg-slate-200 text-slate-500 cursor-not-allowed transition-colors'>
-                                Verify Code
-                            </button>
+                            <button
+                                onClick={handleVerify}
+                                disabled={loading || second === 0}
+                                className={`w-full h-10 rounded-lg font-semibold cursor-pointer ${loading ? 'bg-slate-200' : 'bg-teal-800 text-white'}`}>
+                                {loading ? "Verifying..." : "Verify Code"}
+                                </button>
 
                             {/* Resend Code */}
-                            <div className='text-center text-sm'>
+                            <div 
+                                onClick={handleResendOtp}
+                                className='text-center text-sm'>
                                 <span className='text-slate-600'>Didn't receive the code? </span>
-                                <button className='text-teal-700 hover:text-teal-800 font-semibold underline'>
+                                <button className='text-teal-700 hover:text-teal-800 font-semibold underline cursor-pointer'>
                                     Resend Code
                                 </button>
                             </div>
 
                             {/* Change Email */}
                             <div className='text-center'>
-                                <button className='inline-flex items-center gap-2 text-slate-600 hover:text-slate-800 text-sm font-medium'>
+                                <button 
+                                    onClick={()=>navigate("/login")}
+                                    className='inline-flex items-center gap-2 text-slate-600 hover:text-slate-800 text-sm font-medium cursor-pointer'>
                                     <ArrowLeft className='w-4 h-4' />
                                     Back to Login
                                 </button>

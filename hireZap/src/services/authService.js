@@ -12,6 +12,22 @@ const authService = {
     async logout(){
         const res = await authApi.logout()
     },
+    async resendOtp(data){
+        const res = await authApi.resend_otp(data);
+        return res.data
+    },
+    async registerOtp(data){
+        const res = await authApi.register_otp(data);
+        return res.data
+    },
+    async verifyOtp(data){
+        const res = await authApi.verify_otp(data);
+        return res.data
+    },
+    async csrf_cookie(){
+        const res = await authApi.csrf_cookie();
+        return res
+    }
 }
 
 export default authService;

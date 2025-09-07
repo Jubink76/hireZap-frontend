@@ -112,24 +112,20 @@ const RegLog = () => {
                     role: role,
                 };
 
-                const resultAction = await dispatch(loginUser(loginData));
-                if (loginUser.fulfilled.match(resultAction)) {
-                    notify.success("Login successful");
-                    switch (role) {
-                        case "candidate":
-                            navigate("/candidate_dashboard");
-                            break;
-                        case "recruiter":
-                            navigate("/recruiter_dashboard");
-                            break;
-                        case "admin":
-                            navigate("/admin_dashboard");
-                            break;
-                        default:
-                            navigate("/dashboard");
-                    }
-                } else {
-                    console.error("Login failed:", resultAction.error);
+                const result = await dispatch(loginUser(loginData)).unwrap();
+                notify.success("Login successful");
+                switch (role) {
+                    case "candidate":
+                        navigate("/candidate_dashboard");
+                        break;
+                    case "recruiter":
+                        navigate("/recruiter_dashboard");
+                        break;
+                    case "admin":
+                        navigate("/admin_dashboard");
+                        break;
+                    default:
+                        navigate("/dashboard");
                 }
             } else {
             const registerData = {
@@ -139,26 +135,21 @@ const RegLog = () => {
                 rememberMe: false,
             };
 
-            const resultAction = await dispatch(registerUser(registerData));
+            const resultAction = await dispatch(registerUser(registerData)).unwrap();
+            notify.success(" Please check your email for OTP");
 
-            if (registerUser.fulfilled.match(resultAction)) {
-                notify.success(
-                " Please check your email for OTP"
-                );
-
-                // Redirect to OTP verification page
-                navigate("/verify_otp", {
-                    state: {
-                        email: formData.email, // pass email so OTP API knows which user
-                        role: role,            // optional: for redirect after OTP
+            // Redirect to OTP verification page
+            navigate("/verify_otp", {
+                state: {
+                    email: formData.email, // pass email so OTP API knows which user
+                    role: role,           // optional: for redirect after OTP
+                    action_type:"registration",
                     },
                 });
-            } else {
-                console.error("Registration failed:", resultAction.error);
-                }
             }
-        } catch (error) {
+        } catch (err) {
             console.error("Unexpected error:", error);
+            notify.error(err || "Something went wrong");
         }
     };
 
@@ -223,14 +214,14 @@ const RegLog = () => {
                         )}
                         {/* Role Selection - Always visible */}
                         <div className="space-y-1 mb-4">
-                            <label htmlFor="role" className="text-slate-700 font-medium text-xs block">
+                            <label htmlFor="role" className="text-slate-700 font-medium text-xs block ">
                                 Select Your Role
                             </label>
-                            <div className="relative">
+                            <div className="relative ">
                                 <select
                                     value={role}
                                     onChange={(e) => handleRoleToggle(e.target.value)}
-                                    className="h-8 lg:h-10 w-full rounded-lg border border-slate-300 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 px-3 bg-white appearance-none text-xs lg:text-sm">
+                                    className="h-8 lg:h-10 w-full rounded-lg border border-slate-300 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 px-3 bg-white appearance-none text-xs lg:text-sm cursor-pointer">
                                     <option value="">Choose your role</option>
                                     <option value="candidate">Candidate</option>
                                     <option value="recruiter">Recruiter</option>
@@ -269,19 +260,19 @@ const RegLog = () => {
                                                 <div className='space-y-2'>
                                                     <button 
                                                         type='button'
-                                                        className="w-full h-9 lg:h-10 text-slate-700 border border-slate-300 hover:bg-slate-50 transition-colors bg-white rounded-md flex items-center justify-center font-medium text-xs lg:text-sm">
+                                                        className="w-full h-9 lg:h-10 text-slate-700 border border-slate-300 hover:bg-slate-50 transition-colors bg-white rounded-md flex items-center justify-center font-medium text-xs lg:text-sm cursor-pointer">
                                                         <Chrome className="w-3 h-3 lg:w-4 lg:h-4 mr-2" />
                                                         Continue with Google
                                                     </button>
                                                     <button 
                                                         type='button'
-                                                        className="w-full h-9 lg:h-10 text-slate-700 border border-slate-300 hover:bg-slate-50 transition-colors bg-white rounded-md flex items-center justify-center font-medium text-xs lg:text-sm">
+                                                        className="w-full h-9 lg:h-10 text-slate-700 border border-slate-300 hover:bg-slate-50 transition-colors bg-white rounded-md flex items-center justify-center font-medium text-xs lg:text-sm cursor-pointer">
                                                         <Linkedin className="w-3 h-3 lg:w-4 lg:h-4 mr-2" />
                                                         Continue with LinkedIn
                                                     </button>
                                                     <button
                                                         type='button' 
-                                                        className="w-full h-9 lg:h-10 text-slate-700 border border-slate-300 hover:bg-slate-50 transition-colors bg-white rounded-md flex items-center justify-center font-medium text-xs lg:text-sm">
+                                                        className="w-full h-9 lg:h-10 text-slate-700 border border-slate-300 hover:bg-slate-50 transition-colors bg-white rounded-md flex items-center justify-center font-medium text-xs lg:text-sm cursor-pointer">
                                                         <Github className="w-3 h-3 lg:w-4 lg:h-4 mr-2" />
                                                         Continue with GitHub
                                                     </button>
@@ -375,7 +366,7 @@ const RegLog = () => {
                                                             className="rounded border-slate-300 w-3 h-3" />
                                                         <span>Remember me</span>
                                                     </label>
-                                                    <button type="button" className="text-teal-700 hover:text-teal-800 underline font-medium">
+                                                    <button type="button" className="text-teal-700 hover:text-teal-800 underline font-medium  cursor-pointer">
                                                         Forgot password?
                                                     </button>
                                                 </div>
@@ -386,7 +377,7 @@ const RegLog = () => {
                                             <button 
                                                 type="submit"
                                                 disabled={loading}
-                                                className="w-full h-8 lg:h-10 bg-teal-700 hover:bg-teal-800 text-white font-semibold rounded-lg transition-colors text-xs lg:text-sm">
+                                                className="w-full h-8 lg:h-10 bg-teal-700 hover:bg-teal-800 text-white font-semibold rounded-lg transition-colors text-xs lg:text-sm  cursor-pointer">
                                                 {loading 
                                                     ? (isLogin ? "Signing In..." : "Creating Account...") 
                                                     : (isLogin ? "Sign In" : "Create Account")}
@@ -397,11 +388,11 @@ const RegLog = () => {
 
                                 {/* Toggle between login/register - only for non-admin */}
                                 {canRegister && (
-                                    <div className="text-center text-xs text-slate-600">
+                                    <div className="text-center text-xs text-slate-600 ">
                                         {isLogin ? "Don't have an account? " : "Already have an account? "}
                                         <button
                                             type="button"
-                                            className="text-teal-700 hover:text-teal-800 font-semibold underline"
+                                            className="text-teal-700 hover:text-teal-800 font-semibold underline  cursor-pointer"
                                             onClick={() => setIsLogin(!isLogin)}>
                                             {isLogin ? "Sign up" : "Sign in"}
                                         </button>
