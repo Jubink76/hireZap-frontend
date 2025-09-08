@@ -17,7 +17,7 @@ export const loginUser = createAsyncThunk("auth/login", async(data, thunkAPI)=>{
     try{
         const res = await authService.login(data);
         notify.success("Login Successful");
-        return res;
+        return res.user;
     }catch(err){
         notify.error(err.message || "Login Failed");
         return thunkAPI.rejectWithValue(err.message)

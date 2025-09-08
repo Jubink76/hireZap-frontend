@@ -6,8 +6,7 @@ const authService = {
         return res
     },
     async login(data){
-        const res = await authApi.login(data)
-        return res.data.user;
+        return await authApi.login(data);
     },
     async logout(){
         const res = await authApi.logout()

@@ -113,6 +113,7 @@ const RegLog = () => {
                 };
 
                 const result = await dispatch(loginUser(loginData)).unwrap();
+                console.log("logged in user:",result)
                 notify.success("Login successful");
                 switch (role) {
                     case "candidate":
@@ -132,6 +133,7 @@ const RegLog = () => {
                 name: formData.name,
                 email: formData.email,
                 password: formData.password,
+                role:role,
                 rememberMe: false,
             };
 
@@ -148,7 +150,7 @@ const RegLog = () => {
                 });
             }
         } catch (err) {
-            console.error("Unexpected error:", error);
+            console.error("Unexpected error:", err);
             notify.error(err || "Something went wrong");
         }
     };
