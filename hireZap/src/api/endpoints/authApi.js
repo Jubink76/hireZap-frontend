@@ -8,6 +8,8 @@ const authApi = {
     verify_otp:(data) => axiosInstance.post("/auth/verify_otp/",data),
     login : (data) => axiosInstance.post("/auth/login/", data),
     logout : () => axiosInstance.post("/auth/logout/"),
+    forgot_password: (data) => axiosInstance.post("/auth/forgot_password/",data),
+    reset_password: (data) => axiosInstance.post("/auth/reset_password/",data),
     refreshToken : () => axiosInstance.post("/auth/token/refresh/")
 }
 

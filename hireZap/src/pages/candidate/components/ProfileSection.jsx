@@ -1,5 +1,5 @@
-import { Mail, Phone, Award, Edit } from "lucide-react"
-
+import { Mail, Phone, Award, Eye } from "lucide-react"
+import profileAvatar from '../../../assets/profile_avatar.jpg'
 const ProfileSection = ({ profile, onEditProfile }) => {
   const defaultProfile = {
     name: "Sarah Johnson",
@@ -16,17 +16,19 @@ const ProfileSection = ({ profile, onEditProfile }) => {
     <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
       <div className="flex items-center space-x-4 mb-4">
         <img
-          src={userProfile.avatar}
+          src={profileAvatar}
           alt="Profile"
           className="w-16 h-16 rounded-full object-cover border-2 border-cyan-200"
         />
         <div>
           <h3 className="text-lg font-serif font-bold text-slate-900">{userProfile.name}</h3>
-          <p className="text-slate-600">{userProfile.title}</p>
         </div>
       </div>
       
       <div className="space-y-3 text-sm text-slate-600">
+        <div className="flex items-center space-x-2">
+          <p className="text-slate-600">{userProfile.title}</p>
+        </div>
         <div className="flex items-center space-x-2">
           <Mail className="h-4 w-4" />
           <span>{userProfile.email}</span>
@@ -43,10 +45,10 @@ const ProfileSection = ({ profile, onEditProfile }) => {
 
       <button 
         onClick={onEditProfile}
-        className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+        className="w-full mt-4 bg-teal-700 hover:bg-teal-800 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
       >
-        <Edit className="h-4 w-4" />
-        <span>Edit Profile</span>
+        <Eye className="h-4 w-4" />
+        <span>View Profile</span>
       </button>
     </div>
   )

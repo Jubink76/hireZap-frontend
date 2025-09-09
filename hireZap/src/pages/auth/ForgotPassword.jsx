@@ -1,7 +1,36 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Mail } from 'lucide-react';
 import forgotImage from '../../assets/forget-password.jpeg';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { forgotPassword } from '../../redux/slices/authSlice';
+import { useDispatch } from 'react-redux';
 const ForgotPassword = () => {
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const location = useLocation();
+    const {role, action_type } = location.state || {};
+    const [emailForm, setEmailForm] = useState('');
+
+    const handleSubmit = async(e)=>{
+        e.preventDefault();
+        const data = {
+            role,action_type,email:emailForm
+        };
+        try{
+            const res = await dispatch(forgotPassword(data)).unwrap();
+            navigate("/verify_otp",{
+                state:{
+                    email:emailForm,
+                    role:role,
+                    action_type:"forgot_password",
+                }
+            }
+            )
+        }catch(err){
+            console.log("email verification failed",err)
+        }
+    }
+
   return (
     <div className='h-screen bg-gradient-to-br from-cyan-50 to-emerald-50 flex overflow-hidden'>
         <div  className='hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-teal-600 to-teal-800'>
@@ -57,7 +86,7 @@ const ForgotPassword = () => {
                         <div className='space-y-4 lg:space-y-6'>
 
                             {/* form */}
-                            <div className='space-y-3 lg:space-y-4'>
+                            <form onSubmit={handleSubmit} className='space-y-3 lg:space-y-4'>
                                 <div className="space-y-1 lg:space-y-2">
                                     <label htmlFor="email" className="text-slate-700 font-medium text-sm block">
                                         Email Address
@@ -67,6 +96,8 @@ const ForgotPassword = () => {
                                         <input
                                             id="email"
                                             type="email"
+                                            value={emailForm}
+                                            onChange={(e)=>setEmailForm(e.target.value)}
                                             placeholder="Enter your email"
                                             className="pl-8 lg:pl-10 h-10 lg:h-12 w-full rounded-lg border border-slate-300 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 px-3 text-sm lg:text-base"
                                         />
@@ -79,12 +110,13 @@ const ForgotPassword = () => {
                                 </button>
                                 <div className="text-center text-xs text-slate-600">
                                     <button
+                                        onClick={()=>navigate("/")}
                                         type="button"
-                                        className="text-teal-700 hover:text-teal-800 font-semibold underline">
+                                        className="text-teal-700 hover:text-teal-800 font-semibold underline cursor-pointer">
                                         Back to Login
                                     </button>
                                 </div>
-                            </div>
+                            </form>
                         </div>
                     </div>
 

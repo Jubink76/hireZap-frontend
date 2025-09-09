@@ -11,6 +11,11 @@ import RecruiterDashboard from './pages/recruiter/RecruiterDashboard'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import axiosInstance from './api/axiosInstance'
 import { useEffect } from 'react'
+import CandidateProfileDashboard from './pages/candidate/CandidateProfileDashboard'
+import CandidateAccountSettings from './pages/candidate/CandidateAccountSettings'
+import RecruiterProfileDashboard from './pages/recruiter/RecruiterProfileDashboard'
+import RecruiterAccountSettings from './pages/recruiter/RecruiterAccountSettings'
+import AdminAccountSettings from './pages/admin/AdminAccountSettings'
 const App = () => {
   useEffect(() => {
     axiosInstance.get('/auth/csrf_cookie/')
@@ -30,6 +35,11 @@ const App = () => {
             <Route path= "/candidate_dashboard" element= {<CandidateDashboard />} />
             <Route path= "/recruiter_dashboard" element= {<RecruiterDashboard />} />
             <Route path= "/admin_dashboard" element= {<AdminDashboard />} />
+            <Route path= "/candidate/profile_dashboard" element ={<CandidateProfileDashboard />} />
+            <Route path= "/candidate/account_settings" element = {<CandidateAccountSettings />} />
+            <Route path= "/recruiter/profile_dashboard" element = {<RecruiterProfileDashboard />} />
+            <Route path= "/recruiter/account_settings" element = {<RecruiterAccountSettings />} />
+            <Route path= "/admin/account_settings" element = {<AdminAccountSettings />} />
           </Routes>
         <ToastContainer/>
       </BrowserRouter>

@@ -21,7 +21,15 @@ const authService = {
     },
     async verifyOtp(data){
         const res = await authApi.verify_otp(data);
-        return res.data
+        return res
+    },
+    async forgotPassword(data){
+        const res = await authApi.forgot_password(data)
+        return res
+    },
+    async ResetPassword(data){
+        const res = await authApi.reset_password(data)
+        return res
     },
     async csrf_cookie(){
         const res = await authApi.csrf_cookie();

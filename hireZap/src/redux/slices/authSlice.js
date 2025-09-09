@@ -92,10 +92,28 @@ export const resendOtp = createAsyncThunk("auth/resend_otp",async(data, thunkAPI
     }
 });
 
+// verify email for forgot password
+export const forgotPassword = createAsyncThunk("auth/forgot_password", async(data, thunkAPI) =>{
+    try{
+        const res = await authService.forgotPassword(data);
+        notify.success(res?.message || "Email verified")
+        return res;
+    }catch(err){
+        const message = 
+        err.response?.data?.message || 
+        err.response?.data?.detail || 
+        err.message || 
+        "Invalid Email Id"
+        notify.error(message)
+        return thunkAPI.rejectWithValue(message)
+    }
+});
+
 // verify otp for general purpose
 export const verifyOtp = createAsyncThunk("auth/verify_otp",async(data,thunkApi)=>{
     try{
         const res = await authService.verifyOtp(data);
+        console.log(res)
         if(res.verified){
             notify.success("Otp verification successful");
         }else{
@@ -113,6 +131,23 @@ export const verifyOtp = createAsyncThunk("auth/verify_otp",async(data,thunkApi)
     }
 });
 
+// reset password thunk
+export const resetPassword = createAsyncThunk("auth/reset_password", async(data,thunkAPI)=>{
+    try{
+        const res = await authService.ResetPassword(data);
+        notify.success(res?.message || "Reset password successful!")
+        return res
+    }catch(err){
+        const message = 
+        err.response?.data?.message || 
+        err.response?.data?.detail || 
+        err.message || 
+        "Reset password failed!!"
+        notify.error(message)
+        return thunkAPI.rejectWithValue(message)
+    }
+})
+
 const initialState = {
     user: null,
     token: null,
@@ -120,6 +155,9 @@ const initialState = {
     isAdmin: false,
     loading: false,
     error: null,
+    lastOtp: null,
+    forgotPasswordMessage: null,
+    resetPasswordMessage: null,
 }
 
 const authSlice = createSlice({
@@ -186,6 +224,28 @@ const authSlice = createSlice({
                 state.user = null;
                 state.isAuthenticated = false;
                 state.error = action.payload;
+            })
+            .addCase(forgotPassword.pending,(state)=>{
+                state.loading = true;
+            })
+            .addCase(forgotPassword.fulfilled,(state,action)=>{
+                state.loading = false;
+                state.forgotPasswordMessage = action.payload?.message;
+            })
+            .addCase(forgotPassword.rejected,(state,action)=>{
+                state.loading = false
+                state.error = action.payload
+            })
+            .addCase(resetPassword.pending,(state)=>{
+                state.loading = true;
+            })
+            .addCase(resetPassword.fulfilled,(state,action)=>{
+                state.loading = false;
+                state.forgotPasswordMessage = action.payload?.message;
+            })
+            .addCase(resetPassword.rejected,(state,action)=>{
+                state.loading = false
+                state.error = action.payload
             });
     }
 });

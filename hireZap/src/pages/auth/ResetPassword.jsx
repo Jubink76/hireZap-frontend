@@ -1,7 +1,42 @@
 import React from 'react'
-import { Lock } from 'lucide-react';
+import { Lock,Eye,EyeOff } from 'lucide-react';
 import resetPasswordImg from '../../assets/reset-password.png'
+import { useState } from 'react';
+import { useNavigate , useLocation} from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { resetPassword } from '../../redux/slices/authSlice';
+import { notify } from '../../utils/toast';
 const ResetPassword = () => {
+    const dispatch = useDispatch()
+    const navigate = useNavigate()
+    const location = useLocation()
+    const email = location.state?.email;
+
+    const [password, setPassword] = useState('')
+    const [confirm_password, setConfirmPassword] = useState('')
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+    const passwordRegex =/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+    const handleSubmit = async(e) =>{
+        e.preventDefault()
+        if(!passwordRegex.test(password)){
+            notify.error("Password must be at least 8 chars, contain a letter, number and special char");
+            return
+        }
+        if(password !== confirm_password){
+            notify.error("password do not match");
+            return;
+        }
+        try{
+            await dispatch(resetPassword({email, password})).unwrap();
+            notify.success("Password reset successful, Please login")
+            navigate("/")
+        }catch(err){
+            notify.error(err || "Could not reset password");
+        }
+    };
+
   return (
     <div className='h-screen bg-gradient-to-br from-cyan-50 to-emerald-50 flex overflow-hidden'>
         <div  className='hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-teal-600 to-teal-800'>
@@ -57,7 +92,7 @@ const ResetPassword = () => {
                         <div className='space-y-4 lg:space-y-6'>
 
                             {/* form */}
-                            <div className='space-y-3 lg:space-y-4'>
+                            <form onSubmit={handleSubmit} className='space-y-3 lg:space-y-4'>
                                 <div className="space-y-1 lg:space-y-2">
                                     <label htmlFor="password" className="text-slate-700 font-medium text-sm block">
                                         New Password
@@ -66,37 +101,70 @@ const ResetPassword = () => {
                                         <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4 lg:w-5 lg:h-5" />
                                         <input
                                             id="password"
-                                            type="password"
-                                            placeholder="Enter your email"
+                                            type={showPassword? "text":"password"}
+                                            placeholder="Enter your new pasword"
+                                            value={password}
+                                            onChange={(e)=>setPassword(e.target.value)}
                                             className="pl-8 lg:pl-10 h-10 lg:h-12 w-full rounded-lg border border-slate-300 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 px-3 text-sm lg:text-base"
                                         />
+
+                                        <button
+                                            type="button"
+                                            onClick={()=> setShowPassword((pre)=>!pre)}
+                                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                                {showPassword ? (
+                                                    <EyeOff className="w-4 h-4 lg:w-5 lg:h-5" />
+                                                ):(
+                                                    <Eye className="w-4 h-4 lg:w-5 lg:h-5" />
+                                                )}
+                                            </button>
                                     </div>
-                                    <label htmlFor="password" className="text-slate-700 font-medium text-sm block">
+                                    <label htmlFor="confirm_password" className="text-slate-700 font-medium text-sm block">
                                         Confirm Password
                                     </label>
                                     <div className="relative">
+                                        {/* Left lock icon */}
                                         <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4 lg:w-5 lg:h-5" />
+
+                                        {/* Input field */}
                                         <input
-                                            id="password"
-                                            type="password"
-                                            placeholder="Enter your email"
-                                            className="pl-8 lg:pl-10 h-10 lg:h-12 w-full rounded-lg border border-slate-300 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 px-3 text-sm lg:text-base"
+                                            id="confirm_password"
+                                            type={showConfirmPassword ? "text" : "password"}  // toggle type
+                                            placeholder="Enter your password"
+                                            value={confirm_password}
+                                            onChange={(e)=>setConfirmPassword(e.target.value)}
+                                            className="pl-8 lg:pl-10 pr-8 lg:pr-10 h-10 lg:h-12 w-full rounded-lg border border-slate-300 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 px-3 text-sm lg:text-base"
                                         />
+
+                                        {/* Eye icon button */}
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConfirmPassword((prev) => !prev)}
+                                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                        >
+                                            {showConfirmPassword ? (
+                                            <EyeOff className="w-4 h-4 lg:w-5 lg:h-5" />
+                                            ) : (
+                                            <Eye className="w-4 h-4 lg:w-5 lg:h-5" />
+                                            )}
+                                        </button>
                                     </div>
+
                                 </div>
                                 <button 
                                     type="submit"
-                                    className="w-full h-10 lg:h-12 bg-teal-700 hover:bg-teal-800 text-white font-semibold rounded-lg transition-colors text-sm lg:text-base">
+                                    className="w-full h-10 lg:h-12 bg-teal-700 hover:bg-teal-800 text-white font-semibold rounded-lg transition-colors text-sm lg:text-base cursor-pointer">
                                     Submit
                                 </button>
                                 <div className="text-center text-xs text-slate-600">
                                     <button
+                                        onClick={()=>navigate("/")}
                                         type="button"
-                                        className="text-teal-700 hover:text-teal-800 font-semibold underline">
+                                        className="text-teal-700 hover:text-teal-800 font-semibold underline cursor-pointer">
                                         Back to Login
                                     </button>
                                 </div>
-                            </div>
+                            </form>
                         </div>
                     </div>
 

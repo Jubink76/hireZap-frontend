@@ -76,14 +76,20 @@ const VerifyOtp = () => {
                     } else {
                         navigate("/candidate_dashboard");
                     }
-                    } catch (err) {
+                } catch (err) {
                     console.error("OTP verification failed", err);
                     notify.error(err);
                 }
-            }else{
-                const res = await dispatch(verifyOtp({email,code:otp, action_type})).unwrap()
-                if (res.meta.requestStatus === "fulfilled"){
-                    navigate('/') // for temporary
+            }else if(action_type === "forgot_password"){
+                try{
+                    const res = await dispatch(verifyOtp({email, code:otp, action_type})).unwrap()
+                    console.log(res)
+                    navigate("/reset_password",{
+                        state:{email,role}
+                    })
+                }catch(err){
+                    console.error("OTP verification failed", err);
+                    notify.error(err);
                 }
             }
         }catch(err){

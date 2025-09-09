@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, User, Github, Chrome, Linkedin } from "lucide-react";
+import { Mail, Lock, User, Github, Chrome, Linkedin, Eye, EyeOff } from "lucide-react";
 import candidateBgimage from '../../assets/office-interview-image.png';
 import recruiterBgimage from '../../assets/recruiter-bg-image.jpg';
 import adminBgimage from '../../assets/admin-bg-image.png'
@@ -12,7 +12,7 @@ import { loginUser, registerUser } from '../../redux/slices/authSlice';
 const RegLog = () => {
     const [isLogin, setIsLogin] = useState(true);
     const [role, setRole] = useState('');
-
+    const [showPassword, setShowPassword] = useState(false)
     const [formData, setFormData] = useState({
         name : '',
         email : '',
@@ -155,6 +155,13 @@ const RegLog = () => {
         }
     };
 
+    const handleForgotPassword = ()=>{
+        navigate("/forgot_password",{
+            state :{
+                role, action_type:"forgot_password"
+            },
+        })
+    }
     const canRegister = role !== 'admin';
     const showRegistration = !isLogin && canRegister;
 
@@ -346,13 +353,19 @@ const RegLog = () => {
                                                     <input
                                                         id="password"
                                                         name='password'
-                                                        type="password"
+                                                        type={showPassword?"text":"password"}
                                                         value={formData.password}
                                                         onChange={handleChange}
                                                         placeholder="Enter your password"
                                                         className="pl-7 lg:pl-8 h-8 lg:h-10 w-full rounded-lg border border-slate-300 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 px-3 text-xs lg:text-sm"
                                                         required
                                                     />
+                                                    <button
+                                                        type='button'
+                                                        onClick={()=>setShowPassword((pre)=>!pre)}
+                                                        className='absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400'>
+                                                            {showPassword?(<EyeOff className='w-3 h-3 lg:w-4 lg:h-4'/>):(<Eye className='w-3 h-3 lg:w-4 lg:h-4'/>)}
+                                                        </button>
                                                 </div>
                                                 {formErrors.password && <p className="text-red-500 text-xs mt-1">{formErrors.password}</p>}
                                             </div>
@@ -368,7 +381,7 @@ const RegLog = () => {
                                                             className="rounded border-slate-300 w-3 h-3" />
                                                         <span>Remember me</span>
                                                     </label>
-                                                    <button type="button" className="text-teal-700 hover:text-teal-800 underline font-medium  cursor-pointer">
+                                                    <button onClick={handleForgotPassword} type="button" className="text-teal-700 hover:text-teal-800 underline font-medium  cursor-pointer">
                                                         Forgot password?
                                                     </button>
                                                 </div>

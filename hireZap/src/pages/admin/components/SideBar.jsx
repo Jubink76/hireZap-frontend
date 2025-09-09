@@ -65,19 +65,6 @@ export default function Sidebar({ activeTab, setActiveTab, collapsed, setCollaps
           })}
         </div>
       </nav>
-
-      {/* Footer */}
-      {!collapsed && (
-        <div className="absolute bottom-4 left-4 right-4">
-          <div className="bg-gradient-to-r from-cyan-600 to-emerald-600 rounded-lg p-4 text-white">
-            <h4 className="font-medium text-sm mb-1">Need Help?</h4>
-            <p className="text-xs opacity-90 mb-2">Check our admin guide</p>
-            <button className="w-full bg-white hover:bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs font-medium transition-colors">
-              View Guide
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
