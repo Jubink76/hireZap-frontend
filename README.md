@@ -53,7 +53,7 @@ npm install
 - VITE_BASE_URL=http://localhost:8000/api
 
 ## 🚦 Usag
-- ```
-  bash npm run dev
+- ```bash
+  npm run dev
   ```
   
