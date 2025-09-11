@@ -1,7 +1,7 @@
 # 🚀 hireZap - Frontend
   hireZap is a next-gen **Job Portal + Interview platform** - combining features of LinkedIn, Zoom and HackerRank.
   This repository contains the **React (Vite)** frontend of platform.
-  ![hireZap ui](./pictures/hireZap.png)
+  ![hireZap ui](assets/app-logo.png)
 ---
 ## 📚 Table of Contents
   - [Features](#features)
