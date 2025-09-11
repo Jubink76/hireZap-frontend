@@ -47,11 +47,11 @@ const mockRecruiters = [
 
 const RecruitersList = ({ recruiters = mockRecruiters, onMessageRecruiter, onViewAll }) => {
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-4 overflow-hidden">
+    <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-4 transition-shadow hover:shadow-md overflow-hidden">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
           <Users className="h-4 w-4 text-cyan-600" />
-          <h2 className="text-base font-serif font-semibold text-slate-900">Active Recruiters</h2>
+          <h2 className="text-base font-semibold text-slate-900">Active Recruiters</h2>
         </div>
         <button 
           onClick={onViewAll}
@@ -78,7 +78,7 @@ const RecruitersList = ({ recruiters = mockRecruiters, onMessageRecruiter, onVie
 
       <button 
         onClick={onViewAll}
-        className="w-full mt-4 text-cyan-600 hover:text-cyan-700 py-2 text-xs font-medium border border-cyan-200 rounded-lg hover:bg-cyan-50 transition-colors"
+        className="w-full mt-4 text-teal-600 hover:text-teal-700 py-2 text-xs font-medium border border-teal-200 rounded-lg hover:bg-teal-50 transition-colors"
       >
         Discover more recruiters
       </button>

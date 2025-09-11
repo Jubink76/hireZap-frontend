@@ -34,7 +34,11 @@ const authService = {
     async csrf_cookie(){
         const res = await authApi.csrf_cookie();
         return res
-    }
+    },
+    async fetchUser(){
+        const res = await authApi.fetch_user();
+        return res
+    },
 }
 
 export default authService;

@@ -8,7 +8,7 @@ const PremiumCard = ({ onUpgrade }) => {
           <Crown className="h-5 w-5 text-amber-800" />
         </div>
         <div>
-          <h3 className="font-serif font-bold text-slate-900 text-lg">Try Premium for free</h3>
+          <h3 className="font-bold text-slate-900 text-lg">Try Premium for free</h3>
           <p className="text-sm text-slate-600 mt-1">Unlock exclusive opportunities</p>
         </div>
       </div>

@@ -1,192 +1,194 @@
-import { useState } from "react"
-import { Bookmark } from "lucide-react"
-import JobCard from "../candidate/components/JobCard"
-import ProfileSection from "../candidate/components/ProfileSection"
-import FilterSection from "../candidate/components/FilterSection"
-import SearchBar from "../../components/SearchBar"
-import Pagination from "../../components/Pagination"
-import PremiumCard from "../../components/PremiumCard"
-import RecruitersList from "../../components/RecruitersList"
-import hireZapLogo from '../../assets/hireZap.png'
+import { useState } from 'react';
+
+// Import all components
+import DashboardHeader from '../candidate/components/DashboardHeader';
+import ProfileSection from '../candidate/components/ProfileSection';
+import FilterSection from './components/FilterSection';
+import JobCard from '../candidate/components/JobCard';
+import PremiumCard from '../../components/PremiumCard';
+import RecruitersList from '../../components/RecruitersList';
+import Pagination from '../../components/Pagination';
+
 // Mock job data
 const mockJobs = [
   {
     id: 1,
-    title: "Senior Product Designer",
-    company: "Creative Solutions Inc.",
-    logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=60&h=60&fit=crop",
-    coverImage: "https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=400&h=200&fit=crop",
+    title: "Senior Frontend Engineer",
+    company: "TechFlow",
+    logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=40&h=40&fit=crop",
+    coverImage: "https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=400&h=150&fit=crop",
     location: "Remote",
-    salary: "$80,000 - $100,000",
+    salary: "$120k - $150k",
     type: "Full-time",
-    posted: "2 days ago",
-    skills: ["UI/UX", "Figma", "Design Systems"],
-    description: "Join our innovative team to design cutting-edge products that impact millions of users worldwide.",
+    posted: "2h",
+    skills: ["React", "TypeScript", "GraphQL", "CSS"],
+    description: "Lead the development of cutting-edge web applications using React and TypeScript. Collaborate with design and backend teams to deliver seamless user experiences."
   },
   {
     id: 2,
-    title: "Frontend Developer",
-    company: "TechFlow Solutions",
-    logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=60&h=60&fit=crop",
-    coverImage: "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=400&h=200&fit=crop",
-    location: "San Francisco, CA",
-    salary: "$90,000 - $120,000",
+    title: "Product Designer",
+    company: "Nike",
+    logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=40&h=40&fit=crop",
+    coverImage: "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=400&h=150&fit=crop",
+    location: "Hybrid",
+    salary: "$100k - $130k",
     type: "Full-time",
-    posted: "1 day ago",
-    skills: ["React", "TypeScript", "Next.js"],
-    description: "Build responsive web applications using modern JavaScript frameworks and cutting-edge technologies.",
+    posted: "1d",
+    skills: ["Figma", "Prototyping", "User Research"],
+    description: "Create intuitive interfaces and impactful user journeys. Work closely with product and engineering to ship beautiful experiences."
   },
   {
     id: 3,
-    title: "AI/ML Engineer",
-    company: "DataMind Corp",
-    logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=60&h=60&fit=crop",
-    coverImage: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&h=200&fit=crop",
-    location: "New York, NY",
-    salary: "$110,000 - $150,000",
+    title: "Data Scientist",
+    company: "Microsoft",
+    logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=40&h=40&fit=crop",
+    coverImage: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&h=150&fit=crop",
+    location: "Remote",
+    salary: "$140k - $180k",
     type: "Full-time",
-    posted: "3 days ago",
-    skills: ["Python", "TensorFlow", "Machine Learning"],
-    description: "Develop and deploy machine learning models to solve complex business problems and drive innovation.",
+    posted: "3d",
+    skills: ["Python", "TensorFlow", "SQL", "ML Ops"],
+    description: "Build predictive models and analyze large datasets to uncover insights. Partner with cross-functional teams to drive data-informed decisions."
   },
   {
     id: 4,
-    title: "DevOps Engineer",
-    company: "CloudScale Systems",
-    logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=60&h=60&fit=crop",
-    coverImage: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=200&fit=crop",
-    location: "Austin, TX",
-    salary: "$95,000 - $130,000",
+    title: "UX Designer",
+    company: "Apple",
+    logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=40&h=40&fit=crop",
+    coverImage: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=400&h=150&fit=crop",
+    location: "Cupertino, CA",
+    salary: "$110k - $140k",
     type: "Full-time",
-    posted: "1 week ago",
-    skills: ["AWS", "Docker", "Kubernetes"],
-    description: "Manage cloud infrastructure and automate deployment processes for high-scale applications.",
+    posted: "5d",
+    skills: ["Sketch", "Figma", "Prototyping", "User Testing"],
+    description: "Design innovative user experiences for millions of users worldwide. Work on cutting-edge products that shape the future of technology."
   },
   {
     id: 5,
-    title: "Product Manager",
-    company: "InnovateLab",
-    logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=60&h=60&fit=crop",
-    coverImage: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=200&fit=crop",
+    title: "DevOps Engineer",
+    company: "Amazon",
+    logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=40&h=40&fit=crop",
+    coverImage: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=150&fit=crop",
     location: "Seattle, WA",
-    salary: "$100,000 - $140,000",
+    salary: "$130k - $160k",
     type: "Full-time",
-    posted: "4 days ago",
-    skills: ["Strategy", "Analytics", "Agile"],
-    description: "Lead product development from conception to launch, working with cross-functional teams.",
+    posted: "1w",
+    skills: ["AWS", "Docker", "Kubernetes", "Terraform"],
+    description: "Build and maintain scalable cloud infrastructure. Work with cutting-edge technologies to support millions of users worldwide."
   },
   {
     id: 6,
-    title: "UX Researcher",
-    company: "UserFirst Design",
-    logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=60&h=60&fit=crop",
-    coverImage: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=400&h=200&fit=crop",
-    location: "Remote",
-    salary: "$75,000 - $95,000",
+    title: "Backend Developer",
+    company: "Google",
+    logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=40&h=40&fit=crop",
+    coverImage: "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=400&h=150&fit=crop",
+    location: "Mountain View, CA",
+    salary: "$150k - $180k",
     type: "Full-time",
-    posted: "5 days ago",
-    skills: ["User Research", "Analytics", "Prototyping"],
-    description: "Conduct user research to inform design decisions and improve user experience across products.",
-  },
-]
+    posted: "2w",
+    skills: ["Java", "Go", "MySQL", "Microservices"],
+    description: "Develop high-performance backend systems that serve billions of requests. Join a team of world-class engineers building the future of search and AI."
+  }
+];
 
 const CandidateDashboard = () => {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedJobTypes, setSelectedJobTypes] = useState([])
-  const [selectedLocations, setSelectedLocations] = useState([])
-  const [selectedSkills, setSelectedSkills] = useState([])
-  const [selectedSalaryRange, setSelectedSalaryRange] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [savedJobs, setSavedJobs] = useState([])
+  // State management
+  const [savedJobs, setSavedJobs] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedJobTypes, setSelectedJobTypes] = useState([]);
+  const [selectedLocations, setSelectedLocations] = useState([]);
+  const [selectedSkills, setSelectedSkills] = useState([]);
+  const [selectedSalaryRange, setSelectedSalaryRange] = useState('Any');
 
-  const jobsPerPage = 4
-  const totalPages = Math.ceil(mockJobs.length / jobsPerPage)
-  const startIndex = (currentPage - 1) * jobsPerPage
-  const currentJobs = mockJobs.slice(startIndex, startIndex + jobsPerPage)
+  // Pagination settings
+  const jobsPerPage = 3;
+  const totalPages = Math.ceil(mockJobs.length / jobsPerPage);
+  const startIndex = (currentPage - 1) * jobsPerPage;
+  const currentJobs = mockJobs.slice(startIndex, startIndex + jobsPerPage);
 
+  // Mock user profile data
+  const userProfile = {
+    name: 'Sarah Johnson',
+    title: 'Senior Product Designer',
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face',
+    profileViews: 142,
+    applications: 8,
+    profileScore: 95
+  };
+
+  // Event handlers
   const toggleSaveJob = (jobId) => {
-    setSavedJobs((prev) => (prev.includes(jobId) ? prev.filter((id) => id !== jobId) : [...prev, jobId]))
-  }
+    setSavedJobs(prev => 
+      prev.includes(jobId) 
+        ? prev.filter(id => id !== jobId)
+        : [...prev, jobId]
+    );
+  };
 
   const handleJobClick = (job) => {
-    console.log("Job clicked:", job)
-    // Handle job details navigation
-  }
-
-  const handleEditProfile = () => {
-    console.log("Edit profile clicked")
-    // Handle profile editing
-  }
-
-  const handleSearch = (query) => {
-    console.log("Search query:", query)
-    // Handle search functionality
-  }
+    console.log('Job clicked:', job);
+    // Navigate to job details page
+  };
 
   const handlePageChange = (page) => {
-    setCurrentPage(page)
-    // Optionally scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
+    setCurrentPage(page);
+    // Scroll to top when page changes
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSearch = (query) => {
+    console.log('Search query:', query);
+    // Implement search functionality
+  };
+
+  const handleViewProfile = () => {
+    console.log('View profile clicked');
+    // Navigate to profile page
+  };
+
+  const handleQuickApply = (job) => {
+    console.log('Quick apply for job:', job);
+    // Handle quick apply functionality
+  };
 
   const handlePremiumUpgrade = () => {
-    console.log("Premium upgrade clicked")
+    console.log('Premium upgrade clicked');
     // Handle premium upgrade
-  }
+  };
 
   const handleMessageRecruiter = (recruiter) => {
-    console.log("Message recruiter:", recruiter)
-    // Handle messaging recruiter
-  }
+    console.log('Message recruiter:', recruiter);
+    // Handle messaging functionality
+  };
 
   const handleViewAllRecruiters = () => {
-    console.log("View all recruiters clicked")
-    // Handle view all recruiters
-  }
+    console.log('View all recruiters clicked');
+    // Navigate to recruiters page
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-emerald-50">
-      {/* Header */}
-      <header className="bg-white/50 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className=" flex items-center text-center">
-              <button className="cursor-pointer">
-                <img 
-                  src={hireZapLogo} 
-                  alt="HireZap Logo" 
-                  className="h-16 lg:h-18 mx-auto mb-3"
-                />
-              </button>
-              
-              <h1 className="text-2xl font-serif font-bold text-slate-900 px-4">
-                Explore Your Future
-              </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <button className="flex items-center space-x-2 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
-                <Bookmark className="h-4 w-4" />
-                <span>Saved Jobs ({savedJobs.length})</span>
-              </button>
-              <button className="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-                Post a Job
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Left Sidebar - Profile & Filters */}
+    <div className="min-h-screen bg-gray-50">
+      {/* Header Component */}
+      <DashboardHeader
+        savedJobsCount={savedJobs.length}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        onSearch={handleSearch}
+      />
+      
+      <div className="max-w-7xl mx-auto px-2 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Left Sidebar */}
           <div className="lg:col-span-1 space-y-6">
-            {/* Profile Section */}
+            {/* Profile Section Component */}
             <ProfileSection 
-              onEditProfile={handleEditProfile}
+              profile={userProfile}
+              onViewProfile={handleViewProfile}
             />
             
-            {/* Filter Section */}
-            <FilterSection
+            {/* Filter Section Component */}
+            <FilterSection 
               selectedJobTypes={selectedJobTypes}
               setSelectedJobTypes={setSelectedJobTypes}
               selectedLocations={selectedLocations}
@@ -198,17 +200,10 @@ const CandidateDashboard = () => {
             />
           </div>
 
-          {/* Middle - Search and Job Cards */}
-          <div className="lg:col-span-3">
-            {/* Search Bar */}
-            <SearchBar
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              onSearch={handleSearch}
-            />
-
-            {/* Job Cards Grid - One per row */}
-            <div className="space-y-6 mb-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2">
+            <div className="space-y-6">
+              {/* Job Cards */}
               {currentJobs.map((job) => (
                 <JobCard
                   key={job.id}
@@ -216,53 +211,39 @@ const CandidateDashboard = () => {
                   onSave={toggleSaveJob}
                   isSaved={savedJobs.includes(job.id)}
                   onClick={handleJobClick}
+                  onQuickApply={handleQuickApply}
                 />
               ))}
             </div>
-
-            {/* No Jobs Found Message */}
-            {currentJobs.length === 0 && (
-              <div className="text-center py-12">
-                <div className="text-slate-400 mb-2">
-                  <Search className="h-12 w-12 mx-auto" />
-                </div>
-                <h3 className="text-lg font-medium text-slate-900 mb-2">No jobs found</h3>
-                <p className="text-slate-600">Try adjusting your search criteria or filters</p>
-              </div>
-            )}
-
-            {/* Pagination */}
-            {currentJobs.length > 0 && (
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-                itemsPerPage={jobsPerPage}
-                totalItems={mockJobs.length}
-                startIndex={startIndex}
-              />
-            )}
+            
+            {/* Pagination Component */}
+            <Pagination 
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              itemsPerPage={jobsPerPage}
+              totalItems={mockJobs.length}
+              startIndex={startIndex}
+            />
           </div>
 
-          {/* Right Sidebar - Premium & Recruiters */}
+          {/* Right Sidebar */}
           <div className="lg:col-span-1 space-y-6">
-            {/* Premium Card */}
-            <div className="sticky top-24">
-              <PremiumCard onUpgrade={handlePremiumUpgrade} />
-            </div>
+            {/* Premium Card Component */}
+            <PremiumCard 
+              onUpgrade={handlePremiumUpgrade}
+            />
             
-            {/* Recruiters List */}
-            <div className="sticky top-96">
-              <RecruitersList
-                onMessageRecruiter={handleMessageRecruiter}
-                onViewAll={handleViewAllRecruiters}
-              />
-            </div>
+            {/* Recruiters List Component */}
+            <RecruitersList 
+              onMessageRecruiter={handleMessageRecruiter}
+              onViewAll={handleViewAllRecruiters}
+            />
           </div>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default CandidateDashboard
+export default CandidateDashboard;

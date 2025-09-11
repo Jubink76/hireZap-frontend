@@ -2,7 +2,7 @@ import { MessageCircle, Building } from "lucide-react"
 
 const RecruiterCard = ({ recruiter, onMessage }) => {
   return (
-    <div className="bg-white border border-slate-200 rounded-lg p-3 hover:shadow-md transition-all duration-200 hover:border-cyan-300">
+    <div className="bg-white border border-slate-200 rounded-lg p-3 hover:shadow-md transition-all duration-200 hover:border-teal-600">
       <div className="flex items-start space-x-2">
         <img
           src={recruiter.avatar}

@@ -16,6 +16,7 @@ import CandidateAccountSettings from './pages/candidate/CandidateAccountSettings
 import RecruiterProfileDashboard from './pages/recruiter/RecruiterProfileDashboard'
 import RecruiterAccountSettings from './pages/recruiter/RecruiterAccountSettings'
 import AdminAccountSettings from './pages/admin/AdminAccountSettings'
+import AdminLogin from './pages/auth/AdminLogin'
 const App = () => {
   useEffect(() => {
     axiosInstance.get('/auth/csrf_cookie/')
@@ -29,6 +30,7 @@ const App = () => {
             <Route path= "/" element={<RegLog/>}/>
             <Route path= "/login" element={<RegLog/>}/>
             <Route path= "/register" element={<RegLog/>}/>
+            <Route path= "/admin/login" element={<AdminLogin />} />
             <Route path= "/reset_password" element={<ResetPassword/>}/>
             <Route path= "/forgot_password" element={<ForgotPassword/>}/>
             <Route path= "/verify_otp" element={<VerifyOtp/>}/>

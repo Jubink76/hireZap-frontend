@@ -43,14 +43,6 @@ const RegLog = () => {
             gradient: "from-blue-600 to-indigo-800",
             overlayGradient: "from-teal-700/80 to-teal-900/90"
         },
-        admin: {
-            image: adminBgimage,
-            title: "Administrative Control Center",
-            subtitle: "Manage users, monitor system performance, and configure platform settings with comprehensive admin tools.",
-            features: ["User Management", "System Analytics", "Configuration Control"],
-            gradient: "from-purple-600 to-violet-800",
-            overlayGradient: "from-teal-700/80 to-teal-900/90"
-        }
     };
 
     const currentConfig = role ? roleConfig[role] : roleConfig.candidate;
@@ -122,9 +114,6 @@ const RegLog = () => {
                     case "recruiter":
                         navigate("/recruiter_dashboard");
                         break;
-                    case "admin":
-                        navigate("/admin_dashboard");
-                        break;
                     default:
                         navigate("/dashboard");
                 }
@@ -139,6 +128,9 @@ const RegLog = () => {
 
             const resultAction = await dispatch(registerUser(registerData)).unwrap();
             notify.success(" Please check your email for OTP");
+
+            const otpExpiryTime = new Date().getTime() + 60 * 1000;
+            localStorage.setItem('otpExpiryTime',otpExpiryTime)
 
             // Redirect to OTP verification page
             navigate("/verify_otp", {
@@ -162,8 +154,7 @@ const RegLog = () => {
             },
         })
     }
-    const canRegister = role !== 'admin';
-    const showRegistration = !isLogin && canRegister;
+    const showRegistration = !isLogin;
 
     return (
         <div className='h-screen bg-gradient-to-br from-cyan-50 to-emerald-50 flex overflow-hidden'>
@@ -234,7 +225,6 @@ const RegLog = () => {
                                     <option value="">Choose your role</option>
                                     <option value="candidate">Candidate</option>
                                     <option value="recruiter">Recruiter</option>
-                                    <option value="admin">Admin</option>
                                 </select>
                                 <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
                                     <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -263,8 +253,7 @@ const RegLog = () => {
 
                                 <form onSubmit={handleSubmit}>
                                     <div className='space-y-3 lg:space-y-4'>
-                                        {/* Social buttons - only for non-admin */}
-                                        {role !== 'admin' && (
+                                        {/* Social buttons */}
                                             <>
                                                 <div className='space-y-2'>
                                                     <button 
@@ -297,7 +286,6 @@ const RegLog = () => {
                                                     </div>
                                                 </div>
                                             </>
-                                        )}
 
                                         {/* form */}
                                         <div className='space-y-2 lg:space-y-3'>
@@ -326,7 +314,7 @@ const RegLog = () => {
 
                                             <div className="space-y-1">
                                                 <label htmlFor="email" className="text-slate-700 font-medium text-xs block">
-                                                    {role === 'admin' ? 'Admin Email' : 'Email Address'}
+                                                    Email Address
                                                 </label>
                                                 <div className="relative">
                                                     <Mail className="absolute left-2 top-1/2 transform -translate-y-1/2 text-slate-400 w-3 h-3 lg:w-4 lg:h-4" />
@@ -402,7 +390,6 @@ const RegLog = () => {
                                 </form>
 
                                 {/* Toggle between login/register - only for non-admin */}
-                                {canRegister && (
                                     <div className="text-center text-xs text-slate-600 ">
                                         {isLogin ? "Don't have an account? " : "Already have an account? "}
                                         <button
@@ -412,7 +399,6 @@ const RegLog = () => {
                                             {isLogin ? "Sign up" : "Sign in"}
                                         </button>
                                     </div>
-                                )}
                             </>
                         )}
                     </div>

@@ -10,6 +10,7 @@ const authApi = {
     logout : () => axiosInstance.post("/auth/logout/"),
     forgot_password: (data) => axiosInstance.post("/auth/forgot_password/",data),
     reset_password: (data) => axiosInstance.post("/auth/reset_password/",data),
+    fetch_user: ()=> axiosInstance.get("/auth/fetch_user/"),
     refreshToken : () => axiosInstance.post("/auth/token/refresh/")
 }
 

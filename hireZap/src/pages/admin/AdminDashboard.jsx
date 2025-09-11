@@ -1,70 +1,83 @@
-"use client"
+import React, { useState } from 'react';
+import { Users, Activity, UserPlus, DollarSign } from 'lucide-react';
 
-import { useState } from "react"
-import Sidebar from "./components/Sidebar"
-import RecentUsers from "./components/RecentUsers"
-import StatsCards from "./components/StatsCards"
-import DashboardContent from "./components/DashboardContent"
+// Import all components
+import AdminDashboardHeader from './components/AdminDashboardHeader';
+import AdminSidebar from './components/AdminSidebar';
+import AdminStatsCards from './components/AdminStatsCards';
+import AdminDashboardGraph from './components/AdminDashboardGraph';
+import RecentUsers from './components/RecentUsers';
+import AdminSystemMetrics from './components/AdminSystemMetrics';
 
-export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState("dashboard")
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+const AdminDashboard = () => {
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const stats = [
+    {
+      label: 'Total Users',
+      value: '24,583',
+      trend: 4.2,
+      icon: Users
+    },
+    {
+      label: 'Active Sessions', 
+      value: '1,204',
+      trend: 1.8,
+      icon: Activity
+    },
+    {
+      label: 'New Signups',
+      value: '532',
+      trend: -3.1,
+      icon: UserPlus
+    },
+    {
+      label: 'Revenue',
+      value: '$86,420',
+      trend: 6.4,
+      icon: DollarSign
+    }
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-emerald-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-serif font-bold text-slate-900">Admin Dashboard</h1>
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-slate-600">
-                Welcome back, Admin
+    <div className="min-h-screen bg-gray-50">
+      {/* Fixed Header */}
+      <div className="fixed top-0 left-0 right-0 z-50">
+        <AdminDashboardHeader 
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+        />
+      </div>
+      
+      {/* Fixed Sidebar */}
+      <div className="fixed top-[73px] left-0 bottom-0 z-40">
+        <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      </div>
+      
+      {/* Main Content Area */}
+      <div className="ml-64 mt-[73px]">
+        <div className="p-6">
+          <div className="max-w-7xl mx-auto">
+            {/* Stats Cards */}
+            <AdminStatsCards stats={stats} />
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <AdminDashboardGraph />
+                <AdminSystemMetrics />
+              </div>
+              
+              {/* Right Sidebar */}
+              <div className="space-y-6">
+                <RecentUsers />
               </div>
             </div>
           </div>
         </div>
-      </header>
-
-      <div className="flex">
-        {/* Sidebar */}
-        <Sidebar 
-          activeTab={activeTab} 
-          setActiveTab={setActiveTab}
-          collapsed={sidebarCollapsed}
-          setCollapsed={setSidebarCollapsed}
-        />
-
-        {/* Main Content */}
-        <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
-          <div className="p-6">
-            {activeTab === "dashboard" && (
-              <div className="space-y-6">
-                <StatsCards />
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="lg:col-span-2">
-                    <DashboardContent />
-                  </div>
-                  <div className="lg:col-span-1">
-                    <RecentUsers />
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {activeTab !== "dashboard" && (
-              <div className="text-center py-12">
-                <h2 className="text-2xl font-serif font-bold text-slate-900 mb-4">
-                  {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Panel
-                </h2>
-                <p className="text-slate-600">
-                  This section is under development. Content for {activeTab} will be displayed here.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
     </div>
-  )
-}
+  );
+};
+
+export default AdminDashboard;

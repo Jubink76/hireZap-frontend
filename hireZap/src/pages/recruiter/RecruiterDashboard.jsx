@@ -1,377 +1,196 @@
-"use client"
 
-import { useState } from "react"
-import {
-  Users,
-  Briefcase,
-  Calendar,
-  TrendingUp,
-} from "lucide-react"
+import React, { useState } from 'react';
 
-// Import all components
-import SideBar from "../recruiter/components/SideBar"
-import DashboardHeader from "../recruiter/components/DashboardHeader"
-import StatsCards from "../recruiter/components/StatsCards"
-import JobsSection from "../recruiter/components/JobSection"
-import RecentApplicants from "../recruiter/components/RecentApplicants"
+// Import all components (in a real app, these would be separate files)
+import RecruiterDashboardHeader from '../recruiter/components/RecruiterDashboardHeader';
+import Sidebar from '../recruiter/components/SideBar';
+import StatsCards from '../recruiter/components/StatsCards';
+import JobSection from '../recruiter/components/JobSection';
+import RecentApplicants from '../recruiter/components/RecentApplicants';
+import RecruiterDashboardGraph from '../recruiter/components/RecruiterDashboardGraph'
+import {Users, TrendingUp, Briefcase, Clock} from 'lucide-react'
+import Pagination from '../../components/Pagination';
 
-// Sample data
-const summaryStats = [
-  {
-    title: "Total Applicants",
-    value: "2,847",
-    change: "+12.5%",
-    changeType: "positive",
-    icon: Users,
-    color: "bg-cyan-500",
-  },
-  {
-    title: "Active Jobs",
-    value: "24",
-    change: "+3",
-    changeType: "positive",
-    icon: Briefcase,
-    color: "bg-emerald-500",
-  },
-  {
-    title: "Upcoming Interviews",
-    value: "18",
-    change: "Today",
-    changeType: "neutral",
-    icon: Calendar,
-    color: "bg-amber-500",
-  },
-  {
-    title: "Hire Rate",
-    value: "68%",
-    change: "+5.2%",
-    changeType: "positive",
-    icon: TrendingUp,
-    color: "bg-purple-500",
-  },
-]
+const RecruiterDashboard = () => {
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [searchQuery, setSearchQuery] = useState('');
 
-const createdJobs = [
-  {
-    id: 1,
-    title: "Senior Frontend Developer",
-    company: "TechCorp",
-    location: "San Francisco, CA",
-    salary: "$120k - $160k",
-    type: "Full-time",
-    applicants: 45,
-    posted: "2 days ago",
-    status: "active",
-    skills: ["React", "TypeScript", "Node.js"],
-    logo: "/creative-company-logo.png",
-  },
-  {
-    id: 2,
-    title: "Product Manager",
-    company: "InnovateLab",
-    location: "New York, NY",
-    salary: "$140k - $180k",
-    type: "Full-time",
-    applicants: 32,
-    posted: "1 week ago",
-    status: "active",
-    skills: ["Strategy", "Analytics", "Leadership"],
-    logo: "/abstract-tech-logo.png",
-  },
-  {
-    id: 3,
-    title: "UX Designer",
-    company: "DesignStudio",
-    location: "Austin, TX",
-    salary: "$90k - $120k",
-    type: "Full-time",
-    applicants: 28,
-    posted: "3 days ago",
-    status: "paused",
-    skills: ["Figma", "User Research", "Prototyping"],
-    logo: "/ai-company-logo.png",
-  },
-  {
-    id: 4,
-    title: "Data Scientist",
-    company: "DataFlow",
-    location: "Seattle, WA",
-    salary: "$130k - $170k",
-    type: "Full-time",
-    applicants: 52,
-    posted: "5 days ago",
-    status: "active",
-    skills: ["Python", "Machine Learning", "SQL"],
-    logo: "/cloud-company-logo.png",
-  },
-]
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(3); // Adjust as needed
 
-const recentApplicants = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    position: "Senior Frontend Developer",
-    avatar: "/professional-woman-headshot.png",
-    experience: "5 years",
-    location: "San Francisco, CA",
-    appliedAt: "2 hours ago",
-    status: "new",
-    rating: 4.8,
-    skills: ["React", "TypeScript", "Node.js"],
-  },
-  {
-    id: 2,
-    name: "Michael Chen",
-    position: "Product Manager",
-    avatar: null,
-    experience: "7 years",
-    location: "New York, NY",
-    appliedAt: "4 hours ago",
-    status: "reviewed",
-    rating: 4.6,
-    skills: ["Strategy", "Analytics", "Leadership"],
-  },
-  {
-    id: 3,
-    name: "Emily Rodriguez",
-    position: "UX Designer",
-    avatar: null,
-    experience: "4 years",
-    location: "Austin, TX",
-    appliedAt: "6 hours ago",
-    status: "interview",
-    rating: 4.9,
-    skills: ["Figma", "User Research", "Prototyping"],
-  },
-  {
-    id: 4,
-    name: "David Kim",
-    position: "Data Scientist",
-    avatar: null,
-    experience: "6 years",
-    location: "Seattle, WA",
-    appliedAt: "1 day ago",
-    status: "new",
-    rating: 4.7,
-    skills: ["Python", "Machine Learning", "SQL"],
-  },
-]
+  // Mock data
+  const stats = [
+    {
+      label: 'Total Applicants',
+      value: '1,248',
+      trend: 12.4,
+      icon: Users
+    },
+    {
+      label: 'Hires This Month', 
+      value: '86',
+      trend: 5.2,
+      icon: TrendingUp
+    },
+    {
+      label: 'Open Jobs',
+      value: '42', 
+      trend: 2.1,
+      icon: Briefcase
+    },
+    {
+      label: 'Avg. Time to Hire',
+      value: '18d',
+      trend: -1.6,
+      icon: Clock
+    }
+  ];
 
-export default function RecruiterDashboard() {
-  const [activeTab, setActiveTab] = useState("dashboard")
+  const jobs = [
+    {
+      id: 1,
+      title: "Senior Product Designer",
+      company: "Figma Inc.",
+      location: "San Francisco, CA",
+      salary: "$150k-$180k",
+      posted: "2h ago",
+      applicants: 120,
+      status: "Active",
+      skills: ["Figma", "UX Research", "Prototyping"],
+      logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=40&h=40&fit=crop"
+    },
+    {
+      id: 2,
+      title: "Backend Engineer", 
+      company: "Stripe",
+      location: "Remote",
+      salary: "$160k-$200k",
+      posted: "1d ago", 
+      applicants: 89,
+      status: "Active",
+      skills: ["Go", "PostgreSQL", "Kubernetes"],
+      logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=40&h=40&fit=crop"
+    },
+    {
+      id: 3,
+      title: "People Operations Manager",
+      company: "WellnessCo",
+      location: "Austin, TX", 
+      salary: "$110k-$130k",
+      posted: "3d ago",
+      applicants: 24,
+      status: "Paused", 
+      skills: ["HRIS", "Onboarding", "Compensation"],
+      logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=40&h=40&fit=crop"
+    }
+  ];
+
+  const recentApplicants = [
+    {
+      id: 1,
+      name: "Ava Johnson",
+      title: "Senior Product Designer", 
+      location: "New York, NY",
+      applied: "45m ago",
+      rating: 4.8,
+      status: "New",
+      skills: ["Design Systems", "Figma"],
+      avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b5bc?w=40&h=40&fit=crop&crop=face"
+    },
+    {
+      id: 2,
+      name: "Noah Patel",
+      title: "Backend Engineer",
+      location: "Remote", 
+      applied: "1h ago",
+      rating: 4.6,
+      status: "New",
+      skills: ["Go", "K8s"],
+      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face"
+    },
+    {
+      id: 3,
+      name: "Liam Chen",
+      title: "People Ops Manager",
+      location: "Austin, TX",
+      applied: "3h ago", 
+      rating: 4.2,
+      status: "Reviewed",
+      skills: ["Onboarding", "HRIS"],
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face"
+    }
+  ];
 
   // Event handlers
-  const handleTabChange = (tab) => {
-    setActiveTab(tab)
-    console.log("Tab changed to:", tab)
-  }
-
   const handleAddCandidate = () => {
-    console.log("Add candidate clicked")
-  }
+    console.log('Add candidate clicked');
+  };
 
-  const handleFilters = () => {
-    console.log("Filters clicked")
-  }
+  const handleCreateJob = () => {
+    console.log('Create job clicked');
+  };
 
-  const handleNotifications = () => {
-    console.log("Notifications clicked")
-  }
+  const handleManageJob = (job) => {
+    console.log('Manage job:', job);
+  };
 
-  const handleCreateNewJob = () => {
-    console.log("Create new job clicked")
-  }
+  const handleSearchCandidates = (query) => {
+    console.log('Search candidates:', query);
+  };
 
-  const handleViewJob = (job) => {
-    console.log("View job:", job)
-  }
-
-  const handleEditJob = (job) => {
-    console.log("Edit job:", job)
-  }
-
-  const handleViewApplicants = (job) => {
-    console.log("View applicants for job:", job)
-  }
-
-  const handleViewProfile = (applicant) => {
-    console.log("View profile:", applicant)
-  }
-
-  const handleSendMessage = (applicant) => {
-    console.log("Send message to:", applicant)
-  }
-
-  const handleViewResume = (applicant) => {
-    console.log("View resume:", applicant)
-  }
-
-  const handleViewAllCandidates = () => {
-    console.log("View all candidates clicked")
-  }
-
-  // Get header configuration based on active tab
-  const getHeaderConfig = () => {
-    switch (activeTab) {
-      case "dashboard":
-        return {
-          title: "Recruitment Overview",
-          subtitle: "Track your recruitment progress and manage candidates"
-        }
-      case "jobs":
-        return {
-          title: "Job Management",
-          subtitle: "Create and manage your job postings"
-        }
-      case "selection":
-        return {
-          title: "Selection Procedure",
-          subtitle: "Manage interview processes and candidate evaluation"
-        }
-      case "messages":
-        return {
-          title: "Messages",
-          subtitle: "Communicate with candidates and team members"
-        }
-      case "talent":
-        return {
-          title: "Talent Pool",
-          subtitle: "Browse and manage your candidate database"
-        }
-      case "reports":
-        return {
-          title: "Reports & Analytics",
-          subtitle: "View recruitment metrics and performance data"
-        }
-      case "settings":
-        return {
-          title: "Settings",
-          subtitle: "Manage your account and system preferences"
-        }
-      default:
-        return {
-          title: "Recruitment Overview",
-          subtitle: "Track your recruitment progress and manage candidates"
-        }
-    }
-  }
-
-  // Render different content based on active tab
-  const renderContent = () => {
-    switch (activeTab) {
-      case "dashboard":
-        return (
-          <>
-            {/* Summary Cards */}
-            <StatsCards stats={summaryStats} />
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2">
-                <JobsSection
-                  jobs={createdJobs}
-                  onCreateNewJob={handleCreateNewJob}
-                  onViewJob={handleViewJob}
-                  onEditJob={handleEditJob}
-                  onViewApplicants={handleViewApplicants}
-                />
-              </div>
-
-              {/* Recent Applicants */}
-              <div>
-                <RecentApplicants
-                  applicants={recentApplicants}
-                  onViewProfile={handleViewProfile}
-                  onSendMessage={handleSendMessage}
-                  onViewResume={handleViewResume}
-                  onViewAllCandidates={handleViewAllCandidates}
-                />
-              </div>
-            </div>
-          </>
-        )
-      case "jobs":
-        return (
-          <div className="space-y-6">
-            <JobsSection
-              jobs={createdJobs}
-              onCreateNewJob={handleCreateNewJob}
-              onViewJob={handleViewJob}
-              onEditJob={handleEditJob}
-              onViewApplicants={handleViewApplicants}
-            />
-          </div>
-        )
-      case "selection":
-        return (
-          <div className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20 rounded-2xl p-8">
-            <h2 className="text-2xl font-serif font-bold text-slate-800 mb-4">Selection Procedure</h2>
-            <p className="text-slate-600">Manage your selection processes and interview workflows.</p>
-          </div>
-        )
-      case "messages":
-        return (
-          <div className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20 rounded-2xl p-8">
-            <h2 className="text-2xl font-serif font-bold text-slate-800 mb-4">Messages</h2>
-            <p className="text-slate-600">Communicate with candidates and team members.</p>
-          </div>
-        )
-      case "talent":
-        return (
-          <div className="space-y-6">
-            <RecentApplicants
-              applicants={recentApplicants}
-              onViewProfile={handleViewProfile}
-              onSendMessage={handleSendMessage}
-              onViewResume={handleViewResume}
-              onViewAllCandidates={handleViewAllCandidates}
-            />
-          </div>
-        )
-      case "reports":
-        return (
-          <div className="space-y-6">
-            <StatsCards stats={summaryStats} />
-            <div className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20 rounded-2xl p-8">
-              <h2 className="text-2xl font-serif font-bold text-slate-800 mb-4">Detailed Reports</h2>
-              <p className="text-slate-600">View comprehensive analytics and recruitment metrics.</p>
-            </div>
-          </div>
-        )
-      case "settings":
-        return (
-          <div className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20 rounded-2xl p-8">
-            <h2 className="text-2xl font-serif font-bold text-slate-800 mb-4">Settings</h2>
-            <p className="text-slate-600">Manage your account and system preferences.</p>
-          </div>
-        )
-      default:
-        return null
-    }
-  }
-
-  const headerConfig = getHeaderConfig()
+  const handlePremiumUpgrade = () => {
+    console.log('Premium upgrade clicked');
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-emerald-50 to-teal-50">
-      {/* Sidebar */}
-      <SideBar activeTab={activeTab} onTabChange={handleTabChange} />
-
-      {/* Main Content */}
-      <div className="ml-64">
-        {/* Header */}
-        <DashboardHeader
-          title={headerConfig.title}
-          subtitle={headerConfig.subtitle}
+    <div className="min-h-screen bg-gray-50">
+      {/* Fixed Header */}
+      <div className="fixed top-0 left-0 right-0 z-50">
+        <RecruiterDashboardHeader 
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
           onAddCandidate={handleAddCandidate}
-          onFilters={handleFilters}
-          onNotifications={handleNotifications}
         />
-
-        {/* Dashboard Content */}
-        <main className="p-8">
-          {renderContent()}
-        </main>
+      </div>
+      
+      {/* Fixed Left Sidebar */}
+      <div className="fixed top-[73px] mt-3 left-0 bottom-0 z-40">
+        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      </div>
+      
+      {/* Main Content Area with proper margins */}
+      <div className="ml-64 mt-[73px]">
+        <div className="p-6">
+          <div className="max-w-7xl mx-auto mt-3">
+            {/* Stats Cards */}
+            <StatsCards stats={stats} />
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <RecruiterDashboardGraph />
+                <JobSection 
+                  jobs={jobs}
+                  onCreateJob={handleCreateJob}
+                  onManageJob={handleManageJob}
+                  currentPage={currentPage}
+                  onPageChange={setCurrentPage}
+                  itemsPerPage={itemsPerPage}
+                />
+                <Pagination />
+              </div>
+              {/* Right Sidebar */}
+              <div className="space-y-6">
+                <RecentApplicants 
+                  applicants={recentApplicants}
+                  onSearchCandidates={handleSearchCandidates}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  )
-}
+  );
+};
+
+export default RecruiterDashboard;

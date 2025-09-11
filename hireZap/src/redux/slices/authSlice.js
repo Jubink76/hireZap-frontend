@@ -68,6 +68,7 @@ export const completeRegistration = createAsyncThunk("auth/registerOtp", async(d
 export const logoutUser = createAsyncThunk("auth/logout", async(_, thunkAPI) => {
     try{
         await authService.logout()
+        thunkAPI.dispatch(logout()) // It clear redux state immediately after successfull logout, no need extra reducer
         notify.success("Logout successful");
     }catch(err){
         notify.error("Logout Failed");
@@ -145,6 +146,22 @@ export const resetPassword = createAsyncThunk("auth/reset_password", async(data,
         "Reset password failed!!"
         notify.error(message)
         return thunkAPI.rejectWithValue(message)
+    }
+})
+
+// fetch current user thunk
+export const fetchCurrentUser = createAsyncThunk("auth/current_user", async(_,thunkAPI)=>{
+    try{
+        const res = await authService.fetchUser();
+        return res.data;
+    }catch(err){
+        const message = 
+            err.response?.data?.message ||
+            err.response?.data?.detail || 
+            err.message || 
+            "Failed to fetch user !!"
+            notify.error(message)
+            return thunkAPI.rejectWithValue(message)
     }
 })
 
@@ -246,7 +263,36 @@ const authSlice = createSlice({
             .addCase(resetPassword.rejected,(state,action)=>{
                 state.loading = false
                 state.error = action.payload
-            });
+            })
+            .addCase(fetchCurrentUser.pending,(state)=>{
+                state.loading = true;
+            })
+            .addCase(fetchCurrentUser.fulfilled,(state,action)=>{
+                state.loading = false;
+                const apiUser = action.payload;
+                state.role = apiUser.role;
+                state.error = false;
+                state.isAuthenticated = true;
+
+                if (state.role === "candidate"){
+                    state.user = {
+                        name: apiUser.name,
+                        email: apiUser.email,
+                        phone: apiUser.phone,
+
+                    }
+                }else if(state.role === 'recruiter'){
+                    state.user = {
+                        name: apiUser.name,
+                        email: apiUser.email,
+                    }
+                }
+            })
+            .addCase(fetchCurrentUser.rejected,(state, action)=>{
+                state.loading = false;
+                state.user = null;
+                state.isAuthenticated = false
+            })
     }
 });
 

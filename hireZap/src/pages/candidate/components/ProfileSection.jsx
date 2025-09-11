@@ -1,57 +1,54 @@
-import { Mail, Phone, Award, Eye } from "lucide-react"
-import profileAvatar from '../../../assets/profile_avatar.jpg'
-const ProfileSection = ({ profile, onEditProfile }) => {
-  const defaultProfile = {
-    name: "Sarah Johnson",
-    title: "Frontend Developer",
-    avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b77c?w=80&h=80&fit=crop&crop=face",
-    email: "sarah.j@email.com",
-    phone: "+1 (555) 123-4567",
-    experience: "5+ years experience"
-  }
-
-  const userProfile = { ...defaultProfile, ...profile }
+const ProfileSection = ({ 
+  profile = {}, 
+  onEditProfile,
+  onViewProfile 
+}) => {
+  const {
+    name = 'Sarah Johnson',
+    title = 'Senior Product Designer',
+    avatar = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face',
+    profileViews = 142,
+    applications = 8,
+    profileScore = 95
+  } = profile;
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
-      <div className="flex items-center space-x-4 mb-4">
-        <img
-          src={profileAvatar}
-          alt="Profile"
-          className="w-16 h-16 rounded-full object-cover border-2 border-cyan-200"
-        />
-        <div>
-          <h3 className="text-lg font-serif font-bold text-slate-900">{userProfile.name}</h3>
+    <div className="bg-white rounded-lg shadow-sm border border-gray-400/50 p-6 transition-shadow duration-300 hover:shadow-md">
+      <div className="text-center">
+        <div className="relative inline-block">
+          <img
+            src={avatar}
+            alt="Profile"
+            className="w-20 h-20 rounded-full mx-auto mb-4"
+          />
         </div>
+        <h3 className="font-semibold text-gray-900">{name}</h3>
+        <p className="text-sm text-gray-600">{title}</p>
+        
+        <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t">
+          <div className="text-center">
+            <div className="font-semibold text-gray-900">{profileViews}</div>
+            <div className="text-xs text-gray-600">Profile Views</div>
+          </div>
+          <div className="text-center">
+            <div className="font-semibold text-gray-900">{applications}</div>
+            <div className="text-xs text-gray-600">Applications</div>
+          </div>
+          <div className="text-center">
+            <div className="font-semibold text-gray-900">{profileScore}%</div>
+            <div className="text-xs text-gray-600">Profile Score</div>
+          </div>
+        </div>
+        
+        <button 
+          onClick={onViewProfile}
+          className="w-full mt-4 px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer"
+        >
+          👤 View Profile
+        </button>
       </div>
-      
-      <div className="space-y-3 text-sm text-slate-600">
-        <div className="flex items-center space-x-2">
-          <p className="text-slate-600">{userProfile.title}</p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Mail className="h-4 w-4" />
-          <span>{userProfile.email}</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Phone className="h-4 w-4" />
-          <span>{userProfile.phone}</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Award className="h-4 w-4" />
-          <span>{userProfile.experience}</span>
-        </div>
-      </div>
-
-      <button 
-        onClick={onEditProfile}
-        className="w-full mt-4 bg-teal-700 hover:bg-teal-800 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
-      >
-        <Eye className="h-4 w-4" />
-        <span>View Profile</span>
-      </button>
     </div>
-  )
-}
+  );
+};
 
 export default ProfileSection;
