@@ -52,7 +52,7 @@ npm install
 ## 🔑 Enviorment variables
 - VITE_BASE_URL=http://localhost:8000/api
 
-## 🚦 Usag
+## 🚦 Usage
 - ```bash
   npm run dev
   ```
