@@ -14,15 +14,21 @@ const VerifyOtp = () => {
     const location = useLocation()
     const {user, loading} = useSelector((state)=>state.auth)
     const [code,setCode] = useState(new Array(6).fill(""))
+
     const [second, setSecond] = useState(() => {
         const expiry = localStorage.getItem("otpExpiryTime");
-        if (expiry) {
-            const remaining = Math.floor((expiry - new Date().getTime()) / 1000);
-            return remaining > 0 ? remaining : 0;
+        const now = new Date().getTime();
+
+        if (expiry && expiry > now) {
+            // If a valid expiry exists, use the remaining seconds
+            return Math.floor((expiry - now) / 1000);   
         }
+
+        // No valid expiry or expired OTP → start fresh
+        const newExpiry = now + 60 * 1000; // 60 seconds
+        localStorage.setItem("otpExpiryTime", newExpiry);
         return 60;
     });
-
     const {email, role, action_type} = location.state || {};
 
     // countdown timer for otp
@@ -62,9 +68,16 @@ const VerifyOtp = () => {
     const handleVerify = async()=>{
         const otp = code.join("")
 
+        const expiry = localStorage.getItem("otpExpiryTime");
+        const now = Date.now();
+
         if (otp.length !== 6 ){
             notify.error("please enter full code");
             return 
+        }
+        if (!expiry || now > expiry) {
+            notify.error("OTP expired, please request a new one");
+            return;
         }
         try{
             if (action_type === "registration"){
@@ -83,7 +96,8 @@ const VerifyOtp = () => {
             }else if(action_type === "forgot_password"){
                 try{
                     const res = await dispatch(verifyOtp({email, code:otp, action_type})).unwrap()
-                    console.log(res)
+                    
+                    notify.success("OTP verification successful");
                     navigate("/reset_password",{
                         state:{email,role}
                     })
@@ -112,8 +126,7 @@ const VerifyOtp = () => {
             setSecond(60);
             setCode(new Array(6).fill(""));
         } catch (err) {
-            console.error("Unexpected error", err);
-            notify.error(err || "Failed to resend OTP");
+            notify.error(err);
         }
     };
 
@@ -199,7 +212,7 @@ const VerifyOtp = () => {
                             {/* Verify Button */}
                             <button
                                 onClick={handleVerify}
-                                disabled={loading || second === 0}
+                                disabled={loading}
                                 className={`w-full h-10 rounded-lg font-semibold cursor-pointer ${loading ? 'bg-slate-200' : 'bg-teal-800 text-white'}`}>
                                 {loading ? "Verifying..." : "Verify Code"}
                                 </button>

@@ -4,20 +4,37 @@ import forgotImage from '../../assets/forget-password.jpeg';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { forgotPassword } from '../../redux/slices/authSlice';
 import { useDispatch } from 'react-redux';
+import { notify } from '../../utils/toast';
 const ForgotPassword = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const location = useLocation();
     const {role, action_type } = location.state || {};
     const [emailForm, setEmailForm] = useState('');
-
+    const [emailError, setEmailError] = useState('')
+    const validateEmail = (email)=>{
+        const emailRegex = /^[A-Za-z0-9](\.?[A-Za-z0-9_\-+%])*@[A-Za-z0-9-]+(\.[A-Za-z]{2,})+$/;
+        if (!email)return "Email is required";
+        if (!emailRegex.test(email)) return "Invalid email format";
+        return null;
+    }
     const handleSubmit = async(e)=>{
         e.preventDefault();
+
+        const emailError = validateEmail(emailForm);
+        if(emailError){
+            setEmailError(emailError)
+            notify.error(emailError)
+            return
+        }
         const data = {
             role,action_type,email:emailForm
         };
         try{
             const res = await dispatch(forgotPassword(data)).unwrap();
+            const otpExpiryTime = new Date().getTime() + 60 * 1000;
+            localStorage.setItem("otpExpiryTime", otpExpiryTime);
+            
             navigate("/verify_otp",{
                 state:{
                     email:emailForm,
@@ -102,6 +119,7 @@ const ForgotPassword = () => {
                                             className="pl-8 lg:pl-10 h-10 lg:h-12 w-full rounded-lg border border-slate-300 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 px-3 text-sm lg:text-base"
                                         />
                                     </div>
+                                    { emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
                                 </div>
                                 <button 
                                     type="submit"

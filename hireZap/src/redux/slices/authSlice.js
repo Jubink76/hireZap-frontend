@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import authService from "../../services/authService";
 import { notify } from "../../utils/toast";
+import { getFriendlyError } from "../../utils/errorHandler";
 
 // csrf-cookie thunk
 export const getCsrfCookie = createAsyncThunk("auth/csrf_cookie", async(_,thunkAPI)=>{
@@ -16,11 +17,10 @@ export const getCsrfCookie = createAsyncThunk("auth/csrf_cookie", async(_,thunkA
 export const loginUser = createAsyncThunk("auth/login", async(data, thunkAPI)=>{
     try{
         const res = await authService.login(data);
-        notify.success("Login Successful");
         return res.user;
     }catch(err){
-        notify.error(err.message || "Login Failed");
-        return thunkAPI.rejectWithValue(err.message)
+        const friendly = getFriendlyError(err, "invalid email or password")
+        return thunkAPI.rejectWithValue(friendly)
     }
 });
 
@@ -30,19 +30,15 @@ export const registerUser = createAsyncThunk(
   async (data, thunkAPI) => {
     try {
       const res = await authService.register(data);
+      console.log(res)
       return {
         email: data.email,
         message: res.message,
       };
     } catch (err) {
         console.error("Register API error:", err.response?.data || err.message);
-        const message =
-            err.response?.data?.message ||
-            err.response?.data?.detail ||
-            err.message ||
-            "Registration failed";
-        notify.error(message);
-      return thunkAPI.rejectWithValue(message);
+        const friendly = getFriendlyError(err, "Registration failed.. Try again")
+      return thunkAPI.rejectWithValue(friendly);
     }
   }
 );
@@ -51,15 +47,10 @@ export const registerUser = createAsyncThunk(
 export const completeRegistration = createAsyncThunk("auth/registerOtp", async(data, thunkAPI)=>{
     try{
         const res = await authService.registerOtp(data);
-        notify.success("Registration successfull");
         return res;
     }catch(err){
-        const message = 
-        err.response?.data?.detail || 
-        err.message || 
-        "Registration Failed";
-        notify.error(message)
-        return thunkAPI.rejectWithValue(message)
+        const friendly = getFriendlyError(err,"Registration Failed")
+        return thunkAPI.rejectWithValue(friendly)
     }
 });
 
@@ -80,16 +71,10 @@ export const logoutUser = createAsyncThunk("auth/logout", async(_, thunkAPI) => 
 export const resendOtp = createAsyncThunk("auth/resend_otp",async(data, thunkAPI)=>{
     try{
         const res = await authService.resendOtp(data);
-        notify.success(res?.message || "OTP resent successfully")
         return res;
     }catch(err){
-        const message =
-        err.response?.data?.message || 
-        err.response?.data?.detail ||
-        err.message || 
-        "Resend OTP failed!!"
-        notify.error(message)
-        return thunkAPI.rejectWithValue(message);
+        const friendly = getFriendlyError(err, "Resend OTP failed")
+        return thunkAPI.rejectWithValue(friendly);
     }
 });
 
@@ -100,13 +85,9 @@ export const forgotPassword = createAsyncThunk("auth/forgot_password", async(dat
         notify.success(res?.message || "Email verified")
         return res;
     }catch(err){
-        const message = 
-        err.response?.data?.message || 
-        err.response?.data?.detail || 
-        err.message || 
-        "Invalid Email Id"
-        notify.error(message)
-        return thunkAPI.rejectWithValue(message)
+        const friendly = getFriendlyError(err,"Email is not registered")
+        notify.error(friendly)
+        return thunkAPI.rejectWithValue(friendly)   
     }
 });
 
@@ -114,21 +95,10 @@ export const forgotPassword = createAsyncThunk("auth/forgot_password", async(dat
 export const verifyOtp = createAsyncThunk("auth/verify_otp",async(data,thunkApi)=>{
     try{
         const res = await authService.verifyOtp(data);
-        console.log(res)
-        if(res.verified){
-            notify.success("Otp verification successful");
-        }else{
-            notify.error("Invalid OTP or expired")
-            return thunkApi.rejectWithValue("Invalid OTP or expired ") 
-        }
         return res;
     }catch(err){
-        const message =
-        err.response?.detail || 
-        err.message ||
-        "verification failed!!"
-        notify.error(message)
-        return thunkApi.rejectWithValue(message);
+        const friendly = getFriendlyError(err,"Verification failed")
+        return thunkApi.rejectWithValue(friendly);
     }
 });
 
@@ -136,16 +106,10 @@ export const verifyOtp = createAsyncThunk("auth/verify_otp",async(data,thunkApi)
 export const resetPassword = createAsyncThunk("auth/reset_password", async(data,thunkAPI)=>{
     try{
         const res = await authService.ResetPassword(data);
-        notify.success(res?.message || "Reset password successful!")
         return res
     }catch(err){
-        const message = 
-        err.response?.data?.message || 
-        err.response?.data?.detail || 
-        err.message || 
-        "Reset password failed!!"
-        notify.error(message)
-        return thunkAPI.rejectWithValue(message)
+        const friendly = getFriendlyError(err,"Password reset failed")
+        return thunkAPI.rejectWithValue(friendly)
     }
 })
 

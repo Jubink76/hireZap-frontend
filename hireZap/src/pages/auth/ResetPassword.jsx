@@ -33,6 +33,7 @@ const ResetPassword = () => {
             notify.success("Password reset successful, Please login")
             navigate("/")
         }catch(err){
+            console.error("Reset password failed", err);
             notify.error(err || "Could not reset password");
         }
     };

@@ -49,11 +49,14 @@ const RegLog = () => {
 
     const validateForm = () =>{
         const errors = {};
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const nameRegex = /^[A-za-z\s]+$/;
+        const emailRegex =/^[A-Za-z0-9](\.?[A-Za-z0-9_\-+%])*@[A-Za-z0-9-]+(\.[A-Za-z]{2,})+$/;
         const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
         if(!formData.name.trim()){
             errors.name = 'full name is required';
+        }else if(!nameRegex.test(formData.name.trim())){
+            errors.name = "Name can only contain lettes and space"
         }
         if(!formData.email || !emailRegex.test(formData.email)){
             errors.email = "valid email is required";
@@ -65,7 +68,7 @@ const RegLog = () => {
         }
 
         setFormErrors(errors);
-        return Object.keys(errors).length === 0;
+        return errors
     }
 
     const handleChange = (e) => {
@@ -91,6 +94,7 @@ const RegLog = () => {
         e.preventDefault();
 
         const errors = validateForm();
+        console.log("form validation errors", errors);
         if (Object.keys(errors).length > 0) {
             notify.error("Please fix form errors");
             return;
@@ -103,11 +107,11 @@ const RegLog = () => {
                     password: formData.password,
                     role: role,
                 };
-
-                const result = await dispatch(loginUser(loginData)).unwrap();
-                console.log("logged in user:",result)
-                notify.success("Login successful");
-                switch (role) {
+                try{
+                    const result = await dispatch(loginUser(loginData)).unwrap();
+                    console.log("logged in user:",result)
+                    notify.success("Login successful");
+                    switch (role) {
                     case "candidate":
                         navigate("/candidate_dashboard");
                         break;
@@ -116,6 +120,10 @@ const RegLog = () => {
                         break;
                     default:
                         navigate("/dashboard");
+                }
+                }catch(err){
+                    console.log("err in catch:", err);
+                    notify.error(err)
                 }
             } else {
             const registerData = {
@@ -374,8 +382,6 @@ const RegLog = () => {
                                                     </button>
                                                 </div>
                                             )}
-
-                                            {error && <p className="text-red-500 text-xs">{error}</p>}
 
                                             <button 
                                                 type="submit"
