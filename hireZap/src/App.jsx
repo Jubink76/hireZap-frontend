@@ -19,7 +19,7 @@ import AdminAccountSettings from './pages/admin/AdminAccountSettings'
 import AdminLogin from './pages/auth/AdminLogin'
 const App = () => {
   useEffect(() => {
-    axiosInstance.get('/auth/csrf_cookie/')
+    axiosInstance.get('/auth/csrf-cookie/')
         .then(() => console.log('CSRF cookie set'))
         .catch(err => console.error('CSRF cookie error', err));
 }, []);

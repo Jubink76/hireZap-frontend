@@ -2,14 +2,40 @@ import React, { useState } from 'react'
 import { Mail, Lock, Eye, EyeOff} from 'lucide-react'
 import appLogo from '../../assets/app-logo.png'
 import adminBgimage from '../../assets/admin-bg-image.png'
+import { notify } from '../../utils/toast'
+import { useDispatch } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
+import { loginUser } from '../../redux/slices/authSlice'
 const AdminLogin = () => {
     const [showPassword, setShowPassword] = useState(false)
-
+    const [formErrors, setFormErrors] = useState({})
     const [formData, setFormData] = useState({
         email: '',
         password: '',
         rememberMe: false  // Added missing property
     })
+
+    const dispatch = useDispatch()
+    const navigate = useNavigate()
+
+    const validateForm = () =>{
+        const errors = {}
+        const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+        const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+        if (!formData.email || !emailRegex.test(formData.email)){
+            errors.email = "Valid email is Required"
+        }
+        if (!formData.password){
+            errors.password = "Password required"
+        }else if(!passwordRegex.test(formData.password)){
+            errors.password = "Password must contain,letters,digits,special character and atleast 8 characters"
+        }
+
+        setFormErrors(errors)
+        return errors
+    }
+
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target
@@ -19,15 +45,36 @@ const AdminLogin = () => {
         }))
     }
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async(e) => {
         e.preventDefault()
-        console.log('Login attempt:', formData)
-        // Add your login logic here
+        
+        const errors = validateForm()
+
+        if(Object.keys(errors).length > 0){
+            notify.error("Please fix form errors")
+            return
+        }
+        const loginData = {
+            email: formData.email,
+            password : formData.password,
+        }
+        try{
+            const user = await dispatch(loginUser(loginData)).unwrap();
+            notify.success("Login successful")
+            if(user.is_admin || user.role === 'admin' || user.staff){
+                navigate("/admin_dashboard")
+            }
+        }catch(err){
+            notify.error(err)
+        }
     }
 
-    const handleForgotPassword = () => {
-        console.log('Forgot password clicked')
-        // Add forgot password logic here
+    const handleForgotPassword = ()=>{
+        navigate("/forgot_password",{
+            state :{
+                role:"admin", action_type:"forgot_password"
+            },
+        })
     }
 
     return (
@@ -84,7 +131,7 @@ const AdminLogin = () => {
                             </p>
                         </div>
                         
-                        <div>
+                        <form onSubmit={handleSubmit}>
                             <div className='space-y-3 lg:space-y-4'>
                                 <div className='space-y-2 lg:space-y-3'>
                                     <div className='space-y-1'>
@@ -104,6 +151,7 @@ const AdminLogin = () => {
                                                 required
                                             />
                                         </div>
+                                        {formErrors.email && <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>}
                                     </div>
                                     <div className='space-y-1'>
                                         <label htmlFor='password' className='text-slate-700 font-medium text-xs block'>
@@ -131,6 +179,7 @@ const AdminLogin = () => {
                                                 }
                                             </button>
                                         </div>
+                                        {formErrors.password && <p className="text-red-500 text-xs mt-1">{formErrors.password}</p>}
                                     </div>
                                     <div className="flex items-center justify-between text-xs">
                                         <label className="flex items-center space-x-2 text-slate-600">
@@ -151,13 +200,13 @@ const AdminLogin = () => {
                                         </button>
                                     </div>
                                     <button 
-                                        onClick={handleSubmit}
+                                        type='submit'
                                         className="w-full h-8 lg:h-10 bg-teal-700 hover:bg-teal-800 text-white font-semibold rounded-lg transition-colors text-xs lg:text-sm cursor-pointer">
                                         Sign In
                                     </button>
                                 </div>
                             </div>
-                        </div>
+                        </form>
                     </div>
                 </div>
             </div>

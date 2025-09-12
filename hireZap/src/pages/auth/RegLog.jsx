@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Mail, Lock, User, Github, Chrome, Linkedin, Eye, EyeOff } from "lucide-react";
 import candidateBgimage from '../../assets/office-interview-image.png';
 import recruiterBgimage from '../../assets/recruiter-bg-image.jpg';
-import adminBgimage from '../../assets/admin-bg-image.png'
 import appLogo from '../../assets/app-logo.png'
 import { useDispatch, useSelector } from 'react-redux';
 import {useNavigate, Link} from 'react-router-dom'

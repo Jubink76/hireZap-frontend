@@ -43,7 +43,7 @@ axiosInstance.interceptors.response.use(
         const isAuthEndpoint = 
             url.includes('/auth/login') ||
             url.includes('/auth/register') || 
-            url.includes('/auth/register_otp') || 
+            url.includes('/auth/register-otp') || 
             url.includes('/auth/token/refresh');
 
         // if the error is 401 nd we haven't trie to refresh tokken yet
