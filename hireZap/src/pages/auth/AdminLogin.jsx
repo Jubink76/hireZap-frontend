@@ -62,7 +62,7 @@ const AdminLogin = () => {
             const user = await dispatch(loginUser(loginData)).unwrap();
             notify.success("Login successful")
             if(user.is_admin || user.role === 'admin' || user.staff){
-                navigate("/admin_dashboard")
+                navigate("/admin/dashboard")
             }
         }catch(err){
             notify.error(err)

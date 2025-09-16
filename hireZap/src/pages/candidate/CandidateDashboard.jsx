@@ -8,6 +8,7 @@ import JobCard from '../candidate/components/JobCard';
 import PremiumCard from '../../components/PremiumCard';
 import RecruitersList from '../../components/RecruitersList';
 import Pagination from '../../components/Pagination';
+import { useNavigate } from 'react-router-dom';
 
 // Mock job data
 const mockJobs = [
@@ -117,6 +118,7 @@ const CandidateDashboard = () => {
     profileScore: 95
   };
 
+  const navigate = useNavigate()
   // Event handlers
   const toggleSaveJob = (jobId) => {
     setSavedJobs(prev => 
@@ -143,8 +145,7 @@ const CandidateDashboard = () => {
   };
 
   const handleViewProfile = () => {
-    console.log('View profile clicked');
-    // Navigate to profile page
+    navigate('/candidate/profile-dashboard')
   };
 
   const handleQuickApply = (job) => {

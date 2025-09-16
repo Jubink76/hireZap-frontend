@@ -10,6 +10,7 @@ import RecentApplicants from '../recruiter/components/RecentApplicants';
 import RecruiterDashboardGraph from '../recruiter/components/RecruiterDashboardGraph'
 import {Users, TrendingUp, Briefcase, Clock} from 'lucide-react'
 import Pagination from '../../components/Pagination';
+import { useNavigate } from 'react-router-dom';
 
 const RecruiterDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -18,6 +19,7 @@ const RecruiterDashboard = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(3); // Adjust as needed
 
+  const navigate = useNavigate()
   // Mock data
   const stats = [
     {
@@ -142,6 +144,9 @@ const RecruiterDashboard = () => {
     console.log('Premium upgrade clicked');
   };
 
+  const handleProfileClick = (recruiter)=>{
+    navigate('/recruiter/profile-dashboard')
+  }
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Fixed Header */}
@@ -155,7 +160,10 @@ const RecruiterDashboard = () => {
       
       {/* Fixed Left Sidebar */}
       <div className="fixed top-[73px] mt-3 left-0 bottom-0 z-40">
-        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+        <Sidebar 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab} 
+        onProfileClick={handleProfileClick} />
       </div>
       
       {/* Main Content Area with proper margins */}

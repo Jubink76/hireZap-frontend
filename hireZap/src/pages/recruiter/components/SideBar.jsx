@@ -2,9 +2,11 @@
 import {Home, Briefcase, Users, BarChart3, MessageSquare, TrendingUp} from 'lucide-react'
 import RecruiterProfileCard from './RecruiterProfileCard';
 import RecruiterPremiumCard from './RecruiterPremiumCard';
+import { useNavigate } from 'react-router-dom';
 
-const Sidebar = ({ activeTab, onTabChange }) => {
+const Sidebar = ({ activeTab, onTabChange, onProfileClick }) => {
   
+  const navigate = useNavigate()
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'jobs', label: 'Jobs', icon: Briefcase },
@@ -14,6 +16,7 @@ const Sidebar = ({ activeTab, onTabChange }) => {
     { id: 'talent', label: 'Talent Pool', icon: Users },
     { id: 'analyze', label: 'Analyze Reports', icon: TrendingUp },
   ];
+
 
   return (
     <div className="bg-white w-64 h-full border-r border-slate-200">
@@ -44,7 +47,8 @@ const Sidebar = ({ activeTab, onTabChange }) => {
           name: "Taylor Reed",
           title: "Recruiter",
           avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face"
-        }} />
+        }} 
+        onClick={onProfileClick}/>
       </nav>
     </div>
   );

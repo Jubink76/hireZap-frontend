@@ -52,10 +52,12 @@ const RegLog = () => {
         const emailRegex =/^[A-Za-z0-9](\.?[A-Za-z0-9_\-+%])*@[A-Za-z0-9-]+(\.[A-Za-z]{2,})+$/;
         const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
-        if(!formData.name.trim()){
-            errors.name = 'full name is required';
-        }else if(!nameRegex.test(formData.name.trim())){
-            errors.name = "Name can only contain lettes and space"
+        if(!isLogin){
+            if(!formData.name.trim()){
+                errors.name = 'full name is required';
+            }else if(!nameRegex.test(formData.name.trim())){
+                errors.name = "Name can only contain lettes and space"
+            }
         }
         if(!formData.email || !emailRegex.test(formData.email)){
             errors.email = "valid email is required";
@@ -112,10 +114,10 @@ const RegLog = () => {
                     notify.success("Login successful");
                     switch (role) {
                     case "candidate":
-                        navigate("/candidate_dashboard");
+                        navigate("/candidate/dashboard");
                         break;
                     case "recruiter":
-                        navigate("/recruiter_dashboard");
+                        navigate("/recruiter/dashboard");
                         break;
                     default:
                         navigate("/dashboard");

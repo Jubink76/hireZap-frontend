@@ -58,12 +58,12 @@ export const completeRegistration = createAsyncThunk("auth/registerOtp", async(d
 // Logout thunk
 export const logoutUser = createAsyncThunk("auth/logout", async(_, thunkAPI) => {
     try{
-        await authService.logout()
+        const res = await authService.logout()
         thunkAPI.dispatch(logout()) // It clear redux state immediately after successfull logout, no need extra reducer
-        notify.success("Logout successful");
+        return res
     }catch(err){
-        notify.error("Logout Failed");
-        return thunkAPI.rejectWithValue(err.message);
+        const friendly = getFriendlyError(err,"Logout failed")
+        return thunkAPI.rejectWithValue(friendly);
     }
 })
 

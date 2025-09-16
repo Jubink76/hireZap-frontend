@@ -11,21 +11,31 @@ import {
   Shield,
   Settings
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+const AdminSidebar = ({ activeTab, onTabChange, setActiveTab }) => {
 
-const AdminSidebar = ({ activeTab, onTabChange }) => {
+  const navigate = useNavigate()
+
   const menuItems = [
-    { key: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-    { key: 'users', label: 'Users', icon: Users },
-    { key: 'recruiters', label: 'Recruiters', icon: UserPlus },
-    { key: 'companies', label: 'Companies', icon: Grid3X3 },
-    { key: 'job-postings', label: 'Job Postings', icon: FileText },
-    { key: 'subscriptions', label: 'Subscriptions', icon: CreditCard },
-    { key: 'revenue', label: 'Revenue', icon: DollarSign },
-    { key: 'reports', label: 'Reports', icon: BarChart3 },
-    { key: 'verifications', label: 'Verifications', icon: Shield },
-    { key: 'settings', label: 'Settings', icon: Settings },
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+    { id: 'users', label: 'Users', icon: Users },
+    { id: 'recruiters', label: 'Recruiters', icon: UserPlus },
+    { id: 'companies', label: 'Companies', icon: Grid3X3 },
+    { id: 'job-postings', label: 'Job Postings', icon: FileText },
+    { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard },
+    { id: 'revenue', label: 'Revenue', icon: DollarSign },
+    { id: 'reports', label: 'Reports', icon: BarChart3 },
+    { id: 'verifications', label: 'Verifications', icon: Shield },
+    { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
+  const handleTablClick = (id)=>{
+    if (id=== 'settings'){
+      navigate('/admin/account-settings')
+    }else{
+      setActiveTab(id)
+    }
+  }
   return (
     <div className="w-64 bg-gray-800 mt-6 text-white h-full">
       <div className="p-4 space-y-2">
@@ -33,10 +43,10 @@ const AdminSidebar = ({ activeTab, onTabChange }) => {
           const Icon = item.icon;
           return (
             <button
-              key={item.key}
-              onClick={() => onTabChange(item.key)}
-              className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
-                activeTab === item.key 
+              key={item.id}
+              onClick={() => handleTablClick(item.id)}
+              className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-left transition-colors cursor-pointer ${
+                activeTab === item.id 
                   ? 'bg-orange-500 text-white' 
                   : 'text-gray-300 hover:bg-gray-700 hover:text-white'
               }`}
@@ -48,7 +58,7 @@ const AdminSidebar = ({ activeTab, onTabChange }) => {
         })}
         <AdminProfileCard 
             admin={{
-            name: "John Doe",
+            name: "Admin",
             role: "System Administrator",
             avatar: "/path/to/admin-avatar.jpg"
             }}
