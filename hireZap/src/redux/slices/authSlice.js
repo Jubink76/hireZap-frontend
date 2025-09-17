@@ -147,7 +147,6 @@ export const googleLogin = createAsyncThunk(
 
 const initialState = {
     user: null,
-    token: null,
     isAuthenticated: false,
     isAdmin: false,
     loading: false,
