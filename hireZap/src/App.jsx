@@ -8,7 +8,6 @@ import ResetPassword from './pages/auth/ResetPassword'
 import ForgotPassword from './pages/auth/ForgotPassword'
 import axiosInstance from './api/axiosInstance'
 import { useEffect } from 'react'
-
 import AdminLogin from './pages/auth/AdminLogin'
 import PublicRoutes from './routes/PublicRoutes'
 import { CandidateRoutes } from './routes/CandidateRoutes'

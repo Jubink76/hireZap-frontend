@@ -7,7 +7,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import {useNavigate, Link} from 'react-router-dom'
 import { notify } from '../../utils/toast';
 import { loginUser, registerUser } from '../../redux/slices/authSlice';
-
+import { GoogleLogin } from '@react-oauth/google';
+import useGoogleSignIn from './hooks/useGoogleSignIn';
 const RegLog = () => {
     const [isLogin, setIsLogin] = useState(true);
     const [role, setRole] = useState('');
@@ -23,7 +24,7 @@ const RegLog = () => {
     const dispatch = useDispatch()
     const navigate = useNavigate();
     const {error, loading} = useSelector((state)=> state.auth)
-
+    const { handleGoogleResponse } = useGoogleSignIn();
     // Role-specific configurations
     const roleConfig = {
         candidate: {
@@ -265,12 +266,9 @@ const RegLog = () => {
                                         {/* Social buttons */}
                                             <>
                                                 <div className='space-y-2'>
-                                                    <button 
-                                                        type='button'
-                                                        className="w-full h-9 lg:h-10 text-slate-700 border border-slate-300 hover:bg-slate-50 transition-colors bg-white rounded-md flex items-center justify-center font-medium text-xs lg:text-sm cursor-pointer">
-                                                        <Chrome className="w-3 h-3 lg:w-4 lg:h-4 mr-2" />
-                                                        Continue with Google
-                                                    </button>
+                                                    <GoogleLogin 
+                                                        onSuccess={handleGoogleResponse} 
+                                                        onError={() => console.log("Error")} />
                                                     <button 
                                                         type='button'
                                                         className="w-full h-9 lg:h-10 text-slate-700 border border-slate-300 hover:bg-slate-50 transition-colors bg-white rounded-md flex items-center justify-center font-medium text-xs lg:text-sm cursor-pointer">

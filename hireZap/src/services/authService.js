@@ -39,6 +39,10 @@ const authService = {
         const res = await authApi.fetch_user();
         return res
     },
+    async googleLogin(token) {
+        const res = await authApi.googleLogin(token);
+        return res; 
+    }
 }
 
 export default authService;

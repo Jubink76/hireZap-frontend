@@ -7,11 +7,11 @@ const PublicRoutes = () => {
     if(user){
         switch(user.role){
             case 'candidate':
-                return <Navigate to='/candidate-dashboard' replace />;
+                return <Navigate to='/candidate/dashboard' replace />;
             case 'recruiter':
-                return <Navigate to='/recruiter-dashboard' replace />;
+                return <Navigate to='/recruiter/dashboard' replace />;
             case 'admin':
-                return <Navigate to='/admin-dashboard' replace />;
+                return <Navigate to='/admin/dashboard' replace />;
             default:
                 return <Navigate to='/' replace />;
         }

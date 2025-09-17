@@ -129,6 +129,22 @@ export const fetchCurrentUser = createAsyncThunk("auth/current_user", async(_,th
     }
 })
 
+
+// Social login thunk - Google
+export const googleLogin = createAsyncThunk(
+  "auth/googleLogin",
+  async (token, thunkAPI) => {
+    try {
+      const data = await authService.googleLogin(token); // data is already {user, created}
+      notify.success("Google login successful");
+      return data; // directly return the object
+    } catch (err) {
+      const friendly = getFriendlyError(err, "Google login failed");
+      return thunkAPI.rejectWithValue(friendly);
+    }
+  }
+);
+
 const initialState = {
     user: null,
     token: null,
@@ -153,6 +169,19 @@ const authSlice = createSlice({
     },
     extraReducers : (builder) =>{
         builder
+            .addCase(googleLogin.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+            })
+            .addCase(googleLogin.fulfilled, (state, action) => {
+            state.loading = false;
+            state.user = action.payload.user;
+            state.isAuthenticated = true;
+            })
+            .addCase(googleLogin.rejected, (state, action) => {
+            state.loading = false;
+            state.error = action.payload;
+            })
             .addCase(loginUser.pending, (state)=> {
                 state.loading = true;
             })
@@ -260,5 +289,5 @@ const authSlice = createSlice({
     }
 });
 
-export const  {logout} = authSlice.actions;
+export const  {logout, setUser} = authSlice.actions;
 export default authSlice.reducer;
