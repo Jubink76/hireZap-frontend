@@ -133,17 +133,18 @@ export const fetchCurrentUser = createAsyncThunk("auth/current_user", async(_,th
 // Social login thunk - Google
 export const googleLogin = createAsyncThunk(
   "auth/googleLogin",
-  async (token, thunkAPI) => {
+  async ({ id_token, role }, thunkAPI) => {
     try {
-      const data = await authService.googleLogin(token); // data is already {user, created}
+      const data = await authService.googleLogin({ id_token, role });
       notify.success("Google login successful");
-      return data; // directly return the object
+      return data;
     } catch (err) {
       const friendly = getFriendlyError(err, "Google login failed");
       return thunkAPI.rejectWithValue(friendly);
     }
   }
 );
+
 
 const initialState = {
     user: null,

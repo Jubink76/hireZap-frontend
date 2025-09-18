@@ -24,7 +24,7 @@ const RegLog = () => {
     const dispatch = useDispatch()
     const navigate = useNavigate();
     const {error, loading} = useSelector((state)=> state.auth)
-    const { handleGoogleResponse } = useGoogleSignIn();
+    const { handleGoogleResponse } = useGoogleSignIn(role);
     // Role-specific configurations
     const roleConfig = {
         candidate: {

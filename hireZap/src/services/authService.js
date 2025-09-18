@@ -39,8 +39,8 @@ const authService = {
         const res = await authApi.fetch_user();
         return res
     },
-    async googleLogin(token) {
-        const res = await authApi.googleLogin(token);
+    async googleLogin({id_token,role}) {
+        const res = await authApi.googleLogin({id_token,role});
         return res; 
     }
 }
