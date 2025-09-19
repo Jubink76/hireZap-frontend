@@ -12,7 +12,8 @@ const authApi = {
     reset_password: (data) => axiosInstance.post("/auth/reset-password/",data),
     fetch_user: ()=> axiosInstance.get("/auth/fetch-user/"),
     refreshToken : () => axiosInstance.post("/auth/token/refresh/"),
-googleLogin: ({id_token, role}) => axiosInstance.post("/auth/google/", { id_token, role }),
+    googleLogin: ({id_token, role}) => axiosInstance.post("/auth/google/", { id_token, role }),
+    githubLogin: ({code, role}) => axiosInstance.post("/auth/github/",{code, role}),
 }
 
 export default authApi;

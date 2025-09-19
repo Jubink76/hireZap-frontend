@@ -13,6 +13,7 @@ import PublicRoutes from './routes/PublicRoutes'
 import { CandidateRoutes } from './routes/CandidateRoutes'
 import { AdminRoutes } from './routes/AdminRoutes'
 import { RecruiterRoutes } from './routes/RecruiterRoutes'
+import GithubCallback from './pages/auth/GithubCallback'
 const App = () => {
   useEffect(() => {
     axiosInstance.get('/auth/csrf-cookie/')
@@ -32,6 +33,7 @@ const App = () => {
               <Route path= "/forgot-password" element={<ForgotPassword/>}/>
               <Route path= "/verify-otp" element={<VerifyOtp/>}/>
             </Route>
+            <Route path="/auth/github/callback" element={<GithubCallback />} />
             {CandidateRoutes}
             {RecruiterRoutes}
             {AdminRoutes}

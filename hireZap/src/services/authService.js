@@ -42,7 +42,11 @@ const authService = {
     async googleLogin({id_token,role}) {
         const res = await authApi.googleLogin({id_token,role});
         return res; 
-    }
+    },
+    async githubLogin({code, role}){
+        const res = await authApi.githubLogin({code, role});
+        return res;
+    },
 }
 
 export default authService;

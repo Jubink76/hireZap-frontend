@@ -145,6 +145,21 @@ export const googleLogin = createAsyncThunk(
   }
 );
 
+// social login thunk - github
+export const githubLogin = createAsyncThunk(
+    "auth/githubLogin",
+    async ({code, role }, thunkAPI) =>{
+        try{
+            const data = await authService.githubLogin({code, role});
+            notify.success("Github login successfully")
+            return data;
+        }catch(err){
+            const friendly =getFriendlyError(err,"Github login failed");
+            return thunkAPI.rejectWithValue(friendly);
+        }
+    }
+)
+
 
 const initialState = {
     user: null,
@@ -181,6 +196,19 @@ const authSlice = createSlice({
             .addCase(googleLogin.rejected, (state, action) => {
             state.loading = false;
             state.error = action.payload;
+            })
+            .addCase(githubLogin.pending,(state)=>{
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(githubLogin.fulfilled,(state,action)=>{
+                state.loading = false;
+                state.user = action.payload.user;
+                state.isAuthenticated = true;
+            })
+            .addCase(githubLogin.rejected, (state,action)=>{
+                state.loading = false;
+                state.error = action.payload;
             })
             .addCase(loginUser.pending, (state)=> {
                 state.loading = true;
