@@ -14,12 +14,26 @@ import { CandidateRoutes } from './routes/CandidateRoutes'
 import { AdminRoutes } from './routes/AdminRoutes'
 import { RecruiterRoutes } from './routes/RecruiterRoutes'
 import GithubCallback from './pages/auth/GithubCallback'
+import { useDispatch } from 'react-redux'
+import { fetchCurrentUser } from './redux/slices/authSlice'
+
 const App = () => {
+
+  const dispatch = useDispatch()
+
+
   useEffect(() => {
     axiosInstance.get('/auth/csrf-cookie/')
-        .then(() => console.log('CSRF cookie set'))
+        .then(() => {
+            console.log('CSRF cookie set');
+            // only fetch if a JWT access cookie exists
+            const accessCookie = document.cookie.split(';').find(c => c.trim().startsWith('access='));
+            if (accessCookie) {
+                dispatch(fetchCurrentUser());
+            }
+        })
         .catch(err => console.error('CSRF cookie error', err));
-}, []);
+}, [dispatch]);
   return (
     <div>
       <BrowserRouter>

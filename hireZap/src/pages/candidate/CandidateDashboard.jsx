@@ -9,7 +9,8 @@ import PremiumCard from '../../components/PremiumCard';
 import RecruitersList from '../../components/RecruitersList';
 import Pagination from '../../components/Pagination';
 import { useNavigate } from 'react-router-dom';
-
+import { useSelector } from 'react-redux';
+import profileAvatar from '../../assets/profile_avatar.jpg'
 // Mock job data
 const mockJobs = [
   {
@@ -93,6 +94,8 @@ const mockJobs = [
 ];
 
 const CandidateDashboard = () => {
+
+  const {user, loading, isAuthenticated} = useSelector((state)=>state.auth);
   // State management
   const [savedJobs, setSavedJobs] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -108,15 +111,16 @@ const CandidateDashboard = () => {
   const startIndex = (currentPage - 1) * jobsPerPage;
   const currentJobs = mockJobs.slice(startIndex, startIndex + jobsPerPage);
 
-  // Mock user profile data
   const userProfile = {
-    name: 'Sarah Johnson',
-    title: 'Senior Product Designer',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face',
-    profileViews: 142,
-    applications: 8,
-    profileScore: 95
+    name: user?.full_name || 'Anonymous',
+    title : user?.role || 'candidate',
+    avatar : user?.profile_image_url || profileAvatar,
+    profileViews: 0,
+    applications: 0,
+    profileScore: 0
   };
+
+
 
   const navigate = useNavigate()
   // Event handlers

@@ -13,7 +13,7 @@ const RecruiterProfileCard = ({ recruiter, onClick }) => (
       />
       <div className="min-w-0 flex-1">
         <h3 className="font-medium text-slate-900 truncate text-sm">{recruiter?.name}</h3>
-        <p className="text-xs text-slate-600 truncate">{recruiter?.title}</p>
+        <p className="text-xs text-slate-600 truncate">{recruiter?.role}</p>
       </div>
     </div>
   </button>

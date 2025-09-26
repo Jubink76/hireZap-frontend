@@ -12,7 +12,7 @@ const CandidateSidebarProfile = ({ candidate, onClick }) => (
       />
       <div className="min-w-0 flex-1">
         <h3 className="font-medium text-slate-900 truncate text-sm">{candidate?.name}</h3>
-        <p className="text-xs text-slate-600 truncate">{candidate?.title}</p>
+        <p className="text-xs text-slate-600 truncate">{candidate?.role}</p>
       </div>
     </div>
   </button>

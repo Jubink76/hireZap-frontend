@@ -3,9 +3,17 @@ import {Home, Briefcase, Users, BarChart3, MessageSquare, TrendingUp} from 'luci
 import RecruiterProfileCard from './RecruiterProfileCard';
 import RecruiterPremiumCard from './RecruiterPremiumCard';
 import { useNavigate } from 'react-router-dom';
-
+import profileAvatar from '../../../assets/profile_avatar.jpg';
+import { useSelector } from 'react-redux';
 const Sidebar = ({ activeTab, onTabChange, onProfileClick }) => {
-  
+  const {user, loading, isAuthenticated} = useSelector((state)=>state.auth)
+
+  const sideBarProfile = {
+      name: user?.full_name || 'Anonymous',
+      role : user?.role || 'undefined',
+      avatar : user?.profile_image_url || profileAvatar,
+    } 
+console.log("user details",sideBarProfile)
   const navigate = useNavigate()
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
@@ -43,11 +51,7 @@ const Sidebar = ({ activeTab, onTabChange, onProfileClick }) => {
             );
           })}
         </div>
-        <RecruiterProfileCard recruiter={{
-          name: "Taylor Reed",
-          title: "Recruiter",
-          avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face"
-        }} 
+        <RecruiterProfileCard recruiter={sideBarProfile} 
         onClick={onProfileClick}/>
       </nav>
     </div>

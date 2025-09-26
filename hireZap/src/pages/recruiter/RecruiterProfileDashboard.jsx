@@ -4,19 +4,21 @@ import ProfileHeader from '../candidate/components/ProfileHeader';
 import ProfileInfo from '../candidate/components/ProfileInfo';
 import ProfileStats from '../candidate/components/ProfileStats';
 import RecruiterJobList from './components/RecruiterJobList';
+import profileAvatar from '../../assets/profile_avatar.jpg'
+import { useSelector } from 'react-redux';
 
 const RecruiterProfileDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
-
+  const {user,loading, isAuthenticated} = useSelector((state)=>state.auth)
   // Sample recruiter profile data
   const profileData = {
-    name: "Taylor Reed",
+    name: user?.full_name || 'Anonymous',
     title: "Senior Recruiter",
     company: "TechCorp Inc.",
     location: "San Francisco, CA",
     joinedDate: "January 2023",
     profileComplete: 92,
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+    avatar: user?.profile_image_url || profileAvatar,
     stats: {
       activeJobs: 12,
       totalCandidates: 248,

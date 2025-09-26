@@ -8,15 +8,15 @@ const ProfileInfo = ({ profile }) => {
         {/* Profile Image */}
         <div className="w-24 h-24 rounded-full bg-slate-200 overflow-hidden flex-shrink-0">
           <img
-            src={profile.avatar}
-            alt={profile.name}
+            src={profile?.avatar}
+            alt={profile?.name}
             className="w-full h-full object-cover"
           />
         </div>
 
         {/* Profile Details */}
         <div className="flex-1">
-          <h2 className="text-2xl font-bold text-slate-900 mb-1">{profile.name}</h2>
+          <h2 className="text-2xl font-bold text-slate-900 mb-1">{profile?.name}</h2>
           <p className="text-slate-500 text-lg mb-4">{profile.title}</p>
           
           <div className="flex items-center gap-6 text-slate-500 mb-6">

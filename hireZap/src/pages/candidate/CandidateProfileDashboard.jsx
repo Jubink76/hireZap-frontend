@@ -4,18 +4,20 @@ import ProfileHeader from './components/ProfileHeader';
 import ProfileInfo from "./components/ProfileInfo";
 import ProfileStats from "./components/ProfileStats";
 import RecentApplicationsList from "./components/RecentApplicationsList";
-
+import { useSelector } from "react-redux";
+import profileAvatar from '../../assets/profile_avatar.jpg'
 const CandidateProfileDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  const {user,loading,isAuthenticated} = useSelector((state)=>state.auth)
 
   // Sample profile data matching the design
   const profileData = {
-    name: "Sarah Johnson",
+    name: user?.full_name || 'Anonymous  ',
     title: "Senior Product Designer",
     location: "San Francisco, CA",
     joinedDate: "March 2024",
     profileComplete: 85,
-    avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
+    avatar: user?.profile_image_url || profileAvatar,
     stats: {
       totalApplications: 7,
       hired: 1,

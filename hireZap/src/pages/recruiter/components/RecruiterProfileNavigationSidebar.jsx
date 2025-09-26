@@ -1,5 +1,6 @@
 import React from 'react';
-import appLogo from '../../../assets/app-logo.png'
+import appLogo from '../../../assets/app-logo.png';
+import profileAvatar from '../../../assets/profile_avatar.jpg';
 import RecruiterPremiumCard from './RecruiterPremiumCard';
 import RecruiterProfileCard from './RecruiterProfileCard';
 import { 
@@ -24,13 +25,14 @@ const navigationItems = [
 ];
 
 const RecruiterProfileNavigationSidebar = ({ activeTab, setActiveTab }) => {
+  const {user,loading, isAuthenticated} = useSelector((state)=>state.auth)
   // Sample recruiter data - replace with actual data
   const navigate = useNavigate()
   const recruiter = useSelector((state)=>state.auth.user)
   const recruiterData = {
-    name: recruiter?.name ?? 'recruiter',
-    title: recruiter?.title ?? "Senior Recruiter",
-    avatar: recruiter?.avatar ?? "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face"
+    name: user?.full_name || 'Anonymous',
+    role: user?.role || 'recruiter',
+    avatar: recruiter?.profile_image_url || profileAvatar,
   };
 
   const handleUpgrade = () => {

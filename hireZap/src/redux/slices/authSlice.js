@@ -117,15 +117,14 @@ export const resetPassword = createAsyncThunk("auth/reset_password", async(data,
 export const fetchCurrentUser = createAsyncThunk("auth/current_user", async(_,thunkAPI)=>{
     try{
         const res = await authService.fetchUser();
+        console.log("res of user ",res.data)
         return res.data;
     }catch(err){
-        const message = 
-            err.response?.data?.message ||
-            err.response?.data?.detail || 
-            err.message || 
-            "Failed to fetch user !!"
-            notify.error(message)
-            return thunkAPI.rejectWithValue(message)
+        if(err.response?.status === 401){
+            return thunkAPI.rejectWithValue({message:"unauthenticated"})
+        }
+        const friendly = getFriendlyError(err,"fetch user failed")
+        return thunkAPI.rejectWithValue(friendly)
     }
 })
 
@@ -290,24 +289,10 @@ const authSlice = createSlice({
             })
             .addCase(fetchCurrentUser.fulfilled,(state,action)=>{
                 state.loading = false;
-                const apiUser = action.payload;
-                state.role = apiUser.role;
+                state.user = action.payload;
+                state.role = action.payload.role;
                 state.error = false;
                 state.isAuthenticated = true;
-
-                if (state.role === "candidate"){
-                    state.user = {
-                        name: apiUser.name,
-                        email: apiUser.email,
-                        phone: apiUser.phone,
-
-                    }
-                }else if(state.role === 'recruiter'){
-                    state.user = {
-                        name: apiUser.name,
-                        email: apiUser.email,
-                    }
-                }
             })
             .addCase(fetchCurrentUser.rejected,(state, action)=>{
                 state.loading = false;

@@ -13,6 +13,8 @@ import CandidatePremiumCard from './CandidatePremiumCard';
 import CandidateSidebarProfile from './CandidateSidebarProfile';
 import avatar from '../../../assets/profile_avatar.jpg'
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import profileAvatar from '../../../assets/profile_avatar.jpg'
 const navigationItems = [
   { id: "overview", label: "Overview", icon: User },
   { id: "professional", label: "Professional", icon: Briefcase },
@@ -25,8 +27,14 @@ const navigationItems = [
 
 const ProfileNavigationSidebar = ({ activeTab, setActiveTab, profileData }) => {
 
+  const {user,loading,isAuthenticated} = useSelector((state)=>state.auth)
   const navigate = useNavigate()
 
+  const sideBarProfile = {
+    name: user?.full_name || 'Anonymous',
+    role : user?.role || 'undefined',
+    avatar : user?.profile_image_url || profileAvatar
+  } 
   const handleTabClick = (id)=>{
   if(id === 'settings'){
     navigate('/candidate/account-settings')
@@ -79,7 +87,7 @@ const ProfileNavigationSidebar = ({ activeTab, setActiveTab, profileData }) => {
         </div>
 
         <CandidateSidebarProfile 
-          candidate={profileData} 
+          candidate={sideBarProfile} 
           onClick={handleProfileClick}
         />
       </nav>

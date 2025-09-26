@@ -50,18 +50,15 @@ axiosInstance.interceptors.response.use(
         if (error.response ?.status === 401 && !originalRequest._retry && !isAuthEndpoint){
             originalRequest._retry = true;
 
-            try{
-                // try to refresh the token
-                await axios.post(
-                    `${import.meta.env.VITE_BASE_URL}/auth/token/refresh/`,
-                    {},
-                    { withCredentials: true}
-                );
+            try {
+                // refresh only if refresh cookie exists
+                const refreshCookie = document.cookie.split(';').find(c => c.trim().startsWith('refresh='));
+                if (!refreshCookie) throw new Error('No refresh token');
 
-                // Retry the original request with the new token
-                return axios(originalRequest)
-                .then(response => response.data);
-
+                await axios.post(`${import.meta.env.VITE_BASE_URL}/auth/token/refresh/`,
+                    {}, 
+                    { withCredentials: true });
+                return axios(originalRequest).then(res => res.data);
             } catch( refreshError){
                 console.error('Token refresh failed:', refreshError)
             }
