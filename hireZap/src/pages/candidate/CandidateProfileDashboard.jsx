@@ -6,9 +6,11 @@ import ProfileStats from "./components/ProfileStats";
 import RecentApplicationsList from "./components/RecentApplicationsList";
 import { useSelector } from "react-redux";
 import profileAvatar from '../../assets/profile_avatar.jpg'
+import EditProfileModal from "../../modals/EditProfileModal";
 const CandidateProfileDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const {user,loading,isAuthenticated} = useSelector((state)=>state.auth)
+  const [isModalOpen, setIsModalOpen]= useState(false)
 
   // Sample profile data matching the design
   const profileData = {
@@ -26,6 +28,9 @@ const CandidateProfileDashboard = () => {
     }
   };
 
+  const handleEditProfile = ()=>{
+    setIsModalOpen(true)
+  }
   // Sample applications data matching the design
   const applicationsData = [
     {
@@ -99,10 +104,8 @@ const CandidateProfileDashboard = () => {
       <div className="fixed top-0 left-0 right-0 z-20">
         <ProfileHeader 
           pageName={getPageTitle()}
-          userRole={profileData.name}
-          userRoleDescription={profileData.title}
-          userInitial={profileData.name.charAt(0)}
-          avatarBgColor="bg-blue-500"
+          onClick ={handleEditProfile}
+          text = "edit profile"
         />
       </div>
       
@@ -185,11 +188,22 @@ const CandidateProfileDashboard = () => {
                   </div>
                 </div>
               )}
+              <EditProfileModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                userProfile={profileData}       // pass current user data
+                onSave={(updatedData) => {
+                  // handle saving updated data here
+                  console.log('Updated profile:', updatedData);
+                  // e.g. dispatch Redux action to update user
+                }}
+              />
             </div>
           </div>
         </div>
       </div>
     </div>
+    
   );
 };
 

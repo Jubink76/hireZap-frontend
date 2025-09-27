@@ -1,11 +1,9 @@
-"use client"
 import React from "react"
-import { Briefcase, Badge } from "lucide-react"
+import { Briefcase } from "lucide-react"
 
-// This is your self-contained RecruiterJobList component
 export default function RecruiterJobList({ jobs }) {
   return (
-    <div className="bg-white/80 backdrop-blur-sm border border-slate-200 shadow-lg rounded-xl">
+    <div className="bg-white/80 backdrop-blur-sm border border-slate-200 shadow-lg rounded-xl w-full">
       {/* Header */}
       <div className="px-6 pt-6 pb-2 border-b border-slate-200">
         <h2 className="flex items-center gap-2 text-slate-900 text-lg font-semibold">
@@ -22,26 +20,26 @@ export default function RecruiterJobList({ jobs }) {
             className="flex items-center justify-between p-4 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
           >
             {/* Job Info */}
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-slate-100 rounded-lg">
+            <div className="flex items-center gap-4 flex-1 min-w-0"> {/* Added flex-1 min-w-0 */}
+              <div className="p-2 bg-slate-100 rounded-lg flex-shrink-0">
                 <Briefcase className="h-5 w-5 text-slate-600" />
               </div>
-              <div>
-                <h3 className="font-medium text-slate-900">{job.title}</h3>
-                <p className="text-sm text-slate-500">{job.department}</p>
+              <div className="min-w-0 flex-1"> {/* Added min-w-0 flex-1 */}
+                <h3 className="font-medium text-slate-900 truncate">{job.title}</h3> {/* Added truncate */}
+                <p className="text-sm text-slate-500 truncate">{job.department}</p> {/* Added truncate */}
               </div>
             </div>
 
             {/* Right Side Info */}
-            <div className="flex items-center gap-4">
-              <div className="text-right">
+            <div className="flex items-center gap-4 flex-shrink-0"> {/* Added flex-shrink-0 */}
+              <div className="text-right hidden sm:block"> {/* Hide on small screens */}
                 <p className="text-sm text-slate-500">{job.postedDate}</p>
                 <p className="text-xs text-slate-400">{job.applicants} applicants</p>
               </div>
 
               {/* Status Badge */}
               <span
-                className={`px-3 py-1 rounded-full text-xs font-medium ${
+                className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
                   job.status === "Active"
                     ? "bg-emerald-100 text-emerald-700"
                     : job.status === "Interview Phase"
@@ -55,7 +53,7 @@ export default function RecruiterJobList({ jobs }) {
               </span>
 
               {/* Manage Button */}
-              <button className="px-3 py-1.5 rounded-md text-sm bg-cyan-600 hover:bg-cyan-700 text-white">
+              <button className="px-3 py-1.5 rounded-md text-sm bg-cyan-600 hover:bg-cyan-700 text-white whitespace-nowrap">
                 Manage Job
               </button>
             </div>

@@ -14,7 +14,8 @@ import {
   Crown
 } from 'lucide-react';
 import { useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+
 // Navigation Items Configuration for Recruiters
 const navigationItems = [
   { id: "overview", label: "Overview", icon: User },
@@ -25,10 +26,12 @@ const navigationItems = [
 ];
 
 const RecruiterProfileNavigationSidebar = ({ activeTab, setActiveTab }) => {
-  const {user,loading, isAuthenticated} = useSelector((state)=>state.auth)
-  // Sample recruiter data - replace with actual data
+  const { user, loading, isAuthenticated } = useSelector((state) => state.auth)
   const navigate = useNavigate()
-  const recruiter = useSelector((state)=>state.auth.user)
+  const location = useLocation()
+
+  const currentPath = location.pathname
+  const recruiter = useSelector((state) => state.auth.user)
   const recruiterData = {
     name: user?.full_name || 'Anonymous',
     role: user?.role || 'recruiter',
@@ -40,28 +43,22 @@ const RecruiterProfileNavigationSidebar = ({ activeTab, setActiveTab }) => {
     console.log("Upgrade to premium clicked");
   };
 
-  const handleTabClick = (id)=>{
-    if(id === 'settings'){
-      navigate('/recruiter/account-settings')
-    }else{
-      setActiveTab(id)
-    }
-  }
+  const handleTabClick = (id) => {
+    if (id === 'settings') navigate('/recruiter/account-settings');
+    else if (id === 'company') navigate('/recruiter/company-details');
+    else navigate('/recruiter/profile-dashboard'); // overview
+  };
+
+  const isActive = (id) => {
+    if (id === 'settings') return currentPath.includes('account-settings');
+    if (id === 'company') return currentPath.includes('company-details');
+    return currentPath.includes('profile-dashboard');
+  };
+
   return (
-    <div className="bg-white w-64 h-full border-r border-slate-200 fixed left-0 top-0 h-screen overflow-y-auto">
+    <div className="bg-white w-64 h-full border-r border-slate-200 fixed left-0 top-20 bottom-0 z-10 overflow-y-auto">
       {/* Navigation */}
       <nav className="p-4">
-        <div className="flex items-center mb-2">
-                  <button className="cursor-pointer">
-                    {/* Uncomment and use this when you have the actual logo */}
-                    <img
-                      src={appLogo}
-                      alt="HireZap Logo"
-                      className="h-16 lg:h-24"
-                    />
-                  </button>
-                </div>
-
         <RecruiterPremiumCard onUpgrade={handleUpgrade} />
         
         <div className="space-y-2">
@@ -72,7 +69,7 @@ const RecruiterProfileNavigationSidebar = ({ activeTab, setActiveTab }) => {
                 key={item.id}
                 onClick={() => handleTabClick(item.id)}
                 className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-left transition-all duration-200 ${
-                  activeTab === item.id
+                  isActive(item.id)  
                     ? "bg-teal-100 text-cyan-700 shadow-sm"
                     : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
                 }`}

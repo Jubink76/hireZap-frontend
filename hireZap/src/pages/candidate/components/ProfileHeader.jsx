@@ -1,14 +1,9 @@
 import React from 'react';
 import { Grid3X3 } from 'lucide-react';
 import hireZapLogo from '../../../assets/hireZap.png';
+import ActionButton from '../../../components/ActionButton';
+const ProfileHeader = ({ pageName = "My Profile",text,onClick }) => {
 
-const ProfileHeader = ({ 
-  pageName = "My Profile", 
-  userRole = "Job Seeker", 
-  userRoleDescription = "Profile Management",
-  userInitial = "U",
-  avatarBgColor = "bg-blue-500"
-}) => {
   return (
     <div className="bg-white border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
@@ -31,15 +26,7 @@ const ProfileHeader = ({
         
         {/* Right side - User Profile */}
         <div className="flex items-center">
-          <div className="flex items-center space-x-3 bg-gray-50 rounded-lg px-4 py-2">
-            <div className={`w-8 h-8 ${avatarBgColor} rounded-full flex items-center justify-center`}>
-              <span className="text-white text-sm font-semibold">{userInitial}</span>
-            </div>
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">{userRole}</p>
-              <p className="text-xs text-gray-500">{userRoleDescription}</p>
-            </div>
-          </div>
+          <ActionButton text={text} onClick={onClick} />
         </div>
       </div>
     </div>

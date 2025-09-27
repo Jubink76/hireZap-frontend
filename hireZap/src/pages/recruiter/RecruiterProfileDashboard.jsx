@@ -6,10 +6,11 @@ import ProfileStats from '../candidate/components/ProfileStats';
 import RecruiterJobList from './components/RecruiterJobList';
 import profileAvatar from '../../assets/profile_avatar.jpg'
 import { useSelector } from 'react-redux';
-
+import EditProfileModal from '../../modals/EditProfileModal';
 const RecruiterProfileDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const {user,loading, isAuthenticated} = useSelector((state)=>state.auth)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   // Sample recruiter profile data
   const profileData = {
     name: user?.full_name || 'Anonymous',
@@ -27,6 +28,9 @@ const RecruiterProfileDashboard = () => {
     }
   };
 
+  const handleEditProfile = ()=>{
+    setIsModalOpen(true)
+  }
   // Sample job postings data
   const jobsData = [
     {
@@ -68,8 +72,8 @@ const RecruiterProfileDashboard = () => {
     switch(activeTab) {
       case 'overview':
         return 'Recruiter Dashboard';
-      case 'jobs':
-        return 'Job Management';
+      case 'company':
+        return 'Company Details';
       case 'candidates':
         return 'Candidates';
       case 'analytics':
@@ -85,37 +89,14 @@ const RecruiterProfileDashboard = () => {
     }
   };
 
-  const getPageDescription = () => {
-    switch(activeTab) {
-      case 'overview':
-        return 'Manage your recruitment activities and track performance';
-      case 'jobs':
-        return 'Manage your job postings and track applications';
-      case 'candidates':
-        return 'Review and manage candidate applications';
-      case 'analytics':
-        return 'Track your hiring performance and insights';
-      case 'communication':
-        return 'Manage communications with candidates and team';
-      case 'notifications':
-        return 'Stay updated with your latest notifications';
-      case 'settings':
-        return 'Manage your account preferences and settings';
-      default:
-        return 'Welcome to your recruiter dashboard';
-    }
-  };
-
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Fixed Header - Full Width */}
       <div className="fixed top-0 left-0 right-0 z-20">
         <ProfileHeader 
           pageName={getPageTitle()}
-          userRole={profileData.name}
-          userRoleDescription={`${profileData.title} at ${profileData.company}`}
-          userInitial={profileData.name.charAt(0)}
-          avatarBgColor="bg-emerald-500"
+          onClick ={handleEditProfile}
+          text = "edit profile"
         />
       </div>
       
@@ -198,6 +179,16 @@ const RecruiterProfileDashboard = () => {
                   </div>
                 </div>
               )}
+              <EditProfileModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                userProfile={profileData}       // pass current user data
+                onSave={(updatedData) => {
+                  // handle saving updated data here
+                  console.log('Updated profile:', updatedData);
+                  // e.g. dispatch Redux action to update user
+                }}
+              />
             </div>
           </div>
         </div>
