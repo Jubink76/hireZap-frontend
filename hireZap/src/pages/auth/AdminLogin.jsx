@@ -57,6 +57,7 @@ const AdminLogin = () => {
         const loginData = {
             email: formData.email,
             password : formData.password,
+            remember_me : formData.rememberMe,
         }
         try{
             const user = await dispatch(loginUser(loginData)).unwrap();

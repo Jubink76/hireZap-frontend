@@ -149,7 +149,7 @@ const CandidateDashboard = () => {
   };
 
   const handleViewProfile = () => {
-    navigate('/candidate/profile-dashboard')
+    navigate('/candidate/profile-overview')
   };
 
   const handleQuickApply = (job) => {

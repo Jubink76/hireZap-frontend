@@ -64,4 +64,4 @@ const ProfileOverview = () => {
     )
 }
 
-export default ProfileOverview
+export default ProfileOverview;
