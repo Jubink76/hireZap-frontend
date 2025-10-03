@@ -1,9 +1,22 @@
 import React from 'react';
 import { Grid3X3 } from 'lucide-react';
 import hireZapLogo from '../../../assets/hireZap.png';
-import ActionButton from '../../../components/ActionButton';
-const ProfileHeader = ({ pageName = "My Profile",text,onClick }) => {
+import BackToHome from '../../../components/BackToHome';
+import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+const ProfileHeader = ({ pageName }) => {
 
+  const {user} = useSelector((state)=>state.auth)
+  const navigate = useNavigate()
+
+  const backToHome = ()=>{
+    if(user?.role ==='recruiter'){
+      navigate('/recruiter/dashboard')
+    }else{
+      navigate('/candidate/dashboard')
+    }
+  }
+  
   return (
     <div className="bg-white border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
@@ -26,7 +39,7 @@ const ProfileHeader = ({ pageName = "My Profile",text,onClick }) => {
         
         {/* Right side - User Profile */}
         <div className="flex items-center">
-          <ActionButton text={text} onClick={onClick} />
+          <BackToHome onClick={ backToHome }/>
         </div>
       </div>
     </div>

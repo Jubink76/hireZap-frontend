@@ -1,13 +1,13 @@
-import { Route } from "react-router-dom";
-import PrivateRoutes from "./PrivateRoutes";
-import AdminDashboard from "../pages/admin/components/AdminDashboard";
-import AdminAccountSettings from "../pages/admin/components/AdminAccountSettings";
-import AdminLayout from "../pages/admin/AdminLayout";
-export const AdminRoutes = (
-    <Route element={<PrivateRoutes allowedRole={['admin']} />}>
-        <Route element={<AdminLayout />}>
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/account-settings" element={<AdminAccountSettings />} />
-        </Route>
-    </Route>
-)
+import { lazy } from 'react';
+
+const AdminLayout = lazy(() => import('../pages/admin/AdminLayout'));
+const AdminDashboard = lazy(() => import('../pages/admin/components/AdminDashboard'));
+const AdminAccountSettings = lazy(() => import('../pages/admin/components/AdminAccountSettings'));
+
+export const adminRoutes = {
+  element: <AdminLayout />,
+  children: [
+    { path: '/admin/dashboard', element: <AdminDashboard />, handle: { title: 'Dashboard' } },
+    { path: '/admin/account-settings', element: <AdminAccountSettings />, handle: { title: 'Account Settings' } },
+  ],
+};

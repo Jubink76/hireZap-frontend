@@ -20,11 +20,6 @@ const AccountSettings = () => {
 
     return (
             <div className="rounded-lg shadow-lg border border-slate-200 bg-white/80 backdrop-blur-sm">
-                <div className="p-6 border-b border-slate-100">
-                    <h2 className="text-xl font-semibold text-slate-900">Account Settings</h2>
-                    <p className="text-slate-600 text-sm mt-1">Manage your account preferences and security settings</p>
-                </div>
-                
                 <div className="p-6">
                     <div className="space-y-4">
                         <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer">

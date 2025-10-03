@@ -4,9 +4,10 @@ import ProfileStats from "../components/ProfileStats";
 import RecentApplicationsList from "../components/RecentApplicationsList";
 import profileAvatar from '../../../assets/profile_avatar.jpg'
 import { useSelector } from "react-redux";
+import { useOutletContext } from "react-router-dom";
 const CandidateProfileOverview = () => {
-
   const {user} = useSelector((state)=>state.auth)
+  const {openEditUserModal} = useOutletContext()
   // Sample profile data matching the design
   const profileData = {
     name: user?.full_name || 'Anonymous  ',
@@ -47,7 +48,10 @@ const CandidateProfileOverview = () => {
   ];
   return (
     <>
-      <ProfileInfo profile={profileData}/>
+      <ProfileInfo 
+      profile={profileData}
+      onEdit={openEditUserModal}
+      text="Edit Profile"/>
       <ProfileStats stats={profileData.stats}/>
       <RecentApplicationsList applications={applicationsData}/>
     </>

@@ -25,15 +25,13 @@ const navigationItems = [
   { id: "settings", label: "Account Settings", icon: Settings },
 ];
 
-const ProfileNavigationSidebar = ({ activeTab, setActiveTab, profileData }) => {
-
-  const {user,loading,isAuthenticated} = useSelector((state)=>state.auth)
+const ProfileNavigationSidebar = ({ activeTab, setActiveTab, userProfile }) => {
   const navigate = useNavigate()
 
   const sideBarProfile = {
-    name: user?.full_name || 'Anonymous',
-    role : user?.role || 'undefined',
-    avatar : user?.profile_image_url || profileAvatar
+    name: userProfile?.name || 'Anonymous',
+    role : userProfile?.title || 'undefined',
+    avatar : userProfile?.avatar || profileAvatar
   } 
   const handleTabClick = (id)=>{
   if(id === 'settings'){
@@ -42,13 +40,6 @@ const ProfileNavigationSidebar = ({ activeTab, setActiveTab, profileData }) => {
     setActiveTab(id)
   }
 }
-
-  // Sample candidate data - replace with actual data
-  const candidateData = {
-    name: "Sarah Johnson",
-    title: "Product Designer",
-    avatar: {avatar}
-  };
 
   const handleUpgrade = () => {
     // Handle premium upgrade

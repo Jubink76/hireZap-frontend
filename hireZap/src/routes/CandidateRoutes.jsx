@@ -1,16 +1,29 @@
-import React from 'react'
-import { Route } from 'react-router-dom'
-import CandidateDashboard from '../pages/candidate/CandidateDashboard'
-import PrivateRoutes from './PrivateRoutes'
-import CandidateProfileLayout from '../pages/candidate/CandidateProfileLayout'
-import CandidateProfileOverview from '../pages/candidate/components/CandidateProfileOverview'
-import CandidateAccountSettings from '../pages/candidate/components/CandidateAccountSettings'
-export const CandidateRoutes = (
-    <Route element={<PrivateRoutes allowedRole={['candidate']} />}>
-        <Route path='/candidate/dashboard' element={<CandidateDashboard />} />
-        <Route path='/candidate' element={<CandidateProfileLayout />}>
-            <Route path='profile-overview' element={<CandidateProfileOverview />} />
-            <Route path='account-settings' element={<CandidateAccountSettings />} />
-        </Route>
-    </Route>
-)
+import { lazy } from 'react';
+const CandidateDashboard = lazy(() => import('../pages/candidate/CandidateDashboard'));
+const CandidateProfileLayout = lazy(() => import('../pages/candidate/CandidateProfileLayout'));
+const CandidateProfileOverview = lazy(() => import('../pages/candidate/components/CandidateProfileOverview'));
+const CandidateAccountSettings = lazy(() => import('../pages/candidate/components/CandidateAccountSettings'));
+
+export const candidateRoutes = [
+    {
+        path: '/candidate/dashboard',
+        element: <CandidateDashboard />,
+        handle: { title: 'Dashboard' },
+    },
+    {
+        path: '/candidate',
+        element: <CandidateProfileLayout />,
+        children: [
+            {
+            path: 'profile-overview',
+            element: <CandidateProfileOverview />,
+            handle: { title: 'My Profile' },
+            },
+            {
+            path: 'account-settings',
+            element: <CandidateAccountSettings />,
+            handle: { title: 'Account Settings' },
+            },
+        ],
+    }
+];

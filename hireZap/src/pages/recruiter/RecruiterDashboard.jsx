@@ -145,7 +145,7 @@ const RecruiterDashboard = () => {
   };
 
   const handleProfileClick = (recruiter)=>{
-    navigate('/recruiter/profile-dashboard')
+    navigate('/recruiter/profile-overview')
   }
   return (
     <div className="min-h-screen bg-gray-50">

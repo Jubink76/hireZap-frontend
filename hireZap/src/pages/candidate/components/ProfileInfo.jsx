@@ -1,7 +1,7 @@
 import React from 'react';
 import { MapPin, Calendar } from 'lucide-react';
-
-const ProfileInfo = ({ profile }) => {
+import ActionButton from '../../../components/ActionButton';
+const ProfileInfo = ({ profile,onEdit }) => {
   return (
     <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-8 w-full">
       <div className="flex items-start gap-6">
@@ -16,8 +16,17 @@ const ProfileInfo = ({ profile }) => {
 
         {/* Profile Details */}
         <div className="flex-1 min-w-0"> {/* Added min-w-0 to prevent overflow */}
-          <h2 className="text-2xl font-bold text-slate-900 mb-1">{profile?.name}</h2>
-          <p className="text-slate-500 text-lg mb-4">{profile.title}</p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-1">
+                {profile?.name}
+              </h2>
+              <p className="text-slate-500 text-lg mb-4">{profile.title}</p>
+            </div>
+
+            {/* ✅ Edit Profile Button */}
+            <ActionButton text="Edit Profile" onClick={onEdit} />
+          </div>
           
           <div className="flex items-center gap-6 text-slate-500 mb-6 flex-wrap"> {/* Added flex-wrap for responsiveness */}
             <div className="flex items-center gap-2">

@@ -1,6 +1,6 @@
 // src/recruiter/RecruiterProfileLayout.jsx
 import React, { useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useMatches } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import ProfileHeader from '../candidate/components/ProfileHeader'
 import RecruiterProfileNavigationSidebar from './components/RecruiterProfileNavigationSidebar'
@@ -11,6 +11,10 @@ const RecruiterProfileLayout = () => {
   const { user } = useSelector((state) => state.auth)
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false)
   const [isAddCompanyDetailsModalOpen, setIsAddCompanyDetailsModalOpen] = useState(false)
+
+  const matches = useMatches()
+  const currentRoute = matches.find((m)=>m.handle?.title)
+  const pageName = currentRoute?.handle?.title || 'Candidate Dashboard'
 
   const profileData = {
     name: user?.full_name || 'Anonymous',
@@ -31,9 +35,7 @@ const RecruiterProfileLayout = () => {
       {/* Fixed header */}
       <div className="fixed top-0 left-0 right-0 z-20 h-20 bg-white shadow-sm">
         <ProfileHeader
-          pageName="Recruiter Dashboard"
-          onClick={() => setIsEditProfileModalOpen(true)}
-          text="Edit Profile"
+          pageName={pageName}
         />
       </div>
 
