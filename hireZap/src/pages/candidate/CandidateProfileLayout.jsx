@@ -6,16 +6,21 @@ import { useSelector } from 'react-redux';
 import profileAvatar from '../../assets/profile_avatar.jpg'
 import { useState } from 'react';
 import ProfileHeader from './components/ProfileHeader'
+import { useDispatch } from 'react-redux';
+import { updateUserProfile } from '../../redux/slices/authSlice';
+
 const CandidateProfileLayout = () => {
     const {user} = useSelector((state)=>state.auth)
     const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false)
-
+    const dispatch = useDispatch()
     const matches = useMatches()
     const currentRoute = matches.find((m)=>m.handle?.title)
     const pageName = currentRoute?.handle?.title || 'Candidate Dashboard'
 
     const profileData = {
         name: user?.full_name || 'Anonymous  ',
+        email: user?.email || '',
+        phone: user?.phone || '',
         title: "Senior Product Designer",
         location: "San Francisco, CA",
         joinedDate: "March 2024",
@@ -28,6 +33,15 @@ const CandidateProfileLayout = () => {
           testsCompleted: 2
         }
     };
+
+  const handleUpdate = async (formData) => {
+    try {
+      await dispatch(updateUserProfile(formData)).unwrap(); // unwrap for try/catch error handling
+      setIsEditProfileModalOpen(false); // close modal on success
+    } catch (err) {
+      console.error("Profile update failed:", err);
+    }
+  };
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Fixed header */}
@@ -57,7 +71,7 @@ const CandidateProfileLayout = () => {
         isOpen={isEditProfileModalOpen}
         onClose={() => setIsEditProfileModalOpen(false)}
         userProfile={profileData}
-        onSave={(updatedData) => console.log('Updated profile:', updatedData)}
+        onSave={handleUpdate}
       />
     </div>
   );

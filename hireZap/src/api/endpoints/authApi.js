@@ -14,6 +14,7 @@ const authApi = {
     refreshToken : () => axiosInstance.post("/auth/token/refresh/"),
     googleLogin: ({id_token, role}) => axiosInstance.post("/auth/google/", { id_token, role }),
     githubLogin: ({code, role}) => axiosInstance.post("/auth/github/",{code, role}),
+    updateProfile: (data) => axiosInstance.post("/auth/user/update-profile/",data)
 }
 
 export default authApi;

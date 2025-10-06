@@ -35,7 +35,7 @@ const ForgotPassword = () => {
             const otpExpiryTime = new Date().getTime() + 60 * 1000;
             localStorage.setItem("otpExpiryTime", otpExpiryTime);
             
-            navigate("/verify_otp",{
+            navigate("/verify-otp",{
                 state:{
                     email:emailForm,
                     role:role,

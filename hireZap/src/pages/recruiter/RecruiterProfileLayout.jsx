@@ -50,7 +50,8 @@ const RecruiterProfileLayout = () => {
           <div className="space-y-6 w-full">
             <Outlet 
               context={{
-                  openCompanyModal: () => setIsAddCompanyDetailsModalOpen(true)
+                  openCompanyModal: () => setIsAddCompanyDetailsModalOpen(true),
+                  openEditUserModal:()=>setIsEditProfileModalOpen(true)
               }}
             />
           </div>

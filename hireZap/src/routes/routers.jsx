@@ -10,7 +10,6 @@ import ResetPassword from '../pages/auth/ResetPassword';
 import ForgotPassword from '../pages/auth/ForgotPassword';
 import AdminLogin from '../pages/auth/AdminLogin';
 import GithubCallback from '../pages/auth/GithubCallback';
-
 export const routes = [
   {
     element: <PublicRoutes />,
@@ -22,6 +21,7 @@ export const routes = [
       { path: '/reset-password', element: <ResetPassword /> },
       { path: '/forgot-password', element: <ForgotPassword /> },
       { path: '/verify-otp', element: <VerifyOtp /> },
+      
     ],
   },
   { path: '/auth/github/callback', element: <GithubCallback /> },

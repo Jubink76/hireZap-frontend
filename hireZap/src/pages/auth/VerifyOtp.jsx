@@ -85,9 +85,9 @@ const VerifyOtp = () => {
                     const userData = await dispatch(completeRegistration({ email, role, code: otp, action_type })).unwrap();
                     // success path (no need to check meta)
                     if (role === "recruiter") {
-                        navigate("/recruiter_dashboard");
+                        navigate("/recruiter-dashboard");
                     } else {
-                        navigate("/candidate_dashboard");
+                        navigate("/candidate-dashboard");
                     }
                 } catch (err) {
                     console.error("OTP verification failed", err);

@@ -47,6 +47,11 @@ const authService = {
         const res = await authApi.githubLogin({code, role});
         return res;
     },
+    async updateProfile(formData) {
+        const res = await authApi.updateProfile(formData);
+        return res;
+    },
+
 }
 
 export default authService;

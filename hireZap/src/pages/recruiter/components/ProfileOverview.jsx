@@ -2,23 +2,25 @@ import React from 'react'
 import ProfileInfo from '../../candidate/components/ProfileInfo'
 import ProfileStats from '../../candidate/components/ProfileStats'
 import RecruiterJobList from './RecruiterJobList'
-
+import { useOutletContext } from 'react-router-dom'
+import { useSelector } from 'react-redux'
 const ProfileOverview = () => {
+    const {user} = useSelector((state)=>state.auth)
+    const {openEditUserModal} = useOutletContext()
     const profileData = {
-        name: "Marco polo",
-        title: "Senior Recruiter",
-        company: "TechCorp Inc.",
+        name: user?.full_name || 'Anonymous  ',
+        title: "Senior Product Designer",
         location: "San Francisco, CA",
-        joinedDate: "January 2023",
-        profileComplete: 92,
-        avatar: "/path/to/avatar",
+        joinedDate: "March 2024",
+        profileComplete: 85,
+        avatar: user?.profile_image_url || profileAvatar,
         stats: {
-          totalApplications: 642,
-          hired: 8,
-          inProgress: 23,
-          testsCompleted: 15
+          totalApplications: 7,
+          hired: 1,
+          inProgress: 3,
+          testsCompleted: 2
         }
-    };
+      };
 
     const jobsData = [
         {
@@ -57,7 +59,9 @@ const ProfileOverview = () => {
 
     return (
         <>
-            <ProfileInfo profile={profileData}/>
+            <ProfileInfo 
+            profile={profileData}
+            onEdit={openEditUserModal}/>
             <ProfileStats stats={profileData.stats}/>
             <RecruiterJobList jobs={jobsData}/>
         </>

@@ -3,13 +3,14 @@ const CandidateDashboard = lazy(() => import('../pages/candidate/CandidateDashbo
 const CandidateProfileLayout = lazy(() => import('../pages/candidate/CandidateProfileLayout'));
 const CandidateProfileOverview = lazy(() => import('../pages/candidate/components/CandidateProfileOverview'));
 const CandidateAccountSettings = lazy(() => import('../pages/candidate/components/CandidateAccountSettings'));
-
+import CookieDebugger from '../CookieDebugger';
 export const candidateRoutes = [
     {
         path: '/candidate/dashboard',
         element: <CandidateDashboard />,
         handle: { title: 'Dashboard' },
     },
+    { path: '/cookie-debugger', element: <CookieDebugger />},
     {
         path: '/candidate',
         element: <CandidateProfileLayout />,

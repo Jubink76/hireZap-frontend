@@ -159,6 +159,20 @@ export const githubLogin = createAsyncThunk(
     }
 )
 
+// update user profile
+export const updateUserProfile = createAsyncThunk(
+  "auth/updateUserProfile",
+  async (formData, thunkAPI) => {
+    try {
+      const res = await authService.updateProfile(formData); // call your API
+      return res.data; // assuming API returns updated user
+    } catch (err) {
+      const friendly = getFriendlyError(err, "Profile update failed");
+      return thunkAPI.rejectWithValue(friendly);
+    }
+  }
+);
+
 
 const initialState = {
     user: null,
@@ -299,6 +313,19 @@ const authSlice = createSlice({
                 state.user = null;
                 state.isAuthenticated = false
             })
+            .addCase(updateUserProfile.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(updateUserProfile.fulfilled, (state, action) => {
+                state.loading = false;
+                state.user = action.payload;  // update Redux user state
+                state.isAuthenticated = true; // still logged in
+            })
+            .addCase(updateUserProfile.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            });
     }
 });
 

@@ -243,7 +243,7 @@ const AddCompanyDetailsModal = ({
               onClick={handleClose}
               className="p-2 hover:bg-slate-200 rounded-full transition-all duration-200 hover:scale-105"
             >
-              <X className="w-5 h-5 text-slate-500" />
+              <X className="w-5 h-5 text-red-600 border " />
             </button>
           </div>
 
@@ -668,7 +668,7 @@ const AddCompanyDetailsModal = ({
           </div>
 
           {/* Modal Footer */}
-          <div className="flex justify-end space-x-3 p-6 border-t border-slate-200 bg-slate-50/50 sticky bottom-0">
+          <div className="flex justify-end space-x-3 p-6 border-t border-slate-200 bg-slate-50/50">
             <button
               onClick={handleSaveAsDraft}
               disabled={isLoading}

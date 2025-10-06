@@ -145,7 +145,7 @@ const RegLog = () => {
             localStorage.setItem('otpExpiryTime',otpExpiryTime)
 
             // Redirect to OTP verification page
-            navigate("/verify_otp", {
+            navigate("/verify-otp", {
                 state: {
                     email: formData.email, // pass email so OTP API knows which user
                     role: role,           // optional: for redirect after OTP
@@ -160,7 +160,7 @@ const RegLog = () => {
     };
 
     const handleForgotPassword = ()=>{
-        navigate("/forgot_password",{
+        navigate("/forgot-password",{
             state :{
                 role, action_type:"forgot_password"
             },

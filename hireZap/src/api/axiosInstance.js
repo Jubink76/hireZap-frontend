@@ -1,17 +1,18 @@
 import axios from 'axios'
 
 const axiosInstance = axios.create({
-    baseURL : import.meta.env.VITE_BASE_URL,
-    headers : {
+    baseURL: '/api',  // Changed from import.meta.env.VITE_BASE_URL
+    headers: {
         'Content-Type': 'application/json'
     },
-    withCredentials : true,
-    timeout : 10000,
+    withCredentials: true,
+    timeout: 10000,
 });
 
 // request interceptor to include csrf token if available
 axiosInstance.interceptors.request.use(
     (config) => {
+        console.log('🍪 All cookies:', document.cookie);
         const csrfToken = document.cookie
             .split(';')
             .find(row => row.startsWith('csrftoken='))
@@ -20,6 +21,12 @@ axiosInstance.interceptors.request.use(
         if (csrfToken) {
             config.headers['X-CSRFToken'] = csrfToken;
         }
+
+        const hasAccess = document.cookie.includes('access=');
+        const hasRefresh = document.cookie.includes('refresh=');
+        console.log('🔑 Has access cookie:', hasAccess);
+        console.log('🔑 Has refresh cookie:', hasRefresh);
+        
         return config
     },
     (error) => Promise.reject(error)
@@ -55,9 +62,8 @@ axiosInstance.interceptors.response.use(
                 const refreshCookie = document.cookie.split(';').find(c => c.trim().startsWith('refresh='));
                 if (!refreshCookie) throw new Error('No refresh token');
 
-                await axios.post(`${import.meta.env.VITE_BASE_URL}/auth/token/refresh/`,
-                    {}, 
-                    { withCredentials: true });
+                await axiosInstance.post('/auth/token/refresh/');
+
                 return axios(originalRequest).then(res => res.data);
             } catch( refreshError){
                 console.error('Token refresh failed:', refreshError)
