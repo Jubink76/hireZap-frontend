@@ -18,10 +18,10 @@ const RecruiterProfileLayout = () => {
 
   const profileData = {
     name: user?.full_name || 'Anonymous',
-    title: 'Senior Recruiter',
-    company: 'TechCorp Inc.',
-    location: 'San Francisco, CA',
-    joinedDate: 'January 2023',
+    title: user?.title || '',
+    company: user?.company || '',
+    location: user?.location || '',
+    joinedDate: user?.created_at || '',
     profileComplete: 92,
     avatar: user?.profile_image_url || profileAvatar,
   }

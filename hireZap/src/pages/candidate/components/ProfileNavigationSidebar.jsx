@@ -29,9 +29,9 @@ const ProfileNavigationSidebar = ({ activeTab, setActiveTab, userProfile }) => {
   const navigate = useNavigate()
 
   const sideBarProfile = {
-    name: userProfile?.name || 'Anonymous',
-    role : userProfile?.title || 'undefined',
-    avatar : userProfile?.avatar || profileAvatar
+    name: userProfile?.full_name || 'Anonymous',
+    role : userProfile?.role || 'undefined',
+    avatar : userProfile?.profile_image_url || profileAvatar
   } 
   const handleTabClick = (id)=>{
   if(id === 'settings'){

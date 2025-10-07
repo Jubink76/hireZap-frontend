@@ -1,20 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Save, X, User, Mail, Phone, MapPin, Upload } from 'lucide-react';
 import useCloudinaryUpload from '../hooks/useCloudinaryUpload';
+import { useDispatch, useSelector } from 'react-redux';
+import { updateUserProfile } from '../redux/slices/authSlice';
+const EditProfileModal = ({ isOpen, onClose}) => {
 
-const EditProfileModal = ({ isOpen, onClose, userProfile, onSave }) => {
+  const dispatch = useDispatch();
+  const {user} = useSelector((state)=>state.auth)
   const [formData, setFormData] = useState({
-    full_name: userProfile?.name || "",
-    email: userProfile?.email || "",
-    phone: userProfile?.phone || "",
-    location: userProfile?.location || "",
-    profile_image_url: userProfile?.profile_image_url || "",
+    full_name: user?.full_name || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
+    location: user?.location || "",
+    profile_image_url: user?.profile_image_url || "",
     profile_file: null, // for temporary selected file
   });
 
 
 
-  const [previewImage, setPreviewImage] = useState(userProfile?.profile_image_url || null);
+  const [previewImage, setPreviewImage] = useState(user?.profile_image_url || null);
   const [errors, setErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
 
@@ -31,6 +35,19 @@ const EditProfileModal = ({ isOpen, onClose, userProfile, onSave }) => {
       setPreviewImage(uploadedUrl);
     }
   }, [uploadedUrl]);
+
+  useEffect(() => {
+    if (user && isOpen) {
+      setFormData({
+        full_name: user?.full_name || "",
+        email: user?.email || "",
+        phone: user?.phone || "",
+        location: user?.location || "",
+        profile_image_url: user?.profile_image_url || "",
+      });
+      setPreviewImage(user?.profile_image_url || null);
+    }
+  }, [user, isOpen]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -89,26 +106,35 @@ const EditProfileModal = ({ isOpen, onClose, userProfile, onSave }) => {
 
   const handleSave = async () => {
     if (!validateForm()) return;
-      setIsSaving(true);
+    
+    setIsSaving(true);
+    setErrors({});
+
     try {
-      await dispatch(updateUserProfile(formData));
-      onClose();
+      console.log('💾 Saving profile data:', formData);
+
+      const updatedUser = await dispatch(updateUserProfile(formData)).unwrap();
+
+      console.log('✅ Profile updated successfully:', updatedUser);
+      onClose(); // close modal
     } catch (err) {
-      setErrors({ general: 'Failed to save. Please try again.' });
-    } finally {
-      setIsSaving(false);
+      console.error('❌ Update failed:', err);
+      setErrors({ general: err.message || 'Failed to update profile' });
+    } finally{
+      setIsSaving(false)
     }
+
   };
 
   const handleClose = () => {
     setFormData({
-      full_name: userProfile?.name || '',
-      email: userProfile?.email || '',
-      phone: userProfile?.phone || '',
-      location: userProfile?.location || '',
-      profile_image_url: userProfile?.profile_image_url || null,
+      full_name: user?.name || '',
+      email: user?.email || '',
+      phone: user?.phone || '',
+      location: user?.location || '',
+      profile_image_url: user?.profile_image_url || null,
     });
-    setPreviewImage(userProfile?.profile_image_url || null);
+    setPreviewImage(user?.profile_image_url || null);
     setErrors({});
     onClose();
   };
@@ -267,13 +293,13 @@ const EditProfileModal = ({ isOpen, onClose, userProfile, onSave }) => {
 
         {/* Footer */}
         <div className="flex justify-end space-x-3 p-6 border-t border-slate-200 bg-slate-50/50">
-          <button onClick={handleClose} disabled={isSaving} className="px-6 py-2.5 border rounded-lg text-slate-700">
+          <button onClick={handleClose} disabled={isSaving || uploadLoading} className="px-6 py-2.5 border rounded-lg text-slate-700 cursor-pointer">
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={isSaving || uploadLoading}
-            className="px-6 py-2.5 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg flex items-center"
+            className="px-6 py-2.5 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg flex items-center cursor-pointer"
           >
             {isSaving ? (
               <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>

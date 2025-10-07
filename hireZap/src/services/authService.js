@@ -47,8 +47,8 @@ const authService = {
         const res = await authApi.githubLogin({code, role});
         return res;
     },
-    async updateProfile(formData) {
-        const res = await authApi.updateProfile(formData);
+    async updateProfile(profileData) {
+        const res = await authApi.updateProfile(profileData);
         return res;
     },
 

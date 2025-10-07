@@ -17,31 +17,32 @@ const CandidateProfileLayout = () => {
     const currentRoute = matches.find((m)=>m.handle?.title)
     const pageName = currentRoute?.handle?.title || 'Candidate Dashboard'
 
-    const profileData = {
-        name: user?.full_name || 'Anonymous  ',
-        email: user?.email || '',
-        phone: user?.phone || '',
-        title: "Senior Product Designer",
-        location: "San Francisco, CA",
-        joinedDate: "March 2024",
-        profileComplete: 85,
-        avatar: user?.profile_image_url || profileAvatar,
-        stats: {
-          totalApplications: 7,
-          hired: 1,
-          inProgress: 3,
-          testsCompleted: 2
-        }
-    };
+    // const profileData = useMemo(() => ({
+    //     full_name: user?.full_name || 'Anonymous',
+    //     email: user?.email || '',
+    //     phone: user?.phone || '',
+    //     location: user?.location || 'Not specified',
+    //     profile_image_url: user?.profile_image_url || profileAvatar,
+    //     title: "Senior Product Designer", // This should come from user data too if available
+    //     joinedDate: user?.created_at || '', // This should come from user.created_at
+    //     profileComplete: 85,
+    //     avatar: user?.profile_image_url || profileAvatar,
+    //     stats: {
+    //         totalApplications: 7,
+    //         hired: 1,
+    //         inProgress: 3,
+    //         testsCompleted: 2
+    //     }
+    // }), [user]);
 
-  const handleUpdate = async (formData) => {
-    try {
-      await dispatch(updateUserProfile(formData)).unwrap(); // unwrap for try/catch error handling
-      setIsEditProfileModalOpen(false); // close modal on success
-    } catch (err) {
-      console.error("Profile update failed:", err);
-    }
-  };
+  // const handleUpdate = async (formData) => {
+  //   try {
+  //     await dispatch(updateUserProfile(formData)).unwrap(); // unwrap for try/catch error handling
+  //     setIsEditProfileModalOpen(false); // close modal on success
+  //   } catch (err) {
+  //     console.error("Profile update failed:", err);
+  //   }
+  // };
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Fixed header */}
@@ -54,7 +55,7 @@ const CandidateProfileLayout = () => {
       {/* Fixed sidebar */}
       <div className="fixed left-0 top-20 bottom-0 w-64 z-10 overflow-y-auto bg-white shadow-sm">
         <ProfileNavigationSidebar 
-        userProfile={profileData}/>
+        userProfile={user}/>
       </div>
 
       {/* Main content area offset by header + sidebar */}
@@ -70,8 +71,6 @@ const CandidateProfileLayout = () => {
       <EditProfileModal
         isOpen={isEditProfileModalOpen}
         onClose={() => setIsEditProfileModalOpen(false)}
-        userProfile={profileData}
-        onSave={handleUpdate}
       />
     </div>
   );

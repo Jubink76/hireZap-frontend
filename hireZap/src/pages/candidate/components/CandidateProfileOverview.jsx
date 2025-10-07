@@ -8,20 +8,36 @@ import { useOutletContext } from "react-router-dom";
 const CandidateProfileOverview = () => {
   const {user} = useSelector((state)=>state.auth)
   const {openEditUserModal} = useOutletContext()
-  // Sample profile data matching the design
+  // // Sample profile data matching the design
+  // const profileData = {
+  //   name: user?.full_name || 'Anonymous  ',
+  //   title: "Senior Product Designer",
+  //   location: "San Francisco, CA",
+  //   joinedDate: "March 2024",
+  //   profileComplete: 85,
+  //   avatar: user?.profile_image_url || profileAvatar,
+  //   stats: {
+  //     totalApplications: 7,
+  //     hired: 1,
+  //     inProgress: 3,
+  //     testsCompleted: 2
+  //   }
+  // };
+
   const profileData = {
-    name: user?.full_name || 'Anonymous  ',
-    title: "Senior Product Designer",
-    location: "San Francisco, CA",
-    joinedDate: "March 2024",
-    profileComplete: 85,
+    ...user,
+    joinedDate: new Date(user?.created_at).toLocaleString("default", {
+      month: "long",
+      year: "numeric"
+    }),
+    profileComplete: 85, // you can compute this later
     avatar: user?.profile_image_url || profileAvatar,
     stats: {
       totalApplications: 7,
       hired: 1,
       inProgress: 3,
       testsCompleted: 2
-    }
+    },
   };
 
   const applicationsData = [
@@ -49,7 +65,7 @@ const CandidateProfileOverview = () => {
   return (
     <>
       <ProfileInfo 
-      profile={profileData}
+      profile={user}
       onEdit={openEditUserModal}
       text="Edit Profile"/>
       <ProfileStats stats={profileData.stats}/>

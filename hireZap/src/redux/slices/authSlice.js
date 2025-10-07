@@ -162,10 +162,10 @@ export const githubLogin = createAsyncThunk(
 // update user profile
 export const updateUserProfile = createAsyncThunk(
   "auth/updateUserProfile",
-  async (formData, thunkAPI) => {
+  async (profileData, thunkAPI) => {
     try {
-      const res = await authService.updateProfile(formData); // call your API
-      return res.data; // assuming API returns updated user
+      const res = await authService.updateProfile(profileData); // call your API
+      return res.user; // assuming API returns updated user
     } catch (err) {
       const friendly = getFriendlyError(err, "Profile update failed");
       return thunkAPI.rejectWithValue(friendly);
