@@ -47,8 +47,11 @@ export const registerUser = createAsyncThunk(
 export const completeRegistration = createAsyncThunk("auth/registerOtp", async(data, thunkAPI)=>{
     try{
         const res = await authService.registerOtp(data);
+        console.log("✅ Registration response received:", res);
+            console.log("✅ JWT cookies set by backend in response headers");
         return res;
     }catch(err){
+        console.error("❌ Registration error:", err);
         const friendly = getFriendlyError(err,"Registration Failed")
         return thunkAPI.rejectWithValue(friendly)
     }
@@ -118,9 +121,10 @@ export const fetchCurrentUser = createAsyncThunk("auth/current_user", async(_,th
     try{
         const res = await authService.fetchUser();
         console.log("res of user ",res.data)
-        return res.data;
+        return res;
     }catch(err){
         if(err.response?.status === 401){
+            console.log("⚠️ User not authenticated (401)");
             return thunkAPI.rejectWithValue({message:"unauthenticated"})
         }
         const friendly = getFriendlyError(err,"fetch user failed")
@@ -266,6 +270,7 @@ const authSlice = createSlice({
             })
             .addCase(completeRegistration.fulfilled,(state,action)=>{
                 state.loading = false;
+                console.log("✅ completeRegistration fulfilled with:", action.payload);
                 state.user = action.payload;
                 state.isAuthenticated = true;
                 state.isAdmin = action.payload?.is_admin || false
@@ -303,6 +308,7 @@ const authSlice = createSlice({
             })
             .addCase(fetchCurrentUser.fulfilled,(state,action)=>{
                 state.loading = false;
+                console.log("✅ fetchCurrentUser fulfilled with:", action.payload);
                 state.user = action.payload;
                 state.role = action.payload.role;
                 state.error = false;

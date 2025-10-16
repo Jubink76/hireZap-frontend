@@ -86,7 +86,7 @@ const EditProfileModal = ({ isOpen, onClose}) => {
 
 
   const handleRemoveImage = () => {
-    setFormData(prev => ({ ...prev, profile_image_url: null }));
+    setFormData(prev => ({ ...prev, profile_image_url: '' }));
     setPreviewImage(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (cameraInputRef.current) cameraInputRef.current.value = '';
@@ -113,7 +113,14 @@ const EditProfileModal = ({ isOpen, onClose}) => {
     try {
       console.log('💾 Saving profile data:', formData);
 
-      const updatedUser = await dispatch(updateUserProfile(formData)).unwrap();
+      const cleanedData = {
+            full_name: formData.full_name?.trim(),
+            email: formData.email?.trim(),
+            phone: formData.phone?.trim() || '',  // Send empty string if empty
+            location: formData.location?.trim() || '',  // Send empty string if empty
+            profile_image_url: formData.profile_image_url?.trim() || ''  // Send empty string if empty
+        };
+      const updatedUser = await dispatch(updateUserProfile(cleanedData)).unwrap();
 
       console.log('✅ Profile updated successfully:', updatedUser);
       onClose(); // close modal

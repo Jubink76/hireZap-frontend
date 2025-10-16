@@ -4,6 +4,8 @@ import ProfileStats from '../../candidate/components/ProfileStats'
 import RecruiterJobList from './RecruiterJobList'
 import { useOutletContext } from 'react-router-dom'
 import { useSelector } from 'react-redux'
+import profileAvatar from '../../../assets/profile_avatar.jpg'
+
 const ProfileOverview = () => {
     const {user} = useSelector((state)=>state.auth)
     const {openEditUserModal} = useOutletContext()

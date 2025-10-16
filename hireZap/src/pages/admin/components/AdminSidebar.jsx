@@ -32,6 +32,8 @@ const AdminSidebar = ({ activeTab, onTabChange, setActiveTab }) => {
   const handleTablClick = (id)=>{
     if (id=== 'settings'){
       navigate('/admin/account-settings')
+    }else if(id == 'verifications'){
+      navigate('/admin/company-verifications')
     }else{
       setActiveTab(id)
     }

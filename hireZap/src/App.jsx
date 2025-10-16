@@ -6,18 +6,50 @@ import { useDispatch } from 'react-redux';
 import { useEffect } from 'react';
 import axiosInstance from './api/axiosInstance';
 import { fetchCurrentUser } from './redux/slices/authSlice';
-
+import { useSelector } from 'react-redux';
+import { getCsrfCookie } from './redux/slices/authSlice';
 const App = () => {
   const dispatch = useDispatch();
+  const user = useSelector(state => state.auth.user);
+  const loading = useSelector(state => state.auth.loading);
 
   useEffect(() => {
-    axiosInstance.get('/auth/csrf-cookie/').then(() => {
-      const accessCookie = document.cookie.split(';').find(c => c.trim().startsWith('access='));
-      if (accessCookie) dispatch(fetchCurrentUser());
-    });
-  }, [dispatch]);
+    const initializeAuth = async () => {
+      try {
+        console.log("\n🔵 App initializing...");
+        
+        // Step 1: Get CSRF cookie
+        console.log("   Step 1: Getting CSRF cookie...");
+        await dispatch(getCsrfCookie()).unwrap();
+        console.log("   ✅ CSRF cookie obtained");
+        
+        // Step 2: Check if user has access token cookie
+        const hasAccessCookie = document.cookie
+          .split(';')
+          .some(c => c.trim().startsWith('access='));
+        
+        console.log(`   Step 2: Access token cookie exists? ${hasAccessCookie}`);
+        
+        if (hasAccessCookie && !user) {
+          // User has cookie but Redux is empty (page refresh scenario)
+          console.log("   Step 3: Fetching current user from JWT cookie...");
+          await dispatch(fetchCurrentUser()).unwrap();
+          console.log("   ✅ User fetched and Redux updated");
+        }
+      } catch (err) {
+        console.log("   ⚠️ Auth initialization note:", err.message);
+        // This is expected if user not logged in
+      }
+    };
+
+    initializeAuth();
+  }, [dispatch, user]);
 
   const router = createBrowserRouter(routes);
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-screen">Initializing...</div>;
+  }
 
   return (
     <>

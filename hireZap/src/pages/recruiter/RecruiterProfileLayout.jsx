@@ -16,20 +16,6 @@ const RecruiterProfileLayout = () => {
   const currentRoute = matches.find((m)=>m.handle?.title)
   const pageName = currentRoute?.handle?.title || 'Candidate Dashboard'
 
-  const profileData = {
-    name: user?.full_name || 'Anonymous',
-    title: user?.title || '',
-    company: user?.company || '',
-    location: user?.location || '',
-    joinedDate: user?.created_at || '',
-    profileComplete: 92,
-    avatar: user?.profile_image_url || profileAvatar,
-  }
-
-  const handleSubmit = (data)=>{
-    console.log("company details submitted", data)
-  }
-
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Fixed header */}
@@ -61,13 +47,10 @@ const RecruiterProfileLayout = () => {
       <EditProfileModal
         isOpen={isEditProfileModalOpen}
         onClose={() => setIsEditProfileModalOpen(false)}
-        userProfile={profileData}
-        onSave={(updatedData) => console.log('Updated profile:', updatedData)}
       />
       <AddCompanyDetailsModal
         isOpen={isAddCompanyDetailsModalOpen}
         onClose={() => setIsAddCompanyDetailsModalOpen(false)}
-        onClick={handleSubmit}
       />
     </div>
   )

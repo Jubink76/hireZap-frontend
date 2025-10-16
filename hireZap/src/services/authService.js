@@ -13,11 +13,11 @@ const authService = {
     },
     async resendOtp(data){
         const res = await authApi.resend_otp(data);
-        return res.data
+        return res
     },
     async registerOtp(data){
         const res = await authApi.register_otp(data);
-        return res.data
+        return res
     },
     async verifyOtp(data){
         const res = await authApi.verify_otp(data);

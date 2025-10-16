@@ -12,7 +12,6 @@ const axiosInstance = axios.create({
 // Request interceptor
 axiosInstance.interceptors.request.use(
     (config) => {
-        console.log('🍪 All cookies:', document.cookie);
         const csrfToken = document.cookie
             .split(';')
             .find(row => row.trim().startsWith('csrftoken='))  // ✅ Added trim()
@@ -21,12 +20,7 @@ axiosInstance.interceptors.request.use(
         if (csrfToken) {
             config.headers['X-CSRFToken'] = csrfToken;
         }
-
-        const hasAccess = document.cookie.includes('access=');
-        const hasRefresh = document.cookie.includes('refresh=');
-        console.log('🔑 Has access cookie:', hasAccess);
-        console.log('🔑 Has refresh cookie:', hasRefresh);
-        
+        console.log(`📤 API Request: ${config.method?.toUpperCase()} ${config.url}`);
         return config;
     },
     (error) => Promise.reject(error)
@@ -34,7 +28,10 @@ axiosInstance.interceptors.request.use(
 
 // Response interceptor
 axiosInstance.interceptors.response.use(
-    (response) => response.data,
+    (response) => {
+        console.log(`📥 API Response: ${response.status} ${response.config.url}`);
+        return response.data !== undefined ? response.data : response;
+    },
     async (error) => {
         console.error('❌ Response error:', error.response?.status, error.config?.url);
         
@@ -58,6 +55,8 @@ axiosInstance.interceptors.response.use(
         // Handle 401 Unauthorized
         if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
             originalRequest._retry = true;
+            console.log("🔄 Access token expired, attempting refresh...");
+
 
             try {
                 console.log('🔄 Attempting token refresh...');

@@ -5,7 +5,7 @@ import {useDispatch, useSelector} from 'react-redux'
 import {useNavigate} from 'react-router-dom'
 import { useLocation } from 'react-router-dom';
 import { notify } from '../../utils/toast';
-import { completeRegistration, resendOtp, verifyOtp } from '../../redux/slices/authSlice';
+import { completeRegistration, resendOtp, verifyOtp,fetchCurrentUser } from '../../redux/slices/authSlice';
 
 const VerifyOtp = () => {
 
@@ -83,11 +83,35 @@ const VerifyOtp = () => {
             if (action_type === "registration"){
                 try {
                     const userData = await dispatch(completeRegistration({ email, role, code: otp, action_type })).unwrap();
-                    // success path (no need to check meta)
+                    
+                    console.log("🟢 STEP 1 Complete: User data received from backend");
+                    console.log("   User:", userData);
+                    
+                    // Small delay to ensure Redux commits
+                    console.log("🟡 STEP 2: Waiting for Redux state to commit...");
+                    await new Promise(resolve => setTimeout(resolve, 200));
+            
+                    // Step 3: Fetch current user to validate JWT cookies work
+                    console.log("🟣 STEP 3: Validating JWT cookies with fetchCurrentUser...");
+
+                    // await dispatch(fetchCurrentUser()).unwrap();
+                    // // success path (no need to check meta)
+                    // console.log("🟣 After fetchCurrentUser - Redux fully ready!");
+                    
+                    const currentUserData = await dispatch(
+                        fetchCurrentUser()
+                    ).unwrap();
+                    
+                    console.log("🟠 STEP 3 Complete: JWT validation successful!");
+                    console.log("   Current user:", currentUserData);
+                    
+                    // Step 4: Now we're 100% sure everything is set up correctly
+                    console.log("🟡 STEP 4: Redux state fully updated, navigating to dashboard...");
+
                     if (role === "recruiter") {
-                        navigate("/recruiter-dashboard");
+                        navigate("/recruiter/dashboard");
                     } else {
-                        navigate("/candidate-dashboard");
+                        navigate("/candidate/dashboard");
                     }
                 } catch (err) {
                     console.error("OTP verification failed", err);
@@ -98,7 +122,7 @@ const VerifyOtp = () => {
                     const res = await dispatch(verifyOtp({email, code:otp, action_type})).unwrap()
                     
                     notify.success("OTP verification successful");
-                    navigate("/reset_password",{
+                    navigate("/reset-password",{
                         state:{email,role}
                     })
                 }catch(err){

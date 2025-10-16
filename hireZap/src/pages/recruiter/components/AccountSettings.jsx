@@ -2,19 +2,21 @@ import React from 'react'
 import { useDispatch } from 'react-redux';
 import { ChevronRight, LogOut } from 'lucide-react';
 import { notify } from '../../../utils/toast';
-// import { logoutUser } from '../../../path-to-your-auth-slice'; // Add the correct import path
+import { useNavigate } from 'react-router-dom';
+import { logoutUser } from '../../../redux/slices/authSlice';
 
 const AccountSettings = () => {
     const dispatch = useDispatch()
-    
-    const handleLogout = async() => {
-        try {
-          // await dispatch(logoutUser()).unwrap(); // Uncomment when you have the correct import
-          notify.success("Logout Successful")
-        } catch(err) {
+    const navigate = useNavigate()
+    const handleLogout = async()=>{
+        try{
+          await dispatch(logoutUser()).unwrap();
+          notify.success("Logout successful")
+          navigate('/login')
+        }catch(err){
           notify.error(err)
         }
-    }
+      }
 
     return (
             <div className="rounded-lg shadow-lg border border-slate-200 bg-white/80 backdrop-blur-sm">
