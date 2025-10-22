@@ -13,5 +13,17 @@ const companyService = {
         const res = await companyApi.fetchPendingCompanies()
         return res
     },
+    async fetchCompanyById(companyId){
+        const res = await companyApi.fetchCompanyById(companyId)
+        return res
+    },
+    async approveCompany(companyId){
+        const res = await companyApi.approveCompany(companyId)
+        return res
+    },
+    async rejectCompany(companyId){
+        const res = await companyApi.rejectCompany(companyId)
+        return res
+    }
 }
 export default companyService;

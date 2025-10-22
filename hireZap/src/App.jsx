@@ -8,11 +8,13 @@ import axiosInstance from './api/axiosInstance';
 import { fetchCurrentUser } from './redux/slices/authSlice';
 import { useSelector } from 'react-redux';
 import { getCsrfCookie } from './redux/slices/authSlice';
+import useWebSocket from './hooks/useWebSocket'; 
 const App = () => {
   const dispatch = useDispatch();
   const user = useSelector(state => state.auth.user);
   const loading = useSelector(state => state.auth.loading);
 
+  const { isConnected } = useWebSocket();
   useEffect(() => {
     const initializeAuth = async () => {
       try {
@@ -44,6 +46,12 @@ const App = () => {
 
     initializeAuth();
   }, [dispatch, user]);
+
+  useEffect(() => {
+    if (isConnected) {
+      console.log('✅ WebSocket connected in App');
+    }
+  }, [isConnected]);
 
   const router = createBrowserRouter(routes);
 

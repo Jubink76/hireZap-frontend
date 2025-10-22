@@ -40,12 +40,47 @@ export const fetchPendingCompanies = createAsyncThunk('company/fetchPending',asy
     }
 })
 
+// fetch company By id 
+export const fetchCompanyById = createAsyncThunk('company/fetchCompany', async(companyId,thunkAPI)=>{
+    try{
+        const res = await companyService.fetchCompanyById(companyId);
+        return res
+    }catch(err){
+        const friendly = getFriendlyError(err, "Fetching company detail failed")
+        return thunkAPI.rejectWithValue(friendly)
+    }
+})
+
+// approve company
+export const approveCompany = createAsyncThunk('company/approveComany', async(companyId,thunkAPI)=>{
+    try{
+        const res = await companyService.approveCompany(companyId)
+        return res
+    }catch(err){
+        const friendly = getFriendlyError(err,"Company verification failed")
+        return thunkAPI.rejectWithValue(friendly)
+    }
+})
+
+// reject company
+
+export const rejectCompany = createAsyncThunk('company/rejectCompany', async(companyId, thunkApI) => {
+    try{
+        const res = await companyService.rejectCompany(companyId)
+        return res
+    }catch(err){
+        const friendly = getFriendlyError(err,"Reject company failed")
+        return thunkApI.rejectWithValue(friendly)
+    }
+})
+
 const initialState = {
     company: null,
     pendingCompanies:[],
+    selectedCompany : null,
     loading: false,
     error : null,
-    hascompany: false,
+    hasCompany: false,
 };
 
 const companySlice = createSlice({
@@ -58,10 +93,27 @@ const companySlice = createSlice({
         resetCompanyState: (state) =>{
             state.company = null;
             state.pendingCompanies = [];
+            state.selectedCompany = null;
             state.loading = false;
             state.error = null;
-            state.hascompany = false;
+            state.hasCompany = false;
         },
+        updateCompanyStatus : (state,action) => {
+            const {company, status, reason } = action.payload;
+
+            if (state.company && state.company.id === company.id){
+                state.company = {
+                    ...state.company,
+                    ...company,
+                    verification_status: status,
+                    rejection_reason: reason || null
+                };
+                state.hasCompany = status === 'verified' || status === 'pending';
+            }
+        },
+        triggerCompanyRefresh: (state) =>{
+            state.loading = true;
+        }
     },
     extraReducers: (builder) =>{
         builder
@@ -72,7 +124,7 @@ const companySlice = createSlice({
         .addCase(createCompany.fulfilled, (state,action)=>{
             state.loading = false;
             state.company = action.payload.company;
-            state.hascompany = true;
+            state.hasCompany = true;
         })
         .addCase(createCompany.rejected, (state,action)=>{
             state.loading = false;
@@ -84,13 +136,18 @@ const companySlice = createSlice({
         })
         .addCase(fetchCompany.fulfilled,(state,action)=>{
             state.loading = false;
-            state.company = action.payload
-            state.hascompany = true;
+            if (action.payload === null) {
+                state.company = null;
+                state.hasCompany = false;
+            } else {
+                state.company = action.payload;
+                state.hasCompany = true;
+            }
         })
         .addCase(fetchCompany.rejected,(state,action)=>{
             state.loading = false;
             state.error = action.payload;
-            state.hascompany = false;
+            state.hasCompany = false;
         })
         .addCase(fetchPendingCompanies.pending,(state)=>{
             state.loading = true;
@@ -99,18 +156,64 @@ const companySlice = createSlice({
         .addCase(fetchPendingCompanies.fulfilled,(state,action)=>{
             state.loading = false;
             state.pendingCompanies = action.payload;
-            console.log("📦 Payload type:", typeof action.payload);
-            console.log("📦 Payload:", action.payload);
-            console.log("📦 Is array?", Array.isArray(action.payload));
             state.error = null;
         })
         .addCase(fetchPendingCompanies.rejected,(state,action)=>{
             state.loading = false;
             state.error = action.payload
         })
+        .addCase(fetchCompanyById.pending,(state)=>{
+            state.loading = true;
+            state.error = null
+        })
+        .addCase(fetchCompanyById.fulfilled,(state,action)=>{
+            state.loading = false;
+            state.selectedCompany = action.payload;
+            state.error = null;
+        })
+        .addCase(fetchCompanyById.rejected,(state,action)=>{
+            state.loading = false;
+            state.error = action.payload;
+        })
+        .addCase(approveCompany.pending,(state)=>{
+            state.loading = true;
+            state.error = null;
+        })
+        .addCase(approveCompany.fulfilled,(state,action)=>{
+            state.loading = false;
+            if (state.selectedCompany && state.selectedCompany.id === action.payload.company.id) {
+                state.selectedCompany = action.payload.company;
+            }
+            state.pendingCompanies = state.pendingCompanies.filter(
+                c => c.id !== action.payload.company.id
+            );
+            state.error = null;
 
+        })
+        .addCase(approveCompany.rejected,(state,action)=>{
+            state.loading = false;
+            state.error = action.payload;
+        })
+        .addCase(rejectCompany.pending,(state)=>{
+            state.loading = true;
+            state.error = null;
+        })
+        .addCase(rejectCompany.fulfilled,(state,action)=>{
+            state.loading = false;
+            if (state.selectedCompany && state.selectedCompany.id === action.payload.company.id) {
+                state.selectedCompany = action.payload.company;
+            }
+            state.pendingCompanies = state.pendingCompanies.filter(
+                c => c.id !== action.payload.company.id
+            );
+            state.error = null;
+        })
+        .addCase(rejectCompany.rejected,(state,action)=>{
+            state.loading = false;
+            state.error = action.payload;
+        })
     }
 })
 
-export const { clearCompanyError, resetCompanyState } = companySlice.actions;
+export const { clearCompanyError, resetCompanyState,updateCompanyStatus,triggerCompanyRefresh } = companySlice.actions;
 export default companySlice.reducer;

@@ -3,11 +3,11 @@ import { Search, Bell, Settings, MoreVertical, MapPin, Globe, Calendar, Users, S
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchPendingCompanies } from '../../../redux/slices/companySlice';
 import { formatDistanceToNow } from 'date-fns';
-
+import { useNavigate } from 'react-router-dom';
 const CompanyVerificationManagement = () => {
   const [activeFilter, setActiveFilter] = useState('total');
   const dispatch = useDispatch();
-
+  const navigate = useNavigate();
   useEffect(() => {
     dispatch(fetchPendingCompanies());
   }, [dispatch]);
@@ -232,8 +232,11 @@ const CompanyVerificationManagement = () => {
                         <span className={`px-3 py-1 text-xs font-medium rounded ${request.statusColor}`}>
                           {request.statusLabel}
                         </span>
-                        <button className="px-3 py-1.5 text-xs font-medium bg-teal-100 text-teal-700 rounded hover:bg-teal-200">
-                          View Detail
+                        <button 
+                            onClick={() => navigate(`/admin/company-detail/${request.id}`)}
+                            className="px-3 py-1.5 text-xs font-medium bg-teal-100 text-teal-700 rounded hover:bg-teal-200"
+                            >
+                            View Detail
                         </button>
                         <button className="px-4 py-1.5 text-xs font-medium bg-red-100 text-red-700 rounded hover:bg-red-200">
                           Reject
