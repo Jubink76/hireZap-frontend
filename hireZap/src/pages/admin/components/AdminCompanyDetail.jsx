@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { 
   MapPin, Globe, Users, Calendar, ArrowLeft, 
   CheckCircle, XCircle, Building2, Mail, Phone,
-  FileText, ExternalLink, User, Briefcase
+  FileText, ExternalLink, User, Briefcase, BadgeCheck, Clock
 } from 'lucide-react';
 import { approveCompany, fetchCompanyById, rejectCompany } from '../../../redux/slices/companySlice';
 
@@ -115,14 +115,29 @@ const AdminCompanyDetail = () => {
           </button>
           
           <div className="flex items-center space-x-3">
-            <span className={`px-3 py-1.5 text-sm font-medium rounded ${
-              company.verification_status === 'pending'
-                ? 'bg-yellow-100 text-yellow-700'
-                : company.verification_status === 'verified'
-                ? 'bg-green-100 text-green-700'
-                : 'bg-red-100 text-red-700'
-            }`}>
-              {company.verification_status.charAt(0).toUpperCase() + company.verification_status.slice(1)}
+            <span
+              className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full border
+                ${
+                  company.verification_status === 'pending'
+                    ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                    : company.verification_status === 'verified'
+                    ? 'bg-green-50 text-green-700 border-green-200'
+                    : 'bg-red-50 text-red-700 border-red-200'
+                }`}
+            >
+              {company.verification_status === 'verified' && (
+                <BadgeCheck size={14} className="text-green-600" />
+              )}
+              {company.verification_status === 'pending' && (
+                <Clock size={13} className="text-yellow-600" />
+              )}
+              {company.verification_status === 'rejected' && (
+                <XCircle size={13} className="text-red-600" />
+              )}
+              <span>
+                {company.verification_status.charAt(0).toUpperCase() +
+                  company.verification_status.slice(1)}
+              </span>
             </span>
           </div>
         </div>

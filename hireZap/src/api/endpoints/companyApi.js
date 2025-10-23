@@ -7,6 +7,8 @@ const companyApi = {
     fetchPendingCompanies :() => axiosInstance.get('/company/pending-companies/'),
     fetchCompanyById : (companyId) => axiosInstance.get(`/company/fetch-company/${companyId}`),
     approveCompany : (companyId) => axiosInstance.post(`/company/approve-company/${companyId}/`),
-    rejectCompany : (companyId) => axiosInstance.post(`/company/reject-company/${companyId}/`)
+    rejectCompany : (companyId) => axiosInstance.post(`/company/reject-company/${companyId}/`),
+    fetchVerifiedCompanies : () => axiosInstance.get('/company/verified-companies/'),
+    fetchRejectedCompanies : () => axiosInstance.get('/company/rejected-companies/'),
 }
 export default companyApi

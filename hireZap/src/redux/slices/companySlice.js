@@ -18,6 +18,7 @@ export const createCompany = createAsyncThunk('company/crreate', async(data, thu
 export const fetchCompany = createAsyncThunk('company/fetch',async(_,thunkAPI)=>{
     try{
         const res = await companyService.fetchCompany();
+        console.log("API returned company:", res);
         return res
     }catch(err){
         if (err.response?.status === 404) {
@@ -74,9 +75,35 @@ export const rejectCompany = createAsyncThunk('company/rejectCompany', async(com
     }
 })
 
+// fetch verified companies
+
+export const fetchVerifiedCompanies = createAsyncThunk('company/verified-companies', async(_,thunkAPI)=>{
+    try{
+        const res = await companyService.fetchVerifiedCompanies()
+        return res
+    }catch(err){
+        const friendly = getFriendlyError(err,"Fetch verified companies failed")
+        return thunkAPI.rejectWithValue(friendly)
+    }
+})
+
+// fetch rejected companies
+
+export const fetchRejectedCompanies = createAsyncThunk('company/rejected-companies', async(_,thunkAPI)=>{
+    try{
+        const res = await companyService.fetchRejectedCompanies()
+        return res
+    }catch(err){
+        const friendly = getFriendlyError(err, "Fetch rejected companies failed")
+        return thunkAPI.rejectWithValue(friendly)
+    }
+})
+
 const initialState = {
     company: null,
     pendingCompanies:[],
+    verifiedCompanies:[],
+    rejectedCompanies:[],
     selectedCompany : null,
     loading: false,
     error : null,
@@ -93,6 +120,8 @@ const companySlice = createSlice({
         resetCompanyState: (state) =>{
             state.company = null;
             state.pendingCompanies = [];
+            state.verifiedCompanies = [];
+            state.rejectedCompanies = [];
             state.selectedCompany = null;
             state.loading = false;
             state.error = null;
@@ -209,6 +238,32 @@ const companySlice = createSlice({
             state.error = null;
         })
         .addCase(rejectCompany.rejected,(state,action)=>{
+            state.loading = false;
+            state.error = action.payload;
+        })
+        .addCase(fetchVerifiedCompanies.pending,(state)=>{
+            state.loading = true;
+            state.error = null;
+        })
+        .addCase(fetchVerifiedCompanies.fulfilled,(state,action)=>{
+            state.loading = false;
+            state.verifiedCompanies = action.payload
+            state.error = null;
+        })
+        .addCase(fetchVerifiedCompanies.rejected,(state,action)=>{
+            state.loading = false;
+            state.error = action.payload;
+        })
+        .addCase(fetchRejectedCompanies.pending,(state)=>{
+            state.loading = true;
+            state.error = null;
+        })
+        .addCase(fetchRejectedCompanies.fulfilled,(state,action)=>{
+            state.loading = false;
+            state.rejectedCompanies = action.payload;
+            state.error = null;
+        })
+        .addCase(fetchRejectedCompanies.rejected,(state,action)=>{
             state.loading = false;
             state.error = action.payload;
         })

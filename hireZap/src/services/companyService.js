@@ -7,7 +7,7 @@ const companyService = {
     },
     async fetchCompany(){
         const res = await companyApi.fetchCompany()
-        return res.data
+        return res
     },
     async fetchPendingCompanies(){
         const res = await companyApi.fetchPendingCompanies()
@@ -24,6 +24,14 @@ const companyService = {
     async rejectCompany(companyId){
         const res = await companyApi.rejectCompany(companyId)
         return res
-    }
+    },
+    async fetchVerifiedCompanies(){
+        const res = await companyApi.fetchVerifiedCompanies()
+        return res
+    },
+    async fetchRejectedCompanies(){
+        const res = await companyApi.fetchRejectedCompanies()
+        return res
+    },
 }
 export default companyService;

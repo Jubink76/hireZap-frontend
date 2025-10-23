@@ -1,26 +1,41 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Bell, Settings, MoreVertical, MapPin, Globe, Calendar, Users, Star, Briefcase } from 'lucide-react';
+import { Search, Bell, Settings, MoreVertical, MapPin, Globe, Calendar, Users, Star, Briefcase, Eye, BadgeCheck } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchPendingCompanies } from '../../../redux/slices/companySlice';
+import { fetchPendingCompanies, fetchVerifiedCompanies, fetchRejectedCompanies } from '../../../redux/slices/companySlice';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+
 const CompanyVerificationManagement = () => {
-  const [activeFilter, setActiveFilter] = useState('total');
+  const [activeFilter, setActiveFilter] = useState('pending');
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  
   useEffect(() => {
     dispatch(fetchPendingCompanies());
+    dispatch(fetchVerifiedCompanies());
+    dispatch(fetchRejectedCompanies());
   }, [dispatch]);
 
-  const { pendingCompanies, loading, error } = useSelector((state) => state.company);
+  // Fetch data when filter changes
+  useEffect(() => {
+    if (activeFilter === 'pending') {
+      dispatch(fetchPendingCompanies());
+    } else if (activeFilter === 'verified') {
+      dispatch(fetchVerifiedCompanies());
+    } else if (activeFilter === 'rejected') {
+      dispatch(fetchRejectedCompanies());
+    }
+  }, [activeFilter, dispatch]);
+
+  const { pendingCompanies, verifiedCompanies, rejectedCompanies, loading, error } = useSelector((state) => state.company);
 
   useEffect(() => {
-  if (pendingCompanies) {
-    console.log("company data", pendingCompanies);
-    console.log("Is array?", Array.isArray(pendingCompanies));
-    console.log("Length:", pendingCompanies?.length);
-  }
-}, [pendingCompanies]);
+    if (pendingCompanies) {
+      console.log("company data", pendingCompanies);
+      console.log("Is array?", Array.isArray(pendingCompanies));
+      console.log("Length:", pendingCompanies?.length);
+    }
+  }, [pendingCompanies]);
 
   // Helper function to format date
   const formatJoinedDate = (dateString) => {
@@ -37,8 +52,19 @@ const CompanyVerificationManagement = () => {
     }
   };
 
-  // SAFETY CHECK: Ensure pendingCompanies is an array
-  const companiesList = Array.isArray(pendingCompanies) ? pendingCompanies : [];
+  // SAFETY CHECK: Get the correct data based on active filter
+  const getActiveCompanies = () => {
+    if (activeFilter === 'pending') {
+      return Array.isArray(pendingCompanies) ? pendingCompanies : [];
+    } else if (activeFilter === 'verified') {
+      return Array.isArray(verifiedCompanies) ? verifiedCompanies : [];
+    } else if (activeFilter === 'rejected') {
+      return Array.isArray(rejectedCompanies) ? rejectedCompanies : [];
+    }
+    return [];
+  };
+
+  const companiesList = getActiveCompanies();
 
   // Map backend data to frontend format
   const verificationRequests = companiesList.map((company) => ({
@@ -70,43 +96,37 @@ const CompanyVerificationManagement = () => {
     rating: 0,
   }));
 
-  // Calculate stats
+  // Calculate stats - use all data for counts
+  const allPendingCompanies = Array.isArray(pendingCompanies) ? pendingCompanies : [];
+  const allVerifiedCompanies = Array.isArray(verifiedCompanies) ? verifiedCompanies : [];
+  const allRejectedCompanies = Array.isArray(rejectedCompanies) ? rejectedCompanies : [];
+
   const stats = [
     { 
-      label: 'Total Requests', 
-      count: verificationRequests.length, 
-      icon: Users, 
-      active: activeFilter === 'total',
-      filter: 'total'
-    },
-    { 
       label: 'Pending', 
-      count: verificationRequests.filter(r => r.status === 'pending').length, 
+      count: allPendingCompanies.filter(r => r.verification_status === 'pending').length, 
       icon: Clock, 
       active: activeFilter === 'pending',
       filter: 'pending'
     },
     { 
       label: 'Approved', 
-      count: verificationRequests.filter(r => r.status === 'verified').length, 
+      count: allVerifiedCompanies.filter(r => r.verification_status === 'verified').length, 
       icon: CheckCircle, 
-      active: activeFilter === 'approved',
+      active: activeFilter === 'verified',
       filter: 'verified'
     },
     { 
       label: 'Rejected', 
-      count: verificationRequests.filter(r => r.status === 'rejected').length, 
+      count: allRejectedCompanies.filter(r => r.verification_status === 'rejected').length, 
       icon: XCircle, 
       active: activeFilter === 'rejected',
       filter: 'rejected'
     }
   ];
 
-  // Filter requests based on active filter
-  const filteredRequests = activeFilter === 'total' 
-    ? verificationRequests 
-    : verificationRequests.filter(r => r.status === activeFilter || 
-        (activeFilter === 'approved' && r.status === 'verified'));
+  // Filter requests based on active filter - already filtered by getActiveCompanies
+  const filteredRequests = verificationRequests;
 
   if (loading) {
     return (
@@ -114,22 +134,6 @@ const CompanyVerificationManagement = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading verification requests...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600">Error: {error}</p>
-          <button 
-            onClick={() => dispatch(fetchPendingCompanies())}
-            className="mt-4 px-4 py-2 bg-teal-500 text-white rounded hover:bg-teal-600"
-          >
-            Retry
-          </button>
         </div>
       </div>
     );
@@ -168,7 +172,11 @@ const CompanyVerificationManagement = () => {
 
         {filteredRequests.length === 0 ? (
           <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-            <p className="text-gray-500">No verification requests found</p>
+            <p className="text-gray-500">
+              {activeFilter === 'pending' && 'No pending verification requests'}
+              {activeFilter === 'verified' && 'No verified companies'}
+              {activeFilter === 'rejected' && 'No rejected companies'}
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -187,14 +195,17 @@ const CompanyVerificationManagement = () => {
                     />
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-1">
-                        <h3 className="text-base font-semibold text-gray-900">{request.companyName}</h3>
+                        <h3 className="text-base font-semibold text-gray-900">
+                          {request.companyName}
+                        </h3>
+
                         {request.status === 'verified' && (
-                          <span className="px-2 py-1 text-xs font-medium bg-teal-100 text-teal-700 rounded">
-                            Verified
+                          <span className="flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium bg-green-50 text-green-700 rounded-full border border-green-200">
+                            <BadgeCheck size={14} className="text-green-600" />
+                            <span>Verified</span>
                           </span>
                         )}
                       </div>
-                      
                       <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600 mb-2">
                         <span className="flex items-center">
                           <span className="mr-1">✉</span> {request.email}
@@ -233,10 +244,10 @@ const CompanyVerificationManagement = () => {
                           {request.statusLabel}
                         </span>
                         <button 
-                            onClick={() => navigate(`/admin/company-detail/${request.id}`)}
-                            className="px-3 py-1.5 text-xs font-medium bg-teal-100 text-teal-700 rounded hover:bg-teal-200"
-                            >
-                            View Detail
+                          onClick={() => navigate(`/admin/company-detail/${request.id}`)}
+                          className="px-3 py-1.5 text-xs font-medium bg-teal-100 text-teal-700 rounded hover:bg-teal-200"
+                        >
+                          View Detail
                         </button>
                         <button className="px-4 py-1.5 text-xs font-medium bg-red-100 text-red-700 rounded hover:bg-red-200">
                           Reject
@@ -247,9 +258,13 @@ const CompanyVerificationManagement = () => {
                       </>
                     )}
                     {(request.status === 'verified' || request.status === 'rejected') && (
-                      <span className={`px-3 py-1 text-xs font-medium rounded ${request.statusColor}`}>
-                        {request.statusLabel}
-                      </span>
+                      <button 
+                          onClick={() => navigate(`/admin/company-detail/${request.id}`)}
+                          className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-teal-100 text-teal-700 rounded hover:border border-teal-700 cursor-pointer"
+                        >
+                          <Eye size={14} className="text-teal-700" />
+                          View Detail
+                      </button>
                     )}
                   </div>
                 </div>

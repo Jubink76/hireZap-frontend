@@ -9,6 +9,8 @@ import { fetchCurrentUser } from './redux/slices/authSlice';
 import { useSelector } from 'react-redux';
 import { getCsrfCookie } from './redux/slices/authSlice';
 import useWebSocket from './hooks/useWebSocket'; 
+import LoadingSpinner from './components/LoadingSpinner';
+
 const App = () => {
   const dispatch = useDispatch();
   const user = useSelector(state => state.auth.user);
@@ -56,12 +58,17 @@ const App = () => {
   const router = createBrowserRouter(routes);
 
   if (loading) {
-    return <div className="flex items-center justify-center h-screen">Initializing...</div>;
+    return (
+      <LoadingSpinner 
+        isLoading={true}
+        message='Loading...'
+      />
+    );
   }
 
   return (
     <>
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<LoadingSpinner isLoading={true} message='Loading...'/>}>
         <RouterProvider router={router} />
       </Suspense>
       <ToastContainer />

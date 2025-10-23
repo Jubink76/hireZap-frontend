@@ -12,9 +12,9 @@ import {
   Settings
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-const AdminSidebar = ({ activeTab, onTabChange, setActiveTab }) => {
 
-  const navigate = useNavigate()
+const AdminSidebar = ({ activeTab, setActiveTab }) => {
+  const navigate = useNavigate();
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -29,15 +29,21 @@ const AdminSidebar = ({ activeTab, onTabChange, setActiveTab }) => {
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
-  const handleTablClick = (id)=>{
-    if (id=== 'settings'){
-      navigate('/admin/account-settings')
-    }else if(id == 'verifications'){
-      navigate('/admin/company-verifications')
-    }else{
-      setActiveTab(id)
+  const handleTabClick = (id) => {
+    // Set active tab first
+    setActiveTab(id);
+    
+    // Then navigate if needed
+    if (id === 'settings') {
+      navigate('/admin/account-settings');
+    } else if (id === 'verifications') {
+      navigate('/admin/company-verifications');
+    } else if (id === 'dashboard') {
+      navigate('/admin/dashboard');
     }
-  }
+    // Add other navigation routes as needed
+  };
+
   return (
     <div className="w-64 bg-gray-800 mt-6 text-white h-full">
       <div className="p-4 space-y-2">
@@ -46,7 +52,7 @@ const AdminSidebar = ({ activeTab, onTabChange, setActiveTab }) => {
           return (
             <button
               key={item.id}
-              onClick={() => handleTablClick(item.id)}
+              onClick={() => handleTabClick(item.id)}
               className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-left transition-colors cursor-pointer ${
                 activeTab === item.id 
                   ? 'bg-orange-500 text-white' 
@@ -59,15 +65,14 @@ const AdminSidebar = ({ activeTab, onTabChange, setActiveTab }) => {
           );
         })}
         <AdminProfileCard 
-            admin={{
+          admin={{
             name: "Admin",
             role: "System Administrator",
             avatar: "/path/to/admin-avatar.jpg"
-            }}
-            onClick={(admin) => {
-            // Handle admin profile click
+          }}
+          onClick={(admin) => {
             console.log("Admin profile clicked:", admin);
-            }}
+          }}
         />
       </div>
     </div>
