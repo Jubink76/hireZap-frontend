@@ -8,6 +8,8 @@ import {
   FileText, ExternalLink, User, Briefcase, BadgeCheck, Clock
 } from 'lucide-react';
 import { approveCompany, fetchCompanyById, rejectCompany } from '../../../redux/slices/companySlice';
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
 
 const AdminCompanyDetail = () => {
   const { companyId } = useParams();
@@ -66,6 +68,13 @@ const AdminCompanyDetail = () => {
       setIsProcessing(false);
     }
   };
+
+  const markerIcon = new L.Icon({
+      iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+    });
 
   if (loading) {
     return (
@@ -277,48 +286,35 @@ const AdminCompanyDetail = () => {
 
             {/* Location Map */}
             {company.latitude && company.longitude && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-gray-900">Location</h3>
-                  <span className="text-xs text-gray-500">
-                    {parseFloat(company.latitude).toFixed(4)}, {parseFloat(company.longitude).toFixed(4)}
-                  </span>
-                </div>
-                <div style={{
-                  width: '100%',
-                  height: '250px',
-                  background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
-                  borderRadius: '8px',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}>
-                  <div style={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    background: '#14b8a6',
-                    width: '20px',
-                    height: '20px',
-                    borderRadius: '50%',
-                    border: '4px solid white',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
-                  }}></div>
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '12px',
-                    left: '12px',
-                    background: 'rgba(255,255,255,0.95)',
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    fontSize: '12px',
-                    color: '#64748b',
-                    maxWidth: '80%'
-                  }}>
-                    📍 {company.address}
-                  </div>
-                </div>
-              </div>
+              <div className="p-6">
+                          <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-sm font-medium text-slate-900">Location</h3>
+                            <span className="text-xs text-slate-500">
+                              Coordinates: {parseFloat(company.latitude).toFixed(4)}, {parseFloat(company.longitude).toFixed(4)}
+                            </span>
+                          </div>
+              
+                          <div className="w-full h-[300px] rounded-lg overflow-hidden border border-slate-200">
+                            <MapContainer
+                              center={[parseFloat(company.latitude), parseFloat(company.longitude)]}
+                              zoom={15}
+                              style={{ width: "100%", height: "100%" }}
+                            >
+                              <TileLayer
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                attribution='© <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+                              />
+                              <Marker
+                                position={[parseFloat(company.latitude), parseFloat(company.longitude)]}
+                                icon={markerIcon}
+                              >
+                                <Popup>
+                                  {company.company_name} <br /> {company.address}
+                                </Popup>
+                              </Marker>
+                            </MapContainer>
+                          </div>
+                        </div>
             )}
           </div>
 

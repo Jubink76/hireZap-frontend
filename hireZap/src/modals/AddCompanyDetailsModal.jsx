@@ -4,12 +4,13 @@ import {
   Save, X, ImageIcon, FileText, AlertTriangle, MapPin 
 } from 'lucide-react';
 import { createCompany } from '../redux/slices/companySlice';
+import { updateCompany } from '../redux/slices/companySlice';
 import useCloudinaryUpload from '../hooks/useCloudinaryUpload';
 import { notify } from '../utils/toast';
 
-const AddCompanyDetailsModal = ({ isOpen, onClose }) => {
+const AddCompanyDetailsModal = ({ isOpen, onClose,editMode = false }) => {
   const dispatch = useDispatch();
-  const { isLoading: isCreating } = useSelector((state) => state.company);
+  const { company, isLoading: isCreating } = useSelector((state) => state.company);
   
   // Create two separate instances for logo and certificate
   const { 
@@ -43,12 +44,59 @@ const AddCompanyDetailsModal = ({ isOpen, onClose }) => {
     business_certificate: null
   });
   
+  const [initialFormData, setInitialFormData] = useState(null);
   const [previewLogo, setPreviewLogo] = useState(null);
   const [certificateName, setCertificateName] = useState('');
   const [errors, setErrors] = useState({});
-  
+  const [hasChanges, setHasChanges] = useState(false);
   const logoInputRef = useRef(null);
   const certInputRef = useRef(null);
+
+  // Load existing company data in edit mode
+  useEffect(() => {
+    if (isOpen && editMode && company) {
+      const existingData = {
+        company_name: company.company_name || '',
+        business_email: company.business_email || '',
+        phone_number: company.phone_number || '',
+        industry: company.industry || '',
+        company_size: company.company_size || '',
+        website: company.website || '',
+        linkedin_url: company.linkedin_url || '',
+        founded_year: company.founded_year || '',
+        business_address: company.address || '',
+        latitude: company.latitude || '',
+        longitude: company.longitude || '',
+        description: company.description || '',
+        logo_url: company.logo_url || null,
+        business_certificate: company.business_certificate || null
+      };
+      
+      setFormData(existingData);
+      setInitialFormData(existingData);
+      
+      if (company.logo_url) {
+        setPreviewLogo(company.logo_url);
+      }
+      
+      if (company.business_certificate) {
+        // Extract filename from URL if possible
+        const urlParts = company.business_certificate.split('/');
+        const filename = urlParts[urlParts.length - 1];
+        setCertificateName(filename || 'Existing Certificate');
+      }
+    }
+  }, [isOpen, editMode, company]);
+
+  // Check if form has changes
+  useEffect(() => {
+    if (editMode && initialFormData) {
+      const changed = Object.keys(formData).some(key => {
+        return JSON.stringify(formData[key]) !== JSON.stringify(initialFormData[key]);
+      });
+      setHasChanges(changed);
+    }
+  }, [formData, initialFormData, editMode]);
 
   // Update formData when logo upload completes
   useEffect(() => {
@@ -237,15 +285,31 @@ const AddCompanyDetailsModal = ({ isOpen, onClose }) => {
       logo_url: formData.logo_url || null,
       business_certificate: formData.business_certificate || null,
     };
-
-    const result = await dispatch(createCompany(submissionData));
     
-    if (createCompany.fulfilled.match(result)) {
-      handleClose();
+    try{
+      let result;
+      if (editMode){
+        result = await dispatch(updateCompany({id:company.id,data:submissionData})).unwrap();
+      }else{
+        result = await dispatch(createCompany(submissionData)).unwrap();
+      }
+      setHasChanges(false);
+
+      setTimeout(()=>{handleClose()},100)
+
+    }catch(err){
+      notify.error(err.message || "Failed to submit company details")
     }
   };
 
   const handleClose = () => {
+    if (editMode && hasChanges) {
+      const confirmDiscard = window.confirm(
+        'You have unsaved changes. Are you sure you want to discard them?'
+      );
+      if (!confirmDiscard) return;
+    }
+
     setFormData({
       company_name: '',
       business_email: '',
@@ -262,9 +326,12 @@ const AddCompanyDetailsModal = ({ isOpen, onClose }) => {
       logo_url: null,
       business_certificate: null
     });
+    setInitialFormData(null);
     setPreviewLogo(null);
     setCertificateName('');
     setErrors({});
+    setHasChanges(false);
+
     onClose();
   };
 
@@ -284,8 +351,14 @@ const AddCompanyDetailsModal = ({ isOpen, onClose }) => {
         {/* Modal Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100 sticky top-0 z-10">
           <div>
-            <h2 className="text-xl font-semibold text-slate-800">Company Details for verification</h2>
-            <p className="text-sm text-slate-600 mt-1">Provide accurate company information for verification</p>
+            <h2 className="text-xl font-semibold text-slate-800">
+              {editMode ? 'Update Company Details' : 'Company Details for verification'}
+            </h2>
+            <p className="text-sm text-slate-600 mt-1">
+              {editMode 
+                ? 'Update your company information and resubmit for verification' 
+                : 'Provide accurate company information for verification'}
+            </p>
           </div>
           <button
             onClick={handleClose}
@@ -304,10 +377,12 @@ const AddCompanyDetailsModal = ({ isOpen, onClose }) => {
             </div>
             <div className="flex-1">
               <h3 className="text-sm font-semibold text-slate-900 mb-1">
-                Verification Required
+                {editMode ? 'Re-verification Required' : 'Verification Required'}
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Your Company must be verified by our admin team before you can post job listings. Please provide accurate information.
+                {editMode 
+                  ? 'After updating your company details, they will be submitted for verification again. Your company status will be set to pending until verified by our admin team.'
+                  : 'Your Company must be verified by our admin team before you can post job listings. Please provide accurate information.'}
               </p>
             </div>
           </div>
@@ -681,7 +756,7 @@ const AddCompanyDetailsModal = ({ isOpen, onClose }) => {
             disabled={isSubmitting}
             className="px-6 py-2.5 text-slate-700 border border-slate-300 rounded-lg hover:bg-white hover:border-slate-400 transition-all duration-200 disabled:opacity-50 font-medium"
           >
-            Cancel
+            {editMode && hasChanges ? 'Discard Changes' : 'Cancel'}
           </button>
           <button
             onClick={handleSubmit}
@@ -698,7 +773,7 @@ const AddCompanyDetailsModal = ({ isOpen, onClose }) => {
             ) : (
               <>
                 <Save className="w-4 h-4 mr-2" />
-                Submit for verification
+                {editMode ? 'Apply for Re-verification' : 'Submit for verification'}
               </>
             )}
           </button>

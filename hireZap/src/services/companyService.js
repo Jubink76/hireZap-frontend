@@ -33,5 +33,9 @@ const companyService = {
         const res = await companyApi.fetchRejectedCompanies()
         return res
     },
+    async updateCompany(payload) {
+        const res = await companyApi.updateCompany(payload);
+        return res;
+    }
 }
 export default companyService;

@@ -10,5 +10,6 @@ const companyApi = {
     rejectCompany : (companyId) => axiosInstance.post(`/company/reject-company/${companyId}/`),
     fetchVerifiedCompanies : () => axiosInstance.get('/company/verified-companies/'),
     fetchRejectedCompanies : () => axiosInstance.get('/company/rejected-companies/'),
+    updateCompany: ({ companyId, data }) => axiosInstance.put(`/company/update-company/${companyId}/`, data),
 }
 export default companyApi

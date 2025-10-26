@@ -3,6 +3,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { MapPin, Globe, Users, Calendar, Verified, Edit, AlertTriangle, Plus } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
 import { fetchCompany } from '../../../redux/slices/companySlice';
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
 
 const CompanyDetails = () => {
   const dispatch = useDispatch();
@@ -13,6 +15,14 @@ const CompanyDetails = () => {
     // Fetch company details when component mounts
     dispatch(fetchCompany());
   }, [dispatch]);
+
+
+  const markerIcon = new L.Icon({
+    iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+  });
 
   // Loading state
   if (isLoading) {
@@ -77,7 +87,7 @@ const CompanyDetails = () => {
             {!isPending && (
               <>
                 <button
-                  onClick={openCompanyModal}
+                  onClick={()=>openCompanyModal(false)}
                   className="inline-flex items-center space-x-2 px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg transition-colors shadow-sm cursor-pointer"
                 >
                   <Plus className="w-5 h-5" />
@@ -94,7 +104,7 @@ const CompanyDetails = () => {
             {isPending && (
               <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <p className="text-sm text-blue-800">
-                  <strong>Submitted on:</strong> {new Date(company.created_at).toLocaleDateString()}
+                  <strong>Submitted on:</strong> {new Date(company.updated_at || company.created_at).toLocaleDateString()}
                 </p>
               </div>
             )}
@@ -131,7 +141,7 @@ const CompanyDetails = () => {
 
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-12 text-center">
           <button
-            onClick={openCompanyModal}
+            onClick={() => openCompanyModal(true)}
             className="inline-flex items-center space-x-2 px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg transition-colors shadow-sm"
           >
             <Plus className="w-5 h-5" />
@@ -199,7 +209,7 @@ const CompanyDetails = () => {
 
             {/* Edit Button */}
             <button
-              onClick={openCompanyModal}
+              onClick={() => openCompanyModal(true)}
               className="flex items-center space-x-1 px-3 py-1.5 text-sm text-teal-600 hover:text-teal-700 border border-teal-200 hover:border-teal-300 rounded-lg transition-colors"
             >
               <Edit className="w-4 h-4" />
@@ -258,40 +268,26 @@ const CompanyDetails = () => {
                 Coordinates: {parseFloat(company.latitude).toFixed(4)}, {parseFloat(company.longitude).toFixed(4)}
               </span>
             </div>
-            <div className="w-full">
-              <div style={{
-                width: '100%',
-                height: '200px',
-                background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
-                borderRadius: '8px',
-                position: 'relative',
-                overflow: 'hidden'
-              }}>
-                <div style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  background: '#14b8a6',
-                  width: '16px',
-                  height: '16px',
-                  borderRadius: '50%',
-                  border: '3px solid white',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
-                }}></div>
-                <div style={{
-                  position: 'absolute',
-                  bottom: '8px',
-                  left: '8px',
-                  background: 'rgba(255,255,255,0.9)',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  color: '#64748b'
-                }}>
-                  📍 {company.address}
-                </div>
-              </div>
+
+            <div className="w-full h-[300px] rounded-lg overflow-hidden border border-slate-200">
+              <MapContainer
+                center={[parseFloat(company.latitude), parseFloat(company.longitude)]}
+                zoom={15}
+                style={{ width: "100%", height: "100%" }}
+              >
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution='© <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+                />
+                <Marker
+                  position={[parseFloat(company.latitude), parseFloat(company.longitude)]}
+                  icon={markerIcon}
+                >
+                  <Popup>
+                    {company.company_name} <br /> {company.address}
+                  </Popup>
+                </Marker>
+              </MapContainer>
             </div>
           </div>
         )}

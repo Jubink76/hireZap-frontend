@@ -7,14 +7,34 @@ import RecruiterProfileNavigationSidebar from './components/RecruiterProfileNavi
 import EditProfileModal from '../../modals/EditProfileModal'
 import profileAvatar from '../../assets/profile_avatar.jpg'
 import AddCompanyDetailsModal from '../../modals/AddCompanyDetailsModal'
+import CreateJobModal from '../../modals/CreateJobModal'
+
 const RecruiterProfileLayout = () => {
   const { user } = useSelector((state) => state.auth)
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false)
   const [isAddCompanyDetailsModalOpen, setIsAddCompanyDetailsModalOpen] = useState(false)
+  const [isCompanyEditMode, setIsCompanyEditMode] = useState(false)
+  const [isCreateJobModalOpen, setIsCreateJobModalOpen] = useState(false)
 
   const matches = useMatches()
   const currentRoute = matches.find((m)=>m.handle?.title)
-  const pageName = currentRoute?.handle?.title || 'Candidate Dashboard'
+  const pageName = currentRoute?.handle?.title || 'Recruiter Dashboard'
+
+  // Function to open company modal with edit mode support
+  const openCompanyModal = (editMode = false) => {
+    setIsCompanyEditMode(editMode)
+    setIsAddCompanyDetailsModalOpen(true)
+  }
+
+  // Function to close company modal
+  const closeCompanyModal = () => {
+    setIsAddCompanyDetailsModalOpen(false)
+    setIsCompanyEditMode(false)
+  }
+
+  const openCreateJobModal = () => {
+    setIsCreateJobModalOpen(true)
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -36,8 +56,9 @@ const RecruiterProfileLayout = () => {
           <div className="space-y-6 w-full">
             <Outlet 
               context={{
-                  openCompanyModal: () => setIsAddCompanyDetailsModalOpen(true),
-                  openEditUserModal:()=>setIsEditProfileModalOpen(true)
+                  openCompanyModal: openCompanyModal,
+                  openEditUserModal:()=>setIsEditProfileModalOpen(true),
+                  openCreateJobModal:openCreateJobModal,
               }}
             />
           </div>
@@ -50,7 +71,12 @@ const RecruiterProfileLayout = () => {
       />
       <AddCompanyDetailsModal
         isOpen={isAddCompanyDetailsModalOpen}
-        onClose={() => setIsAddCompanyDetailsModalOpen(false)}
+        onClose={closeCompanyModal}
+        editMode={isCompanyEditMode}
+      />
+      <CreateJobModal
+        isOpen={isCreateJobModalOpen}
+        onClose={()=>setIsCreateJobModalOpen(false)}
       />
     </div>
   )

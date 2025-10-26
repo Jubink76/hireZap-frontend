@@ -163,6 +163,22 @@ export const githubLogin = createAsyncThunk(
     }
 )
 
+//social login thunk - linkedin
+export const linkedinLogin = createAsyncThunk(
+  "auth/linkedinLogin",
+  async ({ code, role }, thunkAPI) => {
+    try {
+      const data = await authService.linkedinLogin({ code, role });
+      notify.success("LinkedIn login successful");
+      return data;
+    } catch (err) {
+      const friendly = getFriendlyError(err, "LinkedIn login failed");
+      return thunkAPI.rejectWithValue(friendly);
+    }
+  }
+);
+
+
 // update user profile
 export const updateUserProfile = createAsyncThunk(
   "auth/updateUserProfile",
@@ -224,6 +240,19 @@ const authSlice = createSlice({
                 state.isAuthenticated = true;
             })
             .addCase(githubLogin.rejected, (state,action)=>{
+                state.loading = false;
+                state.error = action.payload;
+            })
+            .addCase(linkedinLogin.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(linkedinLogin.fulfilled, (state, action) => {
+                state.loading = false;
+                state.user = action.payload.user;
+                state.isAuthenticated = true;
+            })
+            .addCase(linkedinLogin.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             })

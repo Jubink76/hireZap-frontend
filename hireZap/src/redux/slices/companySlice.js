@@ -99,6 +99,18 @@ export const fetchRejectedCompanies = createAsyncThunk('company/rejected-compani
     }
 })
 
+// update company details
+
+export const updateCompany = createAsyncThunk('company/update-company', async({id,data},thunkAPI)=>{
+    try{
+        const res = await companyService.updateCompany({ companyId: id, data })
+        return res
+    }catch(err){
+        const friendly = getFriendlyError(err, "Update company failed")
+        return thunkAPI.rejectWithValue(friendly)
+    }
+})
+
 const initialState = {
     company: null,
     pendingCompanies:[],
@@ -264,6 +276,19 @@ const companySlice = createSlice({
             state.error = null;
         })
         .addCase(fetchRejectedCompanies.rejected,(state,action)=>{
+            state.loading = false;
+            state.error = action.payload;
+        })
+        .addCase(updateCompany.pending,(state,action)=>{
+            state.loading = true;
+            state.error = false;
+        })
+        .addCase(updateCompany.fulfilled,(state,action)=>{
+            state.loading = false;
+            state.company = action.payload
+            state.hasCompany = true;
+        })
+        .addCase(updateCompany.rejected,(state,action)=>{
             state.loading = false;
             state.error = action.payload;
         })

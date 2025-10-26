@@ -18,10 +18,10 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-    { id: 'users', label: 'Users', icon: Users },
+    { id: 'candidates', label: 'Candidates', icon: Users },
     { id: 'recruiters', label: 'Recruiters', icon: UserPlus },
     { id: 'companies', label: 'Companies', icon: Grid3X3 },
-    { id: 'job-postings', label: 'Job Postings', icon: FileText },
+    { id: 'job-posts', label: 'Job Posts', icon: FileText },
     { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard },
     { id: 'revenue', label: 'Revenue', icon: DollarSign },
     { id: 'reports', label: 'Reports', icon: BarChart3 },
@@ -40,6 +40,14 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
       navigate('/admin/company-verifications');
     } else if (id === 'dashboard') {
       navigate('/admin/dashboard');
+    } else if (id === 'recruiters') {
+      navigate('/admin/recruiters')
+    }else if (id === 'candidates') {
+      navigate('/admin/candidates')
+    }else if (id === 'companies') {
+      navigate('/admin/companies')
+    } else if (id === 'job-posts') {
+      navigate('/admin/job-posts')
     }
     // Add other navigation routes as needed
   };

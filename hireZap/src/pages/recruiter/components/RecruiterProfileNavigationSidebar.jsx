@@ -46,12 +46,15 @@ const RecruiterProfileNavigationSidebar = ({ activeTab, setActiveTab }) => {
   const handleTabClick = (id) => {
     if (id === 'settings') navigate('/recruiter/account-settings');
     else if (id === 'company') navigate('/recruiter/company-details');
+    else if (id === 'jobs') navigate('/recruiter/created-jobs');
     else navigate('/recruiter/profile-overview'); // overview
   };
 
   const isActive = (id) => {
     if (id === 'settings') return currentPath.includes('account-settings');
-    if (id === 'company') return currentPath.includes('company-details');
+    else if (id === 'company') return currentPath.includes('company-details');
+    else if (id === 'jobs') return currentPath.includes('created-jobs');
+
     return currentPath.includes('profile-overview');
   };
 
