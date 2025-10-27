@@ -1,4 +1,3 @@
-import { fetchCompany } from '../../redux/slices/companySlice';
 import axiosInstance from '../axiosInstance';
 
 const companyApi = {

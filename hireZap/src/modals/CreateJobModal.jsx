@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import useCloudinaryUpload from '../hooks/useCloudinaryUpload';
 import { notify } from '../utils/toast';
+import { createJob } from '../redux/slices/jobSlice';
 
 const CreateJobModal = ({ isOpen, onClose, editMode = false, jobData = null }) => {
   const dispatch = useDispatch();
@@ -178,7 +179,7 @@ const CreateJobModal = ({ isOpen, onClose, editMode = false, jobData = null }) =
       employment_type: formData.employment_type,
       compensation_range: formData.compensation_range,
       posting_date: formData.posting_date,
-      skills_required: JSON.stringify(formData.skills_required),
+      skills_required: formData.skills_required,
       cover_image: formData.cover_image,
       role_summary: formData.role_summary,
       key_responsibilities: formData.key_responsibilities,
@@ -192,6 +193,7 @@ const CreateJobModal = ({ isOpen, onClose, editMode = false, jobData = null }) =
 
     try {
       // Dispatch create/update job action here
+      dispatch(createJob(submissionData))
       console.log('Submitting job:', submissionData);
       notify.success('Job posted successfully!');
       handleClose();
@@ -402,7 +404,7 @@ const CreateJobModal = ({ isOpen, onClose, editMode = false, jobData = null }) =
                         className="text-slate-500 hover:text-red-600"
                       >
                         <X className="w-3.5 h-3.5" />
-                      </button>
+                      </button> 
                     </span>
                   ))}
                 </div>
