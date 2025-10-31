@@ -3,7 +3,7 @@ import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import { routes } from './routes/routers';
 import { ToastContainer } from 'react-toastify';
 import { useDispatch } from 'react-redux';
-import { useEffect } from 'react';
+import { useEffect,useMemo } from 'react';
 import axiosInstance from './api/axiosInstance';
 import { fetchCurrentUser } from './redux/slices/authSlice';
 import { useSelector } from 'react-redux';
@@ -17,6 +17,9 @@ const App = () => {
   const loading = useSelector(state => state.auth.loading);
 
   const { isConnected } = useWebSocket();
+
+  const router = useMemo(() => createBrowserRouter(routes), []);
+
   useEffect(() => {
     const initializeAuth = async () => {
       try {
@@ -55,7 +58,6 @@ const App = () => {
     }
   }, [isConnected]);
 
-  const router = createBrowserRouter(routes);
 
   if (loading) {
     return (

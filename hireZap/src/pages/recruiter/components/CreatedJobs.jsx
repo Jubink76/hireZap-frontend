@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import Pagination from '../../../components/Pagination';
 import { useOutletContext } from 'react-router-dom';
+import { getJobsByRecruiterId } from '../../../redux/slices/jobSlice';
 
 const CreatedJobs = ({ openCompanyModal }) => {
     const dispatch = useDispatch()
@@ -16,51 +17,22 @@ const CreatedJobs = ({ openCompanyModal }) => {
     const [currentPage, setCurrentPage] = useState(1)
     const itemsPerPage = 5;
 
-    const [jobs] = useState(
-        [
-            // {
-            // id: 1,
-            // title: 'Senior Product Designer',
-            // company: 'Figma Inc.',
-            // location: 'San Francisco, CA',
-            // type: 'Full-time',
-            // salary: '$150k-$180k',
-            // applicants: 120,
-            // postedDate: '2h ago',
-            // status: 'active',
-            // skills: ['Figma', 'UX Research', 'Prototyping']
-            // },
-            // {
-            // id: 2,
-            // title: 'Backend Engineer',
-            // company: 'Stripe',
-            // location: 'Remote',
-            // type: 'Full-time',
-            // salary: '$160k-$200k',
-            // applicants: 89,
-            // postedDate: '1d ago',
-            // status: 'active',
-            // skills: ['Go', 'PostgreSQL', 'Kubernetes']
-            // },
-            // {
-            // id: 3,
-            // title: 'People Operations Manager',
-            // company: 'WellnessCo',
-            // location: 'Austin, TX',
-            // type: 'Full-time',
-            // salary: '$110k-$130k',
-            // applicants: 24,
-            // postedDate: '3d ago',
-            // status: 'paused',
-            // skills: ['HRIS', 'Onboarding', 'Compensation']
-            // }
-        ]
-    )
+    const { recruiterJobs, loading, error } = useSelector((state) => state.job);
+    const recruiterId = useSelector((state) => state.auth.user?.id);
+    console.log("Jobs data:", recruiterJobs);
 
-    const hasJobs = jobs.length > 0;
-    const totalPages = Math.ceil(jobs.length / itemsPerPage);
+    const hasJobs = Array.isArray(recruiterJobs) && recruiterJobs.length > 0;
+    const totalPages = hasJobs ? Math.ceil(recruiterJobs.length / itemsPerPage) : 1;
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const currentJobs = jobs.slice(startIndex, startIndex + itemsPerPage);
+    const currentJobs = hasJobs
+    ? recruiterJobs.slice(startIndex, startIndex + itemsPerPage)
+    : [];
+    
+    useEffect(() => {
+        if (recruiterId) {
+        dispatch(getJobsByRecruiterId(recruiterId));
+        }
+    }, [dispatch, recruiterId]);
 
     // Loading state
     if (!company && company !== null) {
@@ -246,111 +218,117 @@ const CreatedJobs = ({ openCompanyModal }) => {
             ) : (
                 <>
                 {/* Jobs List */}
-                <div className="space-y-4">
-                    {currentJobs.map((job) => (
-                    <div
-                        key={job.id}
-                        className="bg-white rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow"
-                    >
-                        <div className="p-6">
-                        <div className="flex items-start justify-between gap-4">
-                            {/* Left Section - Job Info */}
-                            <div className="flex items-start space-x-4 flex-1 min-w-0">
-                            {/* Company Logo */}
-                            <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg flex items-center justify-center flex-shrink-0 text-white font-bold text-xl">
-                                {company.company_name?.charAt(0) || 'C'}
-                            </div>
+<div className="space-y-4">
+  {currentJobs.map((job) => {
+    const company = job.company || {}; // ✅ safely handle missing company
+    return (
+      <div
+        key={job.id}
+        className="bg-white rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow"
+      >
+        <div className="p-6">
+          <div className="flex items-start justify-between gap-4">
+            {/* Left Section - Job Info */}
+            <div className="flex items-start space-x-4 flex-1 min-w-0">
+              {/* Company Logo */}
+              <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg flex items-center justify-center flex-shrink-0 text-white font-bold text-xl">
+                {company.company_name?.charAt(0) || "C"}
+              </div>
 
-                            {/* Job Details */}
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-start justify-between gap-2 mb-2">
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="text-lg font-semibold text-slate-900 mb-1 truncate">
-                                    {job.title}
-                                    </h3>
-                                    <p className="text-sm text-slate-600">
-                                    {company.company_name} • {job.location}
-                                    </p>
-                                </div>
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                                    job.status === 'active' 
-                                    ? 'bg-green-100 text-green-700' 
-                                    : 'bg-amber-100 text-amber-700'
-                                }`}>
-                                    {job.status === 'active' ? 'Active' : 'Paused'}
-                                </span>
-                                </div>
-
-                                <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600 mb-3">
-                                <div className="flex items-center space-x-1">
-                                    <Briefcase className="w-4 h-4" />
-                                    <span>{job.type}</span>
-                                </div>
-                                <div className="flex items-center space-x-1">
-                                    <DollarSign className="w-4 h-4" />
-                                    <span>{job.salary}</span>
-                                </div>
-                                <div className="flex items-center space-x-1">
-                                    <Clock className="w-4 h-4" />
-                                    <span>{job.postedDate}</span>
-                                </div>
-                                </div>
-
-                                {/* Skills */}
-                                <div className="flex flex-wrap gap-2 mb-3">
-                                {job.skills.map((skill, index) => (
-                                    <span
-                                    key={index}
-                                    className="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-medium"
-                                    >
-                                    {skill}
-                                    </span>
-                                ))}
-                                </div>
-
-                                {/* Applicants Count */}
-                                <button className="text-sm text-teal-600 hover:text-teal-700 font-medium">
-                                {job.applicants} Applicants
-                                </button>
-                            </div>
-                            </div>
-
-                            {/* Right Section - Actions (Desktop) */}
-                            <div className="hidden md:flex items-center space-x-2">
-                            <button
-                                className="p-2 text-slate-600 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
-                                title="Manage"
-                            >
-                                <Eye className="w-5 h-5" />
-                            </button>
-                            <button
-                                className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                title="Edit"
-                            >
-                                <Edit className="w-5 h-5" />
-                            </button>
-                            <button
-                                className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Delete"
-                            >
-                                <Trash2 className="w-5 h-5" />
-                            </button>
-                            </div>
-                        </div>
-
-                        {/* Actions (Mobile) */}
-                        <div className="md:hidden mt-4 pt-4 border-t border-slate-100 flex gap-2">
-                            <button className="flex-1 px-4 py-2 text-sm font-medium text-teal-600 hover:text-teal-700 border border-teal-200 hover:border-teal-300 rounded-lg transition-colors">
-                            Manage
-                            </button>
-                            <button className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-700 border border-slate-200 hover:border-slate-300 rounded-lg transition-colors">
-                            Edit
-                            </button>
-                        </div>
-                        </div>
-                    </div>
-                    ))}
+              {/* Job Details */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-1 truncate">
+                      {job.job_title || job.title}
+                    </h3>
+                    <p className="text-sm text-slate-600">
+                      {company.company_name} • {job.location}
+                    </p>
+                  </div>
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                      job.status === "active"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-amber-100 text-amber-700"
+                    }`}
+                  >
+                    {job.status === "active" ? "Active" : "Paused"}
+                  </span>
                 </div>
+
+                <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600 mb-3">
+                  <div className="flex items-center space-x-1">
+                    <Briefcase className="w-4 h-4" />
+                    <span>{job.type || "Full-time"}</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <DollarSign className="w-4 h-4" />
+                    <span>{job.salary || "Not disclosed"}</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <Clock className="w-4 h-4" />
+                    <span>{job.postedDate || "Recently"}</span>
+                  </div>
+                </div>
+
+                {/* Skills */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {(job.skills || []).map((skill, index) => (
+                    <span
+                      key={index}
+                      className="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-medium"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Applicants Count */}
+                <button className="text-sm text-teal-600 hover:text-teal-700 font-medium">
+                  {job.applicants || 0} Applicants
+                </button>
+              </div>
+            </div>
+
+            {/* Right Section - Actions (Desktop) */}
+            <div className="hidden md:flex items-center space-x-2">
+              <button
+                className="p-2 text-slate-600 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                title="Manage"
+              >
+                <Eye className="w-5 h-5" />
+              </button>
+              <button
+                className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                title="Edit"
+              >
+                <Edit className="w-5 h-5" />
+              </button>
+              <button
+                className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                title="Delete"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Actions (Mobile) */}
+          <div className="md:hidden mt-4 pt-4 border-t border-slate-100 flex gap-2">
+            <button className="flex-1 px-4 py-2 text-sm font-medium text-teal-600 hover:text-teal-700 border border-teal-200 hover:border-teal-300 rounded-lg transition-colors">
+              Manage
+            </button>
+            <button className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-700 border border-slate-200 hover:border-slate-300 rounded-lg transition-colors">
+              Edit
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  })}
+</div>
+
 
                 {/* Pagination */}
                 {totalPages > 1 && (

@@ -8,6 +8,7 @@ import EditProfileModal from '../../modals/EditProfileModal'
 import profileAvatar from '../../assets/profile_avatar.jpg'
 import AddCompanyDetailsModal from '../../modals/AddCompanyDetailsModal'
 import CreateJobModal from '../../modals/CreateJobModal'
+import RecruiterPremiumModal from '../../modals/RecruiterPremiumModal'
 
 const RecruiterProfileLayout = () => {
   const { user } = useSelector((state) => state.auth)
@@ -15,6 +16,7 @@ const RecruiterProfileLayout = () => {
   const [isAddCompanyDetailsModalOpen, setIsAddCompanyDetailsModalOpen] = useState(false)
   const [isCompanyEditMode, setIsCompanyEditMode] = useState(false)
   const [isCreateJobModalOpen, setIsCreateJobModalOpen] = useState(false)
+  const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false)
 
   const matches = useMatches()
   const currentRoute = matches.find((m)=>m.handle?.title)
@@ -34,6 +36,9 @@ const RecruiterProfileLayout = () => {
 
   const openCreateJobModal = () => {
     setIsCreateJobModalOpen(true)
+  }
+  const openPremiumModal = () => {
+    setIsPremiumModalOpen(true)
   }
 
   return (
@@ -59,6 +64,7 @@ const RecruiterProfileLayout = () => {
                   openCompanyModal: openCompanyModal,
                   openEditUserModal:()=>setIsEditProfileModalOpen(true),
                   openCreateJobModal:openCreateJobModal,
+                  openPremiumModal : openPremiumModal,
               }}
             />
           </div>
@@ -77,6 +83,10 @@ const RecruiterProfileLayout = () => {
       <CreateJobModal
         isOpen={isCreateJobModalOpen}
         onClose={()=>setIsCreateJobModalOpen(false)}
+      />
+      <RecruiterPremiumModal
+        isOpen={isPremiumModalOpen}
+        onClose={()=>setIsPremiumModalOpen(false)}
       />
     </div>
   )

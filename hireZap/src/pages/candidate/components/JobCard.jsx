@@ -5,7 +5,8 @@ const JobCard = ({
   onSave, 
   isSaved = false, 
   onClick,
-  onQuickApply
+  onQuickApply,
+  onOpenPremiumModal,
 }) => {
   const {
     id,
@@ -41,12 +42,17 @@ const JobCard = ({
     }
   };
 
+  const handleCloseModal = ()=>{
+    e.stopPropagation();
+    set
+  }
+
   return (
     <div 
       className="bg-white rounded-lg shadow-sm border border-gray-400/50 hover:shadow-md transition-shadow cursor-pointer"
       onClick={handleCardClick}
     >
-      <div className="relative h-32 bg-gradient-to-r from-gray-800 to-gray-900 rounded-t-lg">
+      <div className="relative h-48 bg-gradient-to-r from-gray-800 to-gray-900 rounded-t-lg">
         <img
           src={coverImage}
           alt="Job cover"
@@ -87,9 +93,15 @@ const JobCard = ({
             }`}>
               {type}
             </span>
-            <span className="ml-2 px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded-full">
-              {location}
-            </span>
+            <button
+              onClick={onOpenPremiumModal}
+              className="ml-2 px-3 py-1 text-xs font-medium rounded-full 
+                        bg-blue-600 text-white hover:bg-blue-700 
+                        transition-all duration-200 shadow-sm hover:shadow-md
+                        focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1"
+            >
+              Connect HR
+            </button>
           </div>
         </div>
 

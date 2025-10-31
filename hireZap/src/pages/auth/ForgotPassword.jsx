@@ -27,24 +27,40 @@ const ForgotPassword = () => {
             notify.error(emailError)
             return
         }
+        
         const data = {
-            role,action_type,email:emailForm
+            role, action_type, email: emailForm
         };
+        
         try{
+            console.log("🔍 Sending OTP to:", emailForm);
             const res = await dispatch(forgotPassword(data)).unwrap();
+            
+            console.log("✅ OTP sent successfully");
+            
             const otpExpiryTime = new Date().getTime() + 60 * 1000;
             localStorage.setItem("otpExpiryTime", otpExpiryTime);
             
-            navigate("/verify-otp",{
-                state:{
-                    email:emailForm,
-                    role:role,
-                    action_type:"forgot_password",
+            // Small delay to ensure any state updates complete
+            await new Promise(resolve => setTimeout(resolve, 50));
+            
+            console.log("🔍 Navigating to verify-otp with state:", {
+                email: emailForm,
+                role,
+                action_type: "forgot_password"
+            });
+            
+            navigate("/verify-otp", {
+                state: {
+                    email: emailForm,
+                    role: role,
+                    action_type: "forgot_password",
                 }
-            }
-            )
+            });
+            
         }catch(err){
-            console.log("email verification failed",err)
+            console.error("❌ Email verification failed", err);
+            notify.error(err?.message || "Failed to send OTP. Please try again.");
         }
     }
 

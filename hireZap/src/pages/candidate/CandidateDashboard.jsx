@@ -1,5 +1,6 @@
-import { useState } from 'react';
-
+import { useState, useEffect } from 'react';
+import { fetchActiveJobs } from '../../redux/slices/jobSlice';
+import { fetchCompanyById } from '../../redux/slices/companySlice';
 // Import all components
 import DashboardHeader from '../candidate/components/DashboardHeader';
 import ProfileSection from '../candidate/components/ProfileSection';
@@ -8,94 +9,21 @@ import JobCard from '../candidate/components/JobCard';
 import PremiumCard from '../../components/PremiumCard';
 import RecruitersList from '../../components/RecruitersList';
 import Pagination from '../../components/Pagination';
-import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useNavigate, useOutletContext } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import profileAvatar from '../../assets/profile_avatar.jpg'
-// Mock job data
-const mockJobs = [
-  {
-    id: 1,
-    title: "Senior Frontend Engineer",
-    company: "TechFlow",
-    logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=40&h=40&fit=crop",
-    coverImage: "https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=400&h=150&fit=crop",
-    location: "Remote",
-    salary: "$120k - $150k",
-    type: "Full-time",
-    posted: "2h",
-    skills: ["React", "TypeScript", "GraphQL", "CSS"],
-    description: "Lead the development of cutting-edge web applications using React and TypeScript. Collaborate with design and backend teams to deliver seamless user experiences."
-  },
-  {
-    id: 2,
-    title: "Product Designer",
-    company: "Nike",
-    logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=40&h=40&fit=crop",
-    coverImage: "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=400&h=150&fit=crop",
-    location: "Hybrid",
-    salary: "$100k - $130k",
-    type: "Full-time",
-    posted: "1d",
-    skills: ["Figma", "Prototyping", "User Research"],
-    description: "Create intuitive interfaces and impactful user journeys. Work closely with product and engineering to ship beautiful experiences."
-  },
-  {
-    id: 3,
-    title: "Data Scientist",
-    company: "Microsoft",
-    logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=40&h=40&fit=crop",
-    coverImage: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&h=150&fit=crop",
-    location: "Remote",
-    salary: "$140k - $180k",
-    type: "Full-time",
-    posted: "3d",
-    skills: ["Python", "TensorFlow", "SQL", "ML Ops"],
-    description: "Build predictive models and analyze large datasets to uncover insights. Partner with cross-functional teams to drive data-informed decisions."
-  },
-  {
-    id: 4,
-    title: "UX Designer",
-    company: "Apple",
-    logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=40&h=40&fit=crop",
-    coverImage: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=400&h=150&fit=crop",
-    location: "Cupertino, CA",
-    salary: "$110k - $140k",
-    type: "Full-time",
-    posted: "5d",
-    skills: ["Sketch", "Figma", "Prototyping", "User Testing"],
-    description: "Design innovative user experiences for millions of users worldwide. Work on cutting-edge products that shape the future of technology."
-  },
-  {
-    id: 5,
-    title: "DevOps Engineer",
-    company: "Amazon",
-    logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=40&h=40&fit=crop",
-    coverImage: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=150&fit=crop",
-    location: "Seattle, WA",
-    salary: "$130k - $160k",
-    type: "Full-time",
-    posted: "1w",
-    skills: ["AWS", "Docker", "Kubernetes", "Terraform"],
-    description: "Build and maintain scalable cloud infrastructure. Work with cutting-edge technologies to support millions of users worldwide."
-  },
-  {
-    id: 6,
-    title: "Backend Developer",
-    company: "Google",
-    logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=40&h=40&fit=crop",
-    coverImage: "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=400&h=150&fit=crop",
-    location: "Mountain View, CA",
-    salary: "$150k - $180k",
-    type: "Full-time",
-    posted: "2w",
-    skills: ["Java", "Go", "MySQL", "Microservices"],
-    description: "Develop high-performance backend systems that serve billions of requests. Join a team of world-class engineers building the future of search and AI."
-  }
-];
+import CandidatePremiumModal from '../../modals/CandidatePremiumModal';
 
 const CandidateDashboard = () => {
 
-  const {user, loading, isAuthenticated} = useSelector((state)=>state.auth);
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
+
+  const {user, isAuthenticated} = useSelector((state)=>state.auth);
+  const { allActiveJobs, loading, error } = useSelector((state) => state.job);
+  const { companiesById } = useSelector(state => state.company);
+  
+
   // State management
   const [savedJobs, setSavedJobs] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -105,11 +33,32 @@ const CandidateDashboard = () => {
   const [selectedSkills, setSelectedSkills] = useState([]);
   const [selectedSalaryRange, setSelectedSalaryRange] = useState('Any');
 
+  const [isOpenPremiumModal, setIsOpenPremiumModal] = useState(false)
+
+  const openPremiumModal = () => setIsOpenPremiumModal(true);
+  const closePremiumModal = () => setIsOpenPremiumModal(false);
+
+  useEffect(() => {
+    console.log("🔄 Fetching active jobs...");
+    dispatch(fetchActiveJobs());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (allActiveJobs?.jobs?.length > 0) {
+      allActiveJobs.jobs.forEach(job => {
+        if (job.company_id && !companiesById[job.company_id]) {
+          dispatch(fetchCompanyById(job.company_id));
+        }
+      });
+    }
+  }, [allActiveJobs, dispatch]);
+
   // Pagination settings
   const jobsPerPage = 3;
-  const totalPages = Math.ceil(mockJobs.length / jobsPerPage);
+  const jobs = allActiveJobs?.jobs || [];
+  const totalPages = Math.ceil(jobs.length / jobsPerPage);
   const startIndex = (currentPage - 1) * jobsPerPage;
-  const currentJobs = mockJobs.slice(startIndex, startIndex + jobsPerPage);
+  const currentJobs = jobs.slice(startIndex, startIndex + jobsPerPage);
 
   const userProfile = {
     name: user?.full_name || 'Anonymous',
@@ -121,8 +70,6 @@ const CandidateDashboard = () => {
   };
 
 
-
-  const navigate = useNavigate()
   // Event handlers
   const toggleSaveJob = (jobId) => {
     setSavedJobs(prev => 
@@ -172,7 +119,50 @@ const CandidateDashboard = () => {
     // Navigate to recruiters page
   };
 
+  const transformJob = (job) => {
+    const companyData = companiesById[job.company_id];
+    return{ 
+      id: job.id,
+      title: job.job_title,
+      company: companyData?.company_name || 'Unknown Company', 
+      logo: companyData?.logo_url || "https://via.placeholder.com/40",
+      coverImage: job.cover_image,
+      location: job.location,
+      salary: job.compensation_range || 'Not specified',
+      type: job.employment_type,
+      posted: getTimeAgo(job.created_at),
+      skills: parseSkills(job.skills_required),
+      description: job.role_summary,
+      workType: job.work_type,
+      applicationLink: job.application_link,
+      applicationDeadline: job.application_deadline,
+    }
+  };
+
+  const parseSkills = (skillsJson) => {
+    if (!skillsJson) return [];
+    try {
+      return JSON.parse(skillsJson);
+    } catch {
+      return [];
+    }
+  };
+
+  const getTimeAgo = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours}h`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays}d`;
+    const diffInWeeks = Math.floor(diffInDays / 7);
+    return `${diffInWeeks}w`;
+  };
+
   return (
+    <>
     <div className="min-h-screen bg-gray-50">
       {/* Header Component */}
       <DashboardHeader
@@ -212,11 +202,12 @@ const CandidateDashboard = () => {
               {currentJobs.map((job) => (
                 <JobCard
                   key={job.id}
-                  job={job}
+                  job={transformJob(job)}
                   onSave={toggleSaveJob}
                   isSaved={savedJobs.includes(job.id)}
                   onClick={handleJobClick}
                   onQuickApply={handleQuickApply}
+                  onOpenPremiumModal={openPremiumModal}
                 />
               ))}
             </div>
@@ -227,9 +218,10 @@ const CandidateDashboard = () => {
               totalPages={totalPages}
               onPageChange={handlePageChange}
               itemsPerPage={jobsPerPage}
-              totalItems={mockJobs.length}
+              totalItems={jobs.length}
               startIndex={startIndex}
             />
+
           </div>
 
           {/* Right Sidebar */}
@@ -248,6 +240,11 @@ const CandidateDashboard = () => {
         </div>
       </div>
     </div>
+      <CandidatePremiumModal
+        isOpen={isOpenPremiumModal}              // ✅ Pass state here
+        onClose={closePremiumModal}              // ✅ Pass function to close modal
+      />       
+    </>
   );
 };
 

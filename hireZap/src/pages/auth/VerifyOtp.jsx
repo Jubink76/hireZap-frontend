@@ -13,6 +13,29 @@ const VerifyOtp = () => {
     const navigate = useNavigate()
     const location = useLocation()
     const {user, loading} = useSelector((state)=>state.auth)
+    
+    const {email, role, action_type} = location.state || {};
+
+    // ✅ ADD THIS: Validate required state
+    useEffect(() => {
+        if (!email || !action_type) {
+            console.log("❌ Missing required state in VerifyOtp");
+            notify.error("Invalid access. Please try again.");
+            navigate("/forgot-password", { replace: true });
+        }
+    }, [email, action_type, navigate]);
+
+    // ✅ ADD THIS: Early return if data is missing
+    if (!email || !action_type) {
+        return (
+            <div className="h-screen flex items-center justify-center bg-gray-50">
+                <div className="text-center">
+                    <p className="text-slate-600">Redirecting...</p>
+                </div>
+            </div>
+        );
+    }
+
     const [code,setCode] = useState(new Array(6).fill(""))
 
     const [second, setSecond] = useState(() => {
@@ -20,16 +43,13 @@ const VerifyOtp = () => {
         const now = new Date().getTime();
 
         if (expiry && expiry > now) {
-            // If a valid expiry exists, use the remaining seconds
             return Math.floor((expiry - now) / 1000);   
         }
 
-        // No valid expiry or expired OTP → start fresh
-        const newExpiry = now + 60 * 1000; // 60 seconds
+        const newExpiry = now + 60 * 1000;
         localStorage.setItem("otpExpiryTime", newExpiry);
         return 60;
     });
-    const {email, role, action_type} = location.state || {};
 
     // countdown timer for otp
     useEffect(()=>{
@@ -50,16 +70,15 @@ const VerifyOtp = () => {
 
     // otp input
     const handleChange = (val,idx)=>{
-        const newCode = [...code];
         if (/^\d?$/.test(val)){
             const newCode = [...code];
             newCode[idx] = val;
             setCode(newCode);
 
             if (val && idx < 5){
-                document.getElementById(`otp-${idx+1}`).focus();
+                document.getElementById(`otp-${idx+1}`)?.focus();
             }else if(!val && idx > 0){
-                document.getElementById(`otp-${idx-1}`).focus();
+                document.getElementById(`otp-${idx-1}`)?.focus();
             }
         }
     }
@@ -85,37 +104,25 @@ const VerifyOtp = () => {
                     const userData = await dispatch(completeRegistration({ email, role, code: otp, action_type })).unwrap();
                     
                     console.log("🟢 STEP 1 Complete: User data received from backend");
-                    console.log("   User:", userData);
                     
-                    // Small delay to ensure Redux commits
-                    console.log("🟡 STEP 2: Waiting for Redux state to commit...");
                     await new Promise(resolve => setTimeout(resolve, 200));
             
-                    // Step 3: Fetch current user to validate JWT cookies work
                     console.log("🟣 STEP 3: Validating JWT cookies with fetchCurrentUser...");
-
-                    // await dispatch(fetchCurrentUser()).unwrap();
-                    // // success path (no need to check meta)
-                    // console.log("🟣 After fetchCurrentUser - Redux fully ready!");
                     
-                    const currentUserData = await dispatch(
-                        fetchCurrentUser()
-                    ).unwrap();
+                    const currentUserData = await dispatch(fetchCurrentUser()).unwrap();
                     
                     console.log("🟠 STEP 3 Complete: JWT validation successful!");
-                    console.log("   Current user:", currentUserData);
                     
-                    // Step 4: Now we're 100% sure everything is set up correctly
                     console.log("🟡 STEP 4: Redux state fully updated, navigating to dashboard...");
 
                     if (role === "recruiter") {
-                        navigate("/recruiter/dashboard");
+                        navigate("/recruiter/dashboard", { replace: true });
                     } else {
-                        navigate("/candidate/dashboard");
+                        navigate("/candidate/dashboard", { replace: true });
                     }
                 } catch (err) {
                     console.error("OTP verification failed", err);
-                    notify.error(err);
+                    notify.error(err?.message || "Verification failed");
                 }
             }else if(action_type === "forgot_password"){
                 try{
@@ -127,13 +134,14 @@ const VerifyOtp = () => {
                     })
                 }catch(err){
                     console.error("OTP verification failed", err);
-                    notify.error(err);
+                    notify.error(err?.message || "Verification failed");
                 }
             }
         }catch(err){
             console.error("Otp verification error",err)
         }
     }
+    
     // handle resend otp
     const handleResendOtp = async () => {
         if (!email || !action_type) {
@@ -145,12 +153,12 @@ const VerifyOtp = () => {
             const res = await dispatch(resendOtp({ email, action_type })).unwrap();
             notify.success(res?.message || "OTP resent successfully");
 
-            const otpExpiryTime = new Date().getTime() + 60 * 1000; // 60 seconds
+            const otpExpiryTime = new Date().getTime() + 60 * 1000;
             localStorage.setItem("otpExpiryTime", otpExpiryTime);
             setSecond(60);
             setCode(new Array(6).fill(""));
         } catch (err) {
-            notify.error(err);
+            notify.error(err?.message || "Failed to resend OTP");
         }
     };
 

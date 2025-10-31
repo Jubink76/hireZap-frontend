@@ -117,6 +117,7 @@ const initialState = {
     verifiedCompanies:[],
     rejectedCompanies:[],
     selectedCompany : null,
+    companiesById: {}, // store company details by id for candidate/ job listing
     loading: false,
     error : null,
     hasCompany: false,
@@ -209,7 +210,11 @@ const companySlice = createSlice({
         })
         .addCase(fetchCompanyById.fulfilled,(state,action)=>{
             state.loading = false;
-            state.selectedCompany = action.payload;
+            const company = action.payload;
+            if (company.id){
+                state.companiesById[company.id] = company
+            }
+            state.selectedCompany = company;
             state.error = null;
         })
         .addCase(fetchCompanyById.rejected,(state,action)=>{

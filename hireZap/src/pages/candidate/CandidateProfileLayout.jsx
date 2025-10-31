@@ -8,6 +8,7 @@ import { useState } from 'react';
 import ProfileHeader from './components/ProfileHeader'
 import { useDispatch } from 'react-redux';
 import { updateUserProfile } from '../../redux/slices/authSlice';
+import CandidatePremiumModal from '../../modals/CandidatePremiumModal';
 
 const CandidateProfileLayout = () => {
     const {user} = useSelector((state)=>state.auth)
@@ -37,7 +38,9 @@ const CandidateProfileLayout = () => {
         <div className="p-6 w-full">
           <div className="space-y-6 w-full">
             <Outlet 
-            context={{openEditUserModal:()=>setIsEditProfileModalOpen(true)}}/>
+            context={{
+              openEditUserModal:()=>setIsEditProfileModalOpen(true),
+              }}/>
           </div>
         </div>
       </div>
@@ -46,6 +49,7 @@ const CandidateProfileLayout = () => {
         isOpen={isEditProfileModalOpen}
         onClose={() => setIsEditProfileModalOpen(false)}
       />
+
     </div>
   );
 };

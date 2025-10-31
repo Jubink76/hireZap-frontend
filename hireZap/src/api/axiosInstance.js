@@ -26,6 +26,7 @@ axiosInstance.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
+
 // Response interceptor
 axiosInstance.interceptors.response.use(
     (response) => {
@@ -60,17 +61,6 @@ axiosInstance.interceptors.response.use(
 
             try {
                 console.log('🔄 Attempting token refresh...');
-                
-                // Check if refresh cookie exists
-                const refreshCookie = document.cookie
-                    .split(';')
-                    .find(c => c.trim().startsWith('refresh='));
-                
-                if (!refreshCookie) {
-                    console.error('❌ No refresh token found');
-                    throw new Error('No refresh token');
-                }
-
                 // ✅ Use axios directly (not axiosInstance) to avoid infinite loop
                 const csrfToken = document.cookie
                     .split(';')
