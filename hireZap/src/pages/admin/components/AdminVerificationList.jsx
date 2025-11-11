@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Bell, Settings, MoreVertical, MapPin, Globe, Calendar, Users, Star, Briefcase, Eye, BadgeCheck } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchPendingCompanies, fetchVerifiedCompanies, fetchRejectedCompanies } from '../../../redux/slices/companySlice';
+import { fetchPendingCompanies, fetchVerifiedCompanies, fetchRejectedCompanies, fetchCompanyById } from '../../../redux/slices/companySlice';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
@@ -128,6 +128,16 @@ const CompanyVerificationManagement = () => {
   // Filter requests based on active filter - already filtered by getActiveCompanies
   const filteredRequests = verificationRequests;
 
+  const handleViewDetail = async (companyId) => {
+    console.log(`Viewing company ${companyId}`);
+    
+    // Dispatch action to fetch and set the selected company in Redux
+    await dispatch(fetchCompanyById(companyId));
+    
+    // Then navigate to the detail page
+    navigate(`/admin/company-detail/${companyId}`);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -244,7 +254,7 @@ const CompanyVerificationManagement = () => {
                           {request.statusLabel}
                         </span>
                         <button 
-                          onClick={() => navigate(`/admin/company-detail/${request.id}`)}
+                          onClick={() => handleViewDetail(request.id)}
                           className="px-3 py-1.5 text-xs font-medium bg-teal-100 text-teal-700 rounded hover:bg-teal-200"
                         >
                           View Detail
@@ -259,7 +269,7 @@ const CompanyVerificationManagement = () => {
                     )}
                     {(request.status === 'verified' || request.status === 'rejected') && (
                       <button 
-                          onClick={() => navigate(`/admin/company-detail/${request.id}`)}
+                          onClick={() => handleViewDetail(request.id)}
                           className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-teal-100 text-teal-700 rounded hover:border border-teal-700 cursor-pointer"
                         >
                           <Eye size={14} className="text-teal-700" />

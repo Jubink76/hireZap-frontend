@@ -287,34 +287,34 @@ const AdminCompanyDetail = () => {
             {/* Location Map */}
             {company.latitude && company.longitude && (
               <div className="p-6">
-                          <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-sm font-medium text-slate-900">Location</h3>
-                            <span className="text-xs text-slate-500">
-                              Coordinates: {parseFloat(company.latitude).toFixed(4)}, {parseFloat(company.longitude).toFixed(4)}
-                            </span>
-                          </div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-medium text-slate-900">Location</h3>
+                  <span className="text-xs text-slate-500">
+                    Coordinates: {parseFloat(company.latitude).toFixed(4)}, {parseFloat(company.longitude).toFixed(4)}
+                  </span>
+                </div>
               
-                          <div className="w-full h-[300px] rounded-lg overflow-hidden border border-slate-200">
-                            <MapContainer
-                              center={[parseFloat(company.latitude), parseFloat(company.longitude)]}
-                              zoom={15}
-                              style={{ width: "100%", height: "100%" }}
-                            >
-                              <TileLayer
-                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                                attribution='© <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
-                              />
-                              <Marker
-                                position={[parseFloat(company.latitude), parseFloat(company.longitude)]}
-                                icon={markerIcon}
-                              >
-                                <Popup>
-                                  {company.company_name} <br /> {company.address}
-                                </Popup>
-                              </Marker>
-                            </MapContainer>
-                          </div>
-                        </div>
+                <div className="w-full h-[300px] rounded-lg overflow-hidden border border-slate-200">
+                  <MapContainer
+                    center={[parseFloat(company.latitude), parseFloat(company.longitude)]}
+                    zoom={15}
+                    style={{ width: "100%", height: "100%" }}
+                  >
+                    <TileLayer
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      attribution='© <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+                    />
+                    <Marker
+                      position={[parseFloat(company.latitude), parseFloat(company.longitude)]}
+                      icon={markerIcon}
+                    >
+                      <Popup>
+                        {company.company_name} <br /> {company.address}
+                      </Popup>
+                    </Marker>
+                  </MapContainer>
+                </div>
+              </div>
             )}
           </div>
 

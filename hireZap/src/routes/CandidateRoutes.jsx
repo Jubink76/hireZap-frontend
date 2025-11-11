@@ -6,7 +6,20 @@ const CandidateAccountSettings = lazy(() => import('../pages/candidate/component
 const CandidateProfessionalProfile = lazy(() => import('../pages/candidate/components/CandidateProfessionalProfile.jsx'));
 
 import CookieDebugger from '../CookieDebugger';
+import CandidateAppLayout from '../pages/candidate/CandidateAppLayout.jsx';
+import JobListView from '../pages/candidate/components/JobListView.jsx';
+import JobDetailView from '../pages/candidate/components/JobDetailView.jsx';
+import JobApplicationForm from '../pages/candidate/components/JobApplicationForm.jsx';
 export const candidateRoutes = [
+    {
+        path:'/candidate',
+        element:<CandidateAppLayout />,
+        children:[
+            {path:'jobs', element:<JobListView />, handle:{title:'Jobs'}},
+            {path:'jobs/:jobId', element:<JobDetailView />, handle:{title:'Job Details'}},
+            {path:'jobs/:jobId/apply', element:<JobApplicationForm />, handle:{title:'Apply for Job'}}
+        ]
+    },
     {
         path: '/candidate/dashboard',
         element: <CandidateDashboard />,

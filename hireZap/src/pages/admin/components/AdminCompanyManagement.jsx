@@ -1,119 +1,86 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Search, MapPin, Calendar, Globe, Mail, Star, ChevronLeft, ChevronRight, BadgeCheck, AlertCircle, Clock } from 'lucide-react';
 import Pagination from '../../../components/Pagination';
-
-// Mock data - replace with your Redux data
-const mockCompanies = [
-  {
-    id: 1,
-    name: 'NovaTech Labs',
-    status: 'verified',
-    email: 'contact@novatech.com',
-    website: 'novatech.com',
-    location: 'San Francisco, CA',
-    joinedDate: 'Jan 2023',
-    activeTime: '2h ago',
-    activeJobs: 12,
-    employees: 240,
-    rating: 4.7,
-    industry: 'SaaS',
-    tags: ['AI'],
-    logo: 'https://ui-avatars.com/api/?name=NovaTech+Labs&background=4F46E5&color=fff'
-  },
-  {
-    id: 2,
-    name: 'GreenLeaf Health',
-    status: 'verified',
-    email: 'hello@greenleaf.com',
-    website: 'greenleaf.com',
-    location: 'Austin, TX',
-    joinedDate: 'Sep 2022',
-    activeTime: '1d ago',
-    activeJobs: 4,
-    employees: 80,
-    rating: 4.3,
-    industry: 'Healthcare',
-    tags: [],
-    logo: 'https://ui-avatars.com/api/?name=GreenLeaf+Health&background=10B981&color=fff'
-  },
-  {
-    id: 3,
-    name: 'UrbanBuild Co.',
-    status: 'pending',
-    email: 'info@urbanbuild.com',
-    website: 'urbanbuild.com',
-    location: 'Denver, CO',
-    joinedDate: 'May 2021',
-    activeTime: '3d ago',
-    activeJobs: 0,
-    employees: 410,
-    rating: 4.1,
-    industry: 'Construction',
-    tags: [],
-    logo: 'https://ui-avatars.com/api/?name=UrbanBuild+Co&background=F59E0B&color=fff'
-  },
-  {
-    id: 4,
-    name: 'SkyRoute Logistics',
-    status: 'verified',
-    email: 'team@skyroute.io',
-    website: 'skyroute.io',
-    location: 'Seattle, WA',
-    joinedDate: 'Nov 2020',
-    activeTime: '5h ago',
-    activeJobs: 6,
-    employees: 160,
-    rating: 4.5,
-    industry: 'Logistics',
-    tags: [],
-    logo: 'https://ui-avatars.com/api/?name=SkyRoute+Logistics&background=3B82F6&color=fff'
-  },
-  {
-    id: 5,
-    name: 'Artify Studios',
-    status: 'suspended',
-    email: 'hello@artify.co',
-    website: 'artify.co',
-    location: 'Brooklyn, NY',
-    joinedDate: 'Feb 2024',
-    activeTime: '30m ago',
-    activeJobs: 2,
-    employees: 24,
-    rating: 4.9,
-    industry: 'Design',
-    tags: ['Creative'],
-    logo: 'https://ui-avatars.com/api/?name=Artify+Studios&background=EC4899&color=fff'
-  },
-  {
-    id: 6,
-    name: 'FarmFresh Co.',
-    status: 'verified',
-    email: 'contact@farmfresh.co',
-    website: 'farmfresh.co',
-    location: 'Boise, ID',
-    joinedDate: 'Aug 2023',
-    activeTime: '4d ago',
-    activeJobs: 1,
-    employees: 52,
-    rating: 4.0,
-    industry: 'Agriculture',
-    tags: ['D2C'],
-    logo: 'https://ui-avatars.com/api/?name=FarmFresh+Co&background=84CC16&color=fff'
-  }
-];
+import { fetchVerifiedCompanies,fetchCompanyById } from '../../../redux/slices/companySlice';
+import { useNavigate } from 'react-router-dom';
 
 const AdminCompanyManagement = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { verifiedCompanies, loading, error } = useSelector((state) => state.company);
+  
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('verified'); // Default to verified
   const [industryFilter, setIndustryFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
+  // Fetch verified companies on component mount
+  useEffect(() => {
+    dispatch(fetchVerifiedCompanies());
+  }, [dispatch]);
+
+  // Helper function to format date
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  };
+
+  // Helper function to calculate time ago
+  const getTimeAgo = (dateString) => {
+    if (!dateString) return 'N/A';
+    const now = new Date();
+    const past = new Date(dateString);
+    const diffMs = now - past;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+  };
+
+  // Helper function to generate company logo
+  const getCompanyLogo = (company) => {
+    if (company.logo_url) return company.logo_url;
+    const name = company.name || company.company_name || 'Company';
+    const colors = ['4F46E5', '10B981', 'F59E0B', '3B82F6', 'EC4899', '84CC16'];
+    const colorIndex = (company.id || 0) % colors.length;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${colors[colorIndex]}&color=fff`;
+  };
+
+  // Normalize company data from backend
+  const normalizeCompany = (company) => {
+    return {
+      id: company.id,
+      name: company.name || company.company_name || 'N/A',
+      status: company.verification_status || 'verified',
+      email: company.email || company.contact_email || 'N/A',
+      website: company.website || 'N/A',
+      location: company.location || company.city || 'N/A',
+      joinedDate: formatDate(company.created_at),
+      activeTime: getTimeAgo(company.updated_at || company.created_at),
+      activeJobs: company.active_jobs_count || 0,
+      employees: company.size || company.employee_count || 0,
+      rating: company.rating || 0,
+      industry: company.industry || 'N/A',
+      tags: company.tags || [],
+      logo: getCompanyLogo(company),
+      description: company.description || '',
+      founded_year: company.founded_year || null
+    };
+  };
+
+  // Get companies data
+  const companies = verifiedCompanies ? verifiedCompanies.map(normalizeCompany) : [];
+
   // Calculate stats
-  const totalCompanies = mockCompanies.length;
-  const verifiedCompanies = mockCompanies.filter(c => c.status === 'verified').length;
-  const pendingCompanies = mockCompanies.filter(c => c.status === 'pending').length;
-  const suspendedCompanies = mockCompanies.filter(c => c.status === 'suspended').length;
+  const totalCompanies = companies.length;
+  const verifiedCount = companies.filter(c => c.status === 'verified').length;
+  const blockedCount = companies.filter(c => c.status === 'blocked').length; // For future use
 
   const stats = [
     { 
@@ -123,26 +90,21 @@ const AdminCompanyManagement = () => {
     },
     { 
       label: 'Verified', 
-      count: verifiedCompanies,
+      count: verifiedCount,
       change: 'Active verified',
     },
     { 
-      label: 'Pending', 
-      count: pendingCompanies,
-      change: 'Awaiting review',
-    },
-    { 
-      label: 'Suspended', 
-      count: suspendedCompanies,
-      change: 'Temporarily disabled',
+      label: 'Blocked', 
+      count: blockedCount,
+      change: 'Temporarily blocked',
     }
   ];
 
   // Get unique industries
-  const industries = ['all', ...new Set(mockCompanies.map(c => c.industry))];
+  const industries = ['all', ...new Set(companies.map(c => c.industry).filter(i => i && i !== 'N/A'))];
 
   // Filter companies
-  const filteredCompanies = mockCompanies.filter(company => {
+  const filteredCompanies = companies.filter(company => {
     const matchesSearch = company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          company.email.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || company.status === statusFilter;
@@ -160,6 +122,16 @@ const AdminCompanyManagement = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleViewDetail = async (companyId) => {
+      console.log(`Viewing company ${companyId}`);
+      
+      // Dispatch action to fetch and set the selected company in Redux
+      await dispatch(fetchCompanyById(companyId));
+      
+      // Then navigate to the detail page
+      navigate(`/admin/company-detail/${companyId}`);
+    };
+
   const getStatusBadge = (status) => {
     switch(status) {
       case 'verified':
@@ -169,24 +141,47 @@ const AdminCompanyManagement = () => {
             Verified
           </span>
         );
-      case 'pending':
-        return (
-          <span className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-700 rounded">
-            <Clock size={14} />
-            Pending
-          </span>
-        );
-      case 'suspended':
+      case 'blocked':
         return (
           <span className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-red-100 text-red-700 rounded">
             <AlertCircle size={14} />
-            Suspended
+            Blocked
           </span>
         );
       default:
         return null;
     }
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading companies...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <p className="text-red-600">{error}</p>
+          <button 
+            onClick={() => dispatch(fetchVerifiedCompanies())}
+            className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -228,19 +223,24 @@ const AdminCompanyManagement = () => {
             {/* Status Filter */}
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1); // Reset to first page on filter change
+              }}
               className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent cursor-pointer"
             >
               <option value="all">All Status</option>
               <option value="verified">Verified</option>
-              <option value="pending">Pending</option>
-              <option value="suspended">Suspended</option>
+              <option value="blocked">Blocked</option>
             </select>
 
             {/* Industry Filter */}
             <select
               value={industryFilter}
-              onChange={(e) => setIndustryFilter(e.target.value)}
+              onChange={(e) => {
+                setIndustryFilter(e.target.value);
+                setCurrentPage(1); // Reset to first page on filter change
+              }}
               className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent cursor-pointer"
             >
               <option value="all">All Industries</option>
@@ -293,15 +293,17 @@ const AdminCompanyManagement = () => {
                           <MapPin className="w-3 h-3 mr-1" />
                           {company.location}
                         </span>
-                        <a 
-                          href={`https://${company.website}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center text-blue-600 hover:underline"
-                        >
-                          <Globe className="w-3 h-3 mr-1" />
-                          {company.website}
-                        </a>
+                        {company.website !== 'N/A' && (
+                          <a 
+                            href={`https://${company.website}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center text-blue-600 hover:underline"
+                          >
+                            <Globe className="w-3 h-3 mr-1" />
+                            {company.website}
+                          </a>
+                        )}
                       </div>
 
                       <div className="flex items-center text-xs text-gray-500">
@@ -331,7 +333,9 @@ const AdminCompanyManagement = () => {
 
                   {/* Right Section - Actions */}
                   <div className="flex items-center space-x-3">
-                    <button className="px-3 py-1.5 text-xs font-medium bg-teal-100 text-teal-700 rounded hover:bg-teal-200 transition-colors">
+                    <button 
+                      onClick={()=>handleViewDetail(company.id)}
+                      className="px-3 py-1.5 text-xs font-medium bg-teal-100 text-teal-700 rounded hover:bg-teal-200 transition-colors">
                       Company Details
                     </button>
                     <button className="px-3 py-1.5 text-xs font-medium bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors">
@@ -341,11 +345,13 @@ const AdminCompanyManagement = () => {
                 </div>
 
                 {/* Tags Section */}
-                {(company.industry || company.tags.length > 0) && (
+                {(company.industry !== 'N/A' || company.tags.length > 0) && (
                   <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-2">
-                    <span className="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded">
-                      {company.industry}
-                    </span>
+                    {company.industry !== 'N/A' && (
+                      <span className="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded">
+                        {company.industry}
+                      </span>
+                    )}
                     {company.tags.map((tag, idx) => (
                       <span key={idx} className="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded">
                         {tag}

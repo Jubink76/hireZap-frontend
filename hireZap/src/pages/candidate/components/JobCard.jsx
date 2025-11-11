@@ -1,13 +1,14 @@
 import { Bookmark, MapPin, Clock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const JobCard = ({ 
   job, 
   onSave, 
   isSaved = false, 
-  onClick,
-  onQuickApply,
   onOpenPremiumModal,
 }) => {
+  const navigate = useNavigate();
+  
   const {
     id,
     title,
@@ -31,21 +32,14 @@ const JobCard = ({
 
   const handleQuickApply = (e) => {
     e.stopPropagation();
-    if (onQuickApply) {
-      onQuickApply(job);
-    }
+    // Navigate directly to application form
+    navigate(`/candidate/jobs/${id}/apply`);
   };
 
   const handleCardClick = () => {
-    if (onClick) {
-      onClick(job);
-    }
+    // Navigate to job detail page
+    navigate(`/candidate/jobs/${id}`);
   };
-
-  const handleCloseModal = ()=>{
-    e.stopPropagation();
-    set
-  }
 
   return (
     <div 
@@ -63,9 +57,9 @@ const JobCard = ({
             onClick={handleSave}
             className={`p-2 rounded-full ${
               isSaved 
-                ? 'bg-blue-600 text-white' 
+                ? 'bg-teal-600 text-white' 
                 : 'bg-white text-gray-600'
-            } hover:bg-blue-600 hover:text-white transition-colors`}
+            } hover:bg-teal-600 hover:text-white transition-colors cursor-pointer`}
           >
             <Bookmark className="h-4 w-4" />
           </button>
@@ -94,11 +88,14 @@ const JobCard = ({
               {type}
             </span>
             <button
-              onClick={onOpenPremiumModal}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onOpenPremiumModal) onOpenPremiumModal();
+              }}
               className="ml-2 px-3 py-1 text-xs font-medium rounded-full 
                         bg-blue-600 text-white hover:bg-blue-700 
                         transition-all duration-200 shadow-sm hover:shadow-md
-                        focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1"
+                        focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 cursor-pointer"
             >
               Connect HR
             </button>
@@ -118,7 +115,7 @@ const JobCard = ({
               >
                 {skill}
               </span>
-            ))}
+            ))} 
           </div>
         </div>
 
@@ -135,7 +132,7 @@ const JobCard = ({
           </div>
           <button 
             onClick={handleQuickApply}
-            className="px-4 py-2 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700 transition-colors"
+            className="px-4 py-2 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700 transition-colors cursor-pointer"
           >
             ⚡ Quick Apply
           </button>

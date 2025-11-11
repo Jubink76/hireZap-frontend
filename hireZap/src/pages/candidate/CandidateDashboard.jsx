@@ -44,8 +44,8 @@ const CandidateDashboard = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    if (allActiveJobs?.jobs?.length > 0) {
-      allActiveJobs.jobs.forEach(job => {
+    if (allActiveJobs?.length > 0) {
+      allActiveJobs.forEach(job => {
         if (job.company_id && !companiesById[job.company_id]) {
           dispatch(fetchCompanyById(job.company_id));
         }
@@ -55,7 +55,7 @@ const CandidateDashboard = () => {
 
   // Pagination settings
   const jobsPerPage = 3;
-  const jobs = allActiveJobs?.jobs || [];
+  const jobs = allActiveJobs || [];
   const totalPages = Math.ceil(jobs.length / jobsPerPage);
   const startIndex = (currentPage - 1) * jobsPerPage;
   const currentJobs = jobs.slice(startIndex, startIndex + jobsPerPage);

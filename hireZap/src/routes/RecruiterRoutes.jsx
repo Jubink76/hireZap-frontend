@@ -5,7 +5,8 @@ const RecruiterProfileLayout = lazy(() => import('../pages/recruiter/RecruiterPr
 const ProfileOverview = lazy(() => import('../pages/recruiter/components/ProfileOverview'));
 const AccountSettings = lazy(() => import('../pages/recruiter/components/AccountSettings'));
 const CompanyDetails = lazy(() => import('../pages/recruiter/components/CompanyDetails'));
-const CreatedJobs = lazy(() => import('../pages/recruiter/components/CreatedJobs'))
+const CreatedJobs = lazy(() => import('../pages/recruiter/components/CreatedJobs'));
+const RecruiterProfileDetail = lazy(() => import('../pages/recruiter/components/RecruiterProfileDetail'));
 
 export const recruiterRoutes = [
     {
@@ -22,6 +23,7 @@ export const recruiterRoutes = [
             { path: 'account-settings', element: <AccountSettings />, handle: { title: 'Account Settings' } },
             { path: 'company-details', element: <CompanyDetails />, handle: { title: 'Company Details' } },
             { path: 'created-jobs', element: <CreatedJobs />, handle: {title: 'Created Jobs'} },
+            { path: 'profile-detail', element: <RecruiterProfileDetail />, handle: {title: 'Profile Detail'}}
         ],
     }
 ];

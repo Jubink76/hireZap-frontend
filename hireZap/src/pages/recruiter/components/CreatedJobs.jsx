@@ -12,7 +12,7 @@ import { getJobsByRecruiterId } from '../../../redux/slices/jobSlice';
 const CreatedJobs = ({ openCompanyModal }) => {
     const dispatch = useDispatch()
     const {company} = useSelector((state)=>state.company)
-    const { openCreateJobModal } = useOutletContext()
+    const { openCreateJobModal,openPremiumModal } = useOutletContext()
 
     const [currentPage, setCurrentPage] = useState(1)
     const itemsPerPage = 5;
@@ -183,7 +183,8 @@ const CreatedJobs = ({ openCompanyModal }) => {
                 <p className="text-slate-600 mt-1">Manage and track your job postings</p>
                 </div>
                 <button
-                className="inline-flex items-center space-x-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg transition-colors shadow-sm"
+                onClick={hasJobs?()=>openPremiumModal():()=>openCreateJobModal()}
+                className="inline-flex items-center space-x-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg transition-colors shadow-sm cursor-pointer"
                 >
                 <Plus className="w-5 h-5" />
                 <span>Create New Job</span>
@@ -218,116 +219,116 @@ const CreatedJobs = ({ openCompanyModal }) => {
             ) : (
                 <>
                 {/* Jobs List */}
-<div className="space-y-4">
-  {currentJobs.map((job) => {
-    const company = job.company || {}; // ✅ safely handle missing company
-    return (
-      <div
-        key={job.id}
-        className="bg-white rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow"
-      >
-        <div className="p-6">
-          <div className="flex items-start justify-between gap-4">
-            {/* Left Section - Job Info */}
-            <div className="flex items-start space-x-4 flex-1 min-w-0">
-              {/* Company Logo */}
-              <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg flex items-center justify-center flex-shrink-0 text-white font-bold text-xl">
-                {company.company_name?.charAt(0) || "C"}
-              </div>
+                <div className="space-y-4">
+                  {currentJobs.map((job) => {
+                    const company = job.company || {}; // ✅ safely handle missing company
+                    return (
+                      <div
+                        key={job.id}
+                        className="bg-white rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow"
+                      >
+                        <div className="p-6">
+                          <div className="flex items-start justify-between gap-4">
+                            {/* Left Section - Job Info */}
+                            <div className="flex items-start space-x-4 flex-1 min-w-0">
+                              {/* Company Logo */}
+                              <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg flex items-center justify-center flex-shrink-0 text-white font-bold text-xl">
+                                {company.company_name?.charAt(0) || "C"}
+                              </div>
 
-              {/* Job Details */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-slate-900 mb-1 truncate">
-                      {job.job_title || job.title}
-                    </h3>
-                    <p className="text-sm text-slate-600">
-                      {company.company_name} • {job.location}
-                    </p>
-                  </div>
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                      job.status === "active"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-amber-100 text-amber-700"
-                    }`}
-                  >
-                    {job.status === "active" ? "Active" : "Paused"}
-                  </span>
+                              {/* Job Details */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2 mb-2">
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="text-lg font-semibold text-slate-900 mb-1 truncate">
+                                      {job.job_title || job.title}
+                                    </h3>
+                                    <p className="text-sm text-slate-600">
+                                      {company.company_name} • {job.location}
+                                    </p>
+                                  </div>
+                                  <span
+                                    className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                                      job.status === "active"
+                                        ? "bg-green-100 text-green-700"
+                                        : "bg-amber-100 text-amber-700"
+                                    }`}
+                                  >
+                                    {job.status === "active" ? "Active" : "Paused"}
+                                  </span>
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600 mb-3">
+                                  <div className="flex items-center space-x-1">
+                                    <Briefcase className="w-4 h-4" />
+                                    <span>{job.type || "Full-time"}</span>
+                                  </div>
+                                  <div className="flex items-center space-x-1">
+                                    <DollarSign className="w-4 h-4" />
+                                    <span>{job.salary || "Not disclosed"}</span>
+                                  </div>
+                                  <div className="flex items-center space-x-1">
+                                    <Clock className="w-4 h-4" />
+                                    <span>{job.postedDate || "Recently"}</span>
+                                  </div>
+                                </div>
+
+                                {/* Skills */}
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                  {(job.skills || []).map((skill, index) => (
+                                    <span
+                                      key={index}
+                                      className="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-medium"
+                                    >
+                                      {skill}
+                                    </span>
+                                  ))}
+                                </div>
+
+                                {/* Applicants Count */}
+                                <button className="text-sm text-teal-600 hover:text-teal-700 font-medium">
+                                  {job.applicants || 0} Applicants
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Right Section - Actions (Desktop) */}
+                            <div className="hidden md:flex items-center space-x-2">
+                              <button
+                                className="p-2 text-slate-600 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                                title="Manage"
+                              >
+                                <Eye className="w-5 h-5" />
+                              </button>
+                              <button
+                                className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Edit"
+                              >
+                                <Edit className="w-5 h-5" />
+                              </button>
+                              <button
+                                className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-5 h-5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Actions (Mobile) */}
+                          <div className="md:hidden mt-4 pt-4 border-t border-slate-100 flex gap-2">
+                            <button className="flex-1 px-4 py-2 text-sm font-medium text-teal-600 hover:text-teal-700 border border-teal-200 hover:border-teal-300 rounded-lg transition-colors">
+                              Manage
+                            </button>
+                            <button className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-700 border border-slate-200 hover:border-slate-300 rounded-lg transition-colors">
+                              Edit
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-
-                <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600 mb-3">
-                  <div className="flex items-center space-x-1">
-                    <Briefcase className="w-4 h-4" />
-                    <span>{job.type || "Full-time"}</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <DollarSign className="w-4 h-4" />
-                    <span>{job.salary || "Not disclosed"}</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Clock className="w-4 h-4" />
-                    <span>{job.postedDate || "Recently"}</span>
-                  </div>
-                </div>
-
-                {/* Skills */}
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {(job.skills || []).map((skill, index) => (
-                    <span
-                      key={index}
-                      className="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-medium"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Applicants Count */}
-                <button className="text-sm text-teal-600 hover:text-teal-700 font-medium">
-                  {job.applicants || 0} Applicants
-                </button>
-              </div>
-            </div>
-
-            {/* Right Section - Actions (Desktop) */}
-            <div className="hidden md:flex items-center space-x-2">
-              <button
-                className="p-2 text-slate-600 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
-                title="Manage"
-              >
-                <Eye className="w-5 h-5" />
-              </button>
-              <button
-                className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                title="Edit"
-              >
-                <Edit className="w-5 h-5" />
-              </button>
-              <button
-                className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                title="Delete"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Actions (Mobile) */}
-          <div className="md:hidden mt-4 pt-4 border-t border-slate-100 flex gap-2">
-            <button className="flex-1 px-4 py-2 text-sm font-medium text-teal-600 hover:text-teal-700 border border-teal-200 hover:border-teal-300 rounded-lg transition-colors">
-              Manage
-            </button>
-            <button className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-700 border border-slate-200 hover:border-slate-300 rounded-lg transition-colors">
-              Edit
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  })}
-</div>
 
 
                 {/* Pagination */}

@@ -11,7 +11,8 @@ import {
   MessageSquare, 
   Bell, 
   Settings,
-  Crown
+  Crown,
+  Factory
 } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -19,7 +20,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 // Navigation Items Configuration for Recruiters
 const navigationItems = [
   { id: "overview", label: "Overview", icon: User },
-  { id: "company", label: "Company details", icon: Briefcase },
+  { id: "professional", label: "Professional", icon: Briefcase },
+  { id: "company", label: "Company details", icon: Factory },
   { id: "jobs", label: "Created Jobs", icon: Users },
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "settings", label: "Account Settings", icon: Settings },
@@ -47,6 +49,7 @@ const RecruiterProfileNavigationSidebar = ({ activeTab, setActiveTab }) => {
     if (id === 'settings') navigate('/recruiter/account-settings');
     else if (id === 'company') navigate('/recruiter/company-details');
     else if (id === 'jobs') navigate('/recruiter/created-jobs');
+    else if (id === 'professional') navigate('/recruiter/profile-detail')
     else navigate('/recruiter/profile-overview'); // overview
   };
 
@@ -54,6 +57,7 @@ const RecruiterProfileNavigationSidebar = ({ activeTab, setActiveTab }) => {
     if (id === 'settings') return currentPath.includes('account-settings');
     else if (id === 'company') return currentPath.includes('company-details');
     else if (id === 'jobs') return currentPath.includes('created-jobs');
+    else if (id === 'professional') return currentPath.includes('profile-detail');
 
     return currentPath.includes('profile-overview');
   };
