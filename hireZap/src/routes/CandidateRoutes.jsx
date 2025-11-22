@@ -4,12 +4,16 @@ const CandidateProfileLayout = lazy(() => import('../pages/candidate/CandidatePr
 const CandidateProfileOverview = lazy(() => import('../pages/candidate/components/CandidateProfileOverview'));
 const CandidateAccountSettings = lazy(() => import('../pages/candidate/components/CandidateAccountSettings'));
 const CandidateProfessionalProfile = lazy(() => import('../pages/candidate/components/CandidateProfessionalProfile.jsx'));
+const CandidateAppLayout = lazy(()=> import('../pages/candidate/CandidateAppLayout.jsx'));
+const JobListView = lazy(() => import('../pages/candidate/components/JobListView.jsx'));
+const JobDetailView = lazy(()=> import('../pages/candidate/components/JobDetailView.jsx'));
+const JobApplicationForm = lazy(() => import('../pages/candidate/components/JobApplicationForm.jsx'));
+const JobApplicationsList = lazy(() => import('../pages/candidate/components/JobApplicationList.jsx'));
+const JobApplicationDetail = lazy(() => import('../pages/candidate/components/JobApplicationDetail.jsx'));
+const JobApplicationTracker = lazy(() => import('../pages/candidate/components/JobApplicationTracker.jsx'));
 
 import CookieDebugger from '../CookieDebugger';
-import CandidateAppLayout from '../pages/candidate/CandidateAppLayout.jsx';
-import JobListView from '../pages/candidate/components/JobListView.jsx';
-import JobDetailView from '../pages/candidate/components/JobDetailView.jsx';
-import JobApplicationForm from '../pages/candidate/components/JobApplicationForm.jsx';
+
 export const candidateRoutes = [
     {
         path:'/candidate',
@@ -32,7 +36,10 @@ export const candidateRoutes = [
         children: [
             {path: 'profile-overview',element: <CandidateProfileOverview />,handle: { title: 'My Profile' }},
             {path: 'account-settings',element: <CandidateAccountSettings />,handle: { title: 'Account Settings' }},
-            {path: 'professional-profile',element : <CandidateProfessionalProfile />,handle: {title: 'Professional Profile'}}
+            {path: 'professional-profile',element : <CandidateProfessionalProfile />,handle: {title: 'Professional Profile'}},
+            {path: 'applications', element: <JobApplicationsList />, handle: { title: 'Job Applications'}},
+            {path: 'application/detail/:applicationId', element: <JobApplicationDetail />, handle: { title: 'Application Details'}},
+            {path: 'application/tracker/:applicationId', element: <JobApplicationTracker />, handle: { title: 'Application Tracker'}},
         ],
     }
 ];

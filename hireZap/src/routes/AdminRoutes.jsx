@@ -8,6 +8,9 @@ const AdminRecruiterManagement = lazy(() => import('../pages/admin/components/Ad
 const AdminCandidateManagement = lazy(()=> import('../pages/admin/components/AdminCandidateManagement'));
 const AdminCompanyManagement = lazy(() => import ('../pages/admin/components/AdminCompanyManagement'));
 const AdminJobPostManagement = lazy(() => import('../pages/admin/components/AdminJobPostManagement'));
+const AdminSubscriptionManagement = lazy(() => import('../pages/admin/components/AdminSubscriptionManagement'));
+const AdminSelectionProcessManagement = lazy(() => import('../pages/admin/components/AdminSelectionProcessManagement'));
+
 export const adminRoutes = {
   element: <AdminLayout />,
   children: [
@@ -19,5 +22,7 @@ export const adminRoutes = {
     { path: '/admin/candidates', element: <AdminCandidateManagement />, handle: {title: 'Candidate Management'}},
     { path: '/admin/companies', element: <AdminCompanyManagement />, handle: {title: 'Company Management'}},
     { path: '/admin/job-posts', element: <AdminJobPostManagement />, handle: {title: 'Job Post Management'}},
+    { path: '/admin/subscriptions', element: <AdminSubscriptionManagement />, handle: {title: 'Subscription Management'}},
+    { path: '/admin/selection-process', element: <AdminSelectionProcessManagement />, handle: {title: 'Selection Process Management'}},
   ],
 };

@@ -1,13 +1,21 @@
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import ProfileInfo from '../components/ProfileInfo'
 import ProfileStats from "../components/ProfileStats";
 import RecentApplicationsList from "../components/RecentApplicationsList";
 import profileAvatar from '../../../assets/profile_avatar.jpg'
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useOutletContext } from "react-router-dom";
+import { fetchMyApplications } from "../../../redux/slices/applicationSlice";
 const CandidateProfileOverview = () => {
   const {user} = useSelector((state)=>state.auth)
+  const { myApplications, loading } = useSelector((state) => state.application);
   const {openEditUserModal} = useOutletContext()
+
+  const dispatch = useDispatch()
+
+  useEffect(() => {
+      dispatch(fetchMyApplications(false)); // Don't include drafts
+    }, [dispatch]);
 
   const profileData = {
     ...user,
@@ -25,28 +33,6 @@ const CandidateProfileOverview = () => {
     },
   };
 
-  const applicationsData = [
-    {
-      id: 1,
-      position: "Senior Product Designer",
-      company: "Google"
-    },
-    {
-      id: 2,
-      position: "UX Designer",
-      company: "Apple"
-    },
-    {
-      id: 3,
-      position: "Product Designer",
-      company: "Meta"
-    },
-    {
-      id: 4,
-      position: "Senior UX Researcher",
-      company: "Netflix"
-    }
-  ];
   return (
     <>
       <ProfileInfo 
@@ -54,7 +40,7 @@ const CandidateProfileOverview = () => {
       onEdit={openEditUserModal}
       text="Edit Profile"/>
       <ProfileStats stats={profileData.stats}/>
-      <RecentApplicationsList applications={applicationsData}/>
+      <RecentApplicationsList applications={myApplications}/>
     </>
     
   );

@@ -5,6 +5,8 @@ import authReducer from './slices/authSlice'
 import companyReducer from './slices/companySlice';
 import jobReducer from './slices/jobSlice';
 import candidateReducer from './slices/candidateSlice'
+import applicationReducer from './slices/applicationSlice'
+import adminReducer from './slices/adminSlice'
 
 const persistConfig = {
   key: 'root',
@@ -17,6 +19,9 @@ const rootReducer = combineReducers({
   company: companyReducer,
   job: jobReducer,
   candidate:candidateReducer,
+  application:applicationReducer,
+  admin:adminReducer,
+
 });
 
 

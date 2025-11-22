@@ -40,6 +40,7 @@ const ProfileNavigationSidebar = () => {
   const handleTabClick = (id) => {
     if (id === 'settings') navigate('/candidate/account-settings');
     else if (id === 'professional') navigate('/candidate/professional-profile');
+    else if (id === 'applications') navigate('/candidate/applications');
     else navigate('/candidate/profile-overview'); // default route
   };
 
@@ -79,7 +80,7 @@ const ProfileNavigationSidebar = () => {
                 onClick={() => handleTabClick(item.id)}
                 className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-left transition-all duration-200 ${
                   isActive(item.id)
-                    ? "bg-teal-100 text-cyan-700 shadow-sm"
+                    ? "bg-teal-100 text-cyan-900 shadow-sm"
                     : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
                 }`}
               >

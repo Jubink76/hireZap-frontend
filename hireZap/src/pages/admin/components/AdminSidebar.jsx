@@ -9,6 +9,7 @@ import {
   Grid3X3,
   BarChart3,
   Shield,
+  Route,
   Settings
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -23,6 +24,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
     { id: 'companies', label: 'Companies', icon: Grid3X3 },
     { id: 'job-posts', label: 'Job Posts', icon: FileText },
     { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard },
+    { id: 'selection-process', label: 'Selection Process', icon: Route},  
     { id: 'revenue', label: 'Revenue', icon: DollarSign },
     { id: 'reports', label: 'Reports', icon: BarChart3 },
     { id: 'verifications', label: 'Verifications', icon: Shield },
@@ -48,6 +50,10 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
       navigate('/admin/companies')
     } else if (id === 'job-posts') {
       navigate('/admin/job-posts')
+    } else if (id === 'subscriptions'){
+      navigate('/admin/subscriptions')
+    } else if (id === 'selection-process'){
+      navigate('/admin/selection-process')
     }
     // Add other navigation routes as needed
   };

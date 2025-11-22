@@ -2,19 +2,15 @@
 import React, { useState } from 'react';
 
 // Import all components (in a real app, these would be separate files)
-import RecruiterDashboardHeader from '../recruiter/components/RecruiterDashboardHeader';
-import Sidebar from '../recruiter/components/SideBar';
-import StatsCards from '../recruiter/components/StatsCards';
-import JobSection from '../recruiter/components/JobSection';
-import RecentApplicants from '../recruiter/components/RecentApplicants';
-import RecruiterDashboardGraph from '../recruiter/components/RecruiterDashboardGraph'
+import StatsCards from './StatsCards';
+import JobSection from './JobSection';
+import RecentApplicants from './RecentApplicants';
+import RecruiterDashboardGraph from './RecruiterDashboardGraph'
 import {Users, TrendingUp, Briefcase, Clock} from 'lucide-react'
-import Pagination from '../../components/Pagination';
+import Pagination from '../../../components/Pagination';
 import { useNavigate } from 'react-router-dom';
 
 const RecruiterDashboard = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [searchQuery, setSearchQuery] = useState('');
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(3); // Adjust as needed
@@ -149,25 +145,6 @@ const RecruiterDashboard = () => {
   }
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Fixed Header */}
-      <div className="fixed top-0 left-0 right-0 z-50">
-        <RecruiterDashboardHeader 
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          onAddCandidate={handleAddCandidate}
-        />
-      </div>
-      
-      {/* Fixed Left Sidebar */}
-      <div className="fixed top-[73px] mt-3 left-0 bottom-0 z-40">
-        <Sidebar 
-        activeTab={activeTab} 
-        onTabChange={setActiveTab} 
-        onProfileClick={handleProfileClick} />
-      </div>
-      
-      {/* Main Content Area with proper margins */}
-      <div className="ml-64 mt-[73px]">
         <div className="p-6">
           <div className="max-w-7xl mx-auto mt-3">
             {/* Stats Cards */}
@@ -196,7 +173,6 @@ const RecruiterDashboard = () => {
             </div>
           </div>
         </div>
-      </div>
     </div>
   );
 };

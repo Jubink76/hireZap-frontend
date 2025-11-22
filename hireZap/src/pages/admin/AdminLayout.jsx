@@ -24,6 +24,10 @@ const AdminLayout = () => {
       setActiveTab('companies');
     } else if (path.includes('/admin/job-posts') || path.includes('/admin/job-details')) {
       setActiveTab('job-posts');
+    } else if (path.includes('/admin/subscriptions') || path.includes('/admin/subscriptions')){
+      setActiveTab('subscriptions')
+    } else if (path.includes('/admin/selection-process') || path.includes('/admin/selection-process')){
+      setActiveTab('selection-process')
     } else if (path === '/admin' || path === '/admin/' || path === '/admin/dashboard') {
       setActiveTab('dashboard');
     }
@@ -36,6 +40,8 @@ const AdminLayout = () => {
   const isCandidateManagement = location.pathname.includes('/admin/candidates') || location.pathname.includes('/admin/candidate-detail');
   const isCompanyManagement = location.pathname.includes('/admin/companies') || location.pathname.includes('/admin/company-detail');
   const isJobPostManagement = location.pathname.includes('/admin/job-posts') || location.pathname.includes('/admin/job-details');
+  const isSubscriptionManagement = location.pathname.includes('/admin/subscriptions') || location.pathname.includes('/admin/subscriptions');
+  const isSelectionProcessManagement = location.pathname.includes('/admin/selection-process') || location.pathname.includes('/admin/selection-process');  
 
   // Get the page name for AdminPageHeader
   const getPageName = () => {
@@ -45,6 +51,8 @@ const AdminLayout = () => {
     if (isCandidateManagement) return 'Candidate Management';
     if (isCompanyManagement) return 'Company Management';
     if (isJobPostManagement) return 'Job Posts Management';
+    if (isSubscriptionManagement) return 'Subscription Management';
+    if (isSelectionProcessManagement) return 'Selection Process Management'
     return '';
   };
 
