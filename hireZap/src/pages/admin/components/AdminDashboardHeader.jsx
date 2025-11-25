@@ -17,9 +17,9 @@ const AdminDashboardHeader = ({ searchQuery, setSearchQuery }) => {
                           className="h-12 lg:h-14 mx-auto"
                         />
             </button>
-            <span className="text-xl font-semibold text-gray-900">Admin Panel</span>
+            {/* <span className="text-xl font-semibold text-gray-900">Admin Panel</span> */}
           </div>
-          <h1 className="text-xl font-semibold text-gray-900 ml-8">Dashboard Overview</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 ml-8">Dashboard Overview</h1>
         </div>
         
         <div className="flex items-center space-x-4">

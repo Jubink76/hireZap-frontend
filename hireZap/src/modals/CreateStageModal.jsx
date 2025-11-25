@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
-import { Plus, Edit2, Save, X, Trash2, GripVertical, FileText, Phone, Video, Users, CheckCircle, Award, Briefcase, Lock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Edit2, Save, X, Trash2, GripVertical, FileText, Phone, Video, Users, CheckCircle, Award, Briefcase, Lock , Loader2} from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { createSelectionStage, updateSelectionStage } from '../redux/slices/selectionStageSlice';
 
 // Create/Edit Stage Modal Component
 const CreateStageModal = ({ isOpen, onClose, onSave, editingStage, isCreating }) => {
+
+  const dispatch = useDispatch()
+  const { loading, error, successMessage } = useSelector((state) => state.selectionStage);
+
   const [formData, setFormData] = useState(editingStage || {
-    id: `stage-${Date.now()}`,
     name: '',
     description: '',
     icon: 'FileText',
@@ -13,25 +18,86 @@ const CreateStageModal = ({ isOpen, onClose, onSave, editingStage, isCreating })
     tier: 'free',
     isDefault: false
   });
+  
+  const [validationError, setValidationError] = useState('');
 
   const iconMap = {
     FileText, Phone, Video, Users, CheckCircle, Award, Briefcase, Lock
   };
 
-  const handleSave = () => {
-    if (!formData.name || !formData.description) {
-      alert('Please fill in all required fields (Name and Description)');
+  // Initialize form data when editing
+  useEffect(() => {
+    if (editingStage && !isCreating) {
+      setFormData({
+        id: editingStage.id,
+        name: editingStage.name || '',
+        description: editingStage.description || '',
+        icon: editingStage.icon || 'FileText',
+        duration: editingStage.duration || '',
+        requiresPremium: editingStage.requiresPremium || false,
+        tier: editingStage.tier || 'free',
+      });
+
+      console.log("id is ", editingStage.id)
+    } else if (isCreating) {
+      // Reset form for creating new stage
+      setFormData({
+        name: '',
+        description: '',
+        icon: 'FileText',
+        duration: '',
+        requiresPremium: false,
+        tier: 'free',
+      });
+    }
+  }, [editingStage, isCreating, isOpen]);
+
+  // Close modal on success
+  useEffect(() => {
+    if (successMessage && isOpen) {
+      // Wait a bit to show success, then close
+      const timer = setTimeout(() => {
+        onClose();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage, isOpen, onClose]);
+
+  const handleSave = async () => {
+    // Clear previous errors
+    setValidationError('');
+    
+    // Validation
+    if (!formData.name.trim()) {
+      setValidationError('Stage name is required');
       return;
     }
-    onSave(formData);
+    
+    if (!formData.description.trim()) {
+      setValidationError('Stage description is required');
+      return;
+    }
+    
+    // Dispatch create or update
+    if (isCreating) {
+      await dispatch(createSelectionStage(formData)).unwrap();
+    } else {
+      await dispatch(updateSelectionStage({
+        stageId: formData.id,
+        stageData: formData
+      })).unwrap();
+    }
+  };
+
+  const handleClose = () => {
+    setValidationError('');
     onClose();
   };
 
   if (!isOpen) return null;
-
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Modal Header */}
         <div className="bg-white border-b border-gray-200 px-8 py-5 flex items-center justify-between">
           <div>
@@ -43,8 +109,9 @@ const CreateStageModal = ({ isOpen, onClose, onSave, editingStage, isCreating })
             </p>
           </div>
           <button 
-            onClick={onClose}
+            onClick={handleClose}
             className="text-gray-400 hover:text-red-700 transition-colors p-2 hover:bg-gray-100 rounded-lg"
+            disabled={loading}
           >
             <X className="w-6 h-6" />
           </button>
@@ -52,6 +119,20 @@ const CreateStageModal = ({ isOpen, onClose, onSave, editingStage, isCreating })
 
         {/* Modal Body */}
         <div className="px-8 py-6 space-y-6">
+          {/* Error Messages */}
+          {(error || validationError) && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              {validationError || error}
+            </div>
+          )}
+
+          {/* Success Message */}
+          {successMessage && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+              {successMessage}
+            </div>
+          )}
+
           {/* Basic Information */}
           <div className="space-y-4">
             <div>
@@ -77,6 +158,7 @@ const CreateStageModal = ({ isOpen, onClose, onSave, editingStage, isCreating })
                 placeholder="Brief description of this stage"
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
                 rows="3"
+                disabled={loading}
               />
             </div>
 
@@ -89,6 +171,7 @@ const CreateStageModal = ({ isOpen, onClose, onSave, editingStage, isCreating })
                   value={formData.icon}
                   onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  disabled={loading}
                 >
                   {Object.keys(iconMap).map(icon => (
                     <option key={icon} value={icon}>{icon}</option>
@@ -106,6 +189,7 @@ const CreateStageModal = ({ isOpen, onClose, onSave, editingStage, isCreating })
                   onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
                   placeholder="e.g., 30 minutes, 1 hour"
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -125,6 +209,7 @@ const CreateStageModal = ({ isOpen, onClose, onSave, editingStage, isCreating })
                   });
                 }}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                disabled={loading}
               >
                 <option value="free">Free (Available to all)</option>
                 <option value="per-post">Per Post Payment</option>
@@ -188,15 +273,26 @@ const CreateStageModal = ({ isOpen, onClose, onSave, editingStage, isCreating })
           <button
             onClick={onClose}
             className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
+            disabled={loading}
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             className="flex items-center gap-2 px-6 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium"
+            disabled={loading}
           >
-            <Save className="w-4 h-4" />
-            {isCreating ? 'Create Stage' : 'Save Changes'}
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                {isCreating ? 'Creating...' : 'Saving...'}
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                {isCreating ? 'Create Stage' : 'Save Changes'}
+              </>
+            )}
           </button>
         </div>
       </div>

@@ -1,117 +1,56 @@
-import React, { useState } from 'react';
-import { Plus, Edit2, Save, X, Trash2, GripVertical, FileText, Phone, Video, Users, CheckCircle, Award, Briefcase, Lock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Edit2, Save, X, Trash2, RefreshCw, FileText, Phone, Video, Users, CheckCircle,AlertCircle, Award, Briefcase, Lock } from 'lucide-react';
 import CreateStageModal from '../../../modals/CreateStageModal';
 
+import { 
+  fetchAllStages, 
+  fetchInactiveStages,
+  reactivateSelectionStage,
+  deleteSelectionStage, 
+  clearStageError, 
+  clearSuccessMessage 
+} from '../../../redux/slices/selectionStageSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchApplicationById } from '../../../redux/slices/applicationSlice';
+
 const AdminSelectionProcessManagement = () => {
+
+  const dispatch = useDispatch();
+
+  const { 
+    stages, 
+    freeStages, 
+    premiumStages,
+    selectedStage, 
+    inactiveStages,
+    loading, 
+    error, 
+    successMessage 
+  } = useSelector((state) => state.selectionStage);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStage, setEditingStage] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
-
-  const [stages, setStages] = useState([
-    {
-      id: 'resume-screening',
-      name: 'Resume Screening',
-      description: 'Screen submitted applications for minimum qualifications and fit.',
-      icon: 'FileText',
-      duration: '15 minutes',
-      requiresPremium: false,
-      tier: 'free',
-      isDefault: true,
-      order: 1
-    },
-    {
-      id: 'telephonic',
-      name: 'Telephonic Round',
-      description: '30-minute recruiter phone interview to validate experience and interest.',
-      icon: 'Phone',
-      duration: '30 minutes',
-      requiresPremium: false,
-      tier: 'free',
-      isDefault: true,
-      order: 2
-    },
-    {
-      id: 'hr-round',
-      name: 'HR Round',
-      description: 'In-depth deep dive on past projects, current role, and career goals.',
-      icon: 'Users',
-      duration: '45 minutes',
-      requiresPremium: false,
-      tier: 'free',
-      isDefault: true,
-      order: 3
-    },
-    {
-      id: 'technical',
-      name: 'Technical Round',
-      description: 'Multi-round panel including system design, coding, and culture ask.',
-      icon: 'Award',
-      duration: '1-2 hours',
-      requiresPremium: true,
-      tier: 'per-post',
-      isDefault: false,
-      order: 4
-    },
-    {
-      id: 'machine-task',
-      name: 'Machine Task',
-      description: 'Home assignment or timed test to evaluate frontend expertise.',
-      icon: 'Briefcase',
-      duration: '2-3 hours',
-      requiresPremium: true,
-      tier: 'professional',
-      isDefault: false,
-      order: 5
-    },
-    {
-      id: 'group-discussion',
-      name: 'Group Discussion',
-      description: 'Home assignment or timed test to evaluate frontend expertise.',
-      icon: 'Users',
-      duration: '1 hour',
-      requiresPremium: true,
-      tier: 'professional',
-      isDefault: false,
-      order: 6
-    },
-    {
-      id: 'ceo-round',
-      name: 'CEO Round',
-      description: 'Higher-level discussions and competency-based tests to hire specialists.',
-      icon: 'Award',
-      duration: '45 minutes',
-      requiresPremium: true,
-      tier: 'per-post',
-      isDefault: false,
-      order: 7
-    },
-    {
-      id: 'offline-meeting',
-      name: 'Offline Meeting',
-      description: 'Home assignment or timed test to evaluate frontend expertise.',
-      icon: 'Users',
-      duration: '1-2 hours',
-      requiresPremium: true,
-      tier: 'enterprise',
-      isDefault: false,
-      order: 8
-    },
-    {
-      id: 'offer',
-      name: 'Offer',
-      description: 'Compensation review, verbal offer, and formal letter issuance.',
-      icon: 'CheckCircle',
-      duration: '30 minutes',
-      requiresPremium: false,
-      tier: 'free',
-      isDefault: true,
-      order: 9
-    }
-  ]);
+  const [showInactive, setShowInactive] = useState(false);
 
   const iconMap = {
-    FileText, Phone, Video, Users, CheckCircle, Award, Briefcase, Lock
+    FileText, Phone, Video, Users, CheckCircle, Award, Briefcase, Lock,AlertCircle
   };
+
+  // Fetch stages on mount
+  useEffect(() => {
+    dispatch(fetchAllStages());
+    dispatch(fetchInactiveStages())
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        dispatch(clearSuccessMessage());
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage, dispatch]);
 
   const handleCreateNew = () => {
     setIsCreating(true);
@@ -125,19 +64,30 @@ const AdminSelectionProcessManagement = () => {
     setIsModalOpen(true);
   };
 
-  const handleSave = (stageData) => {
-    if (isCreating) {
-      const maxOrder = Math.max(...stages.map(s => s.order), 0);
-      setStages([...stages, { ...stageData, order: maxOrder + 1 }]);
-    } else {
-      setStages(stages.map(s => s.id === stageData.id ? stageData : s));
+  const handleDelete = async (stageId) => {
+    if (window.confirm(`Are you sure you want to delete?`)) {
+      await dispatch(deleteSelectionStage(stageId)).unwrap();
+      // Refresh stages list
+      dispatch(fetchAllStages());
+      dispatch(fetchInactiveStages())
     }
   };
 
-  const handleDelete = (stageId) => {
-    if (window.confirm('Are you sure you want to delete this stage?')) {
-      setStages(stages.filter(s => s.id !== stageId));
+  const handleReactivate = async (stageId) => {
+    if (window.confirm('Are you sure you want to reactivate this stage?')) {
+      await dispatch(reactivateSelectionStage(stageId)).unwrap();
+      dispatch(fetchAllStages());
+      dispatch(fetchInactiveStages());
     }
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setEditingStage(null);
+    setIsCreating(false);
+    // Refresh stages after modal closes
+    dispatch(fetchAllStages());
+    dispatch(fetchInactiveStages())
   };
 
   const getTierBadge = (tier) => {
@@ -155,8 +105,6 @@ const AdminSelectionProcessManagement = () => {
     );
   };
 
-  const freeStages = stages.filter(s => !s.requiresPremium).sort((a, b) => a.order - b.order);
-  const premiumStages = stages.filter(s => s.requiresPremium).sort((a, b) => a.order - b.order);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -167,21 +115,59 @@ const AdminSelectionProcessManagement = () => {
             <h1 className="text-2xl font-bold text-gray-900">Selection Process Management</h1>
             <p className="text-sm text-gray-600 mt-1">Configure hiring stages for recruitment process</p>
           </div>
-          <button
-            onClick={handleCreateNew}
-            className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Create New Stage
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowInactive(!showInactive)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                showInactive 
+                  ? 'bg-gray-100 border-gray-300 text-gray-700' 
+                  : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <AlertCircle className="w-4 h-4" />
+              {showInactive ? 'Hide' : 'Show'} Inactive Stages
+              {inactiveStages.length > 0 && (
+                <span className="px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 rounded-full">
+                  {inactiveStages.length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={handleCreateNew}
+              className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Create New Stage
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Success Message */}
+      {successMessage && (
+        <div className="mx-6 mt-6">
+          <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-center gap-2">
+            <CheckCircle className="w-5 h-5" />
+            <span>{successMessage}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Error Message */}
+      {error && (
+        <div className="mx-6 mt-6">
+          <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-center gap-2">
+            <AlertCircle className="w-5 h-5" />
+            <span>{error}</span>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="px-6 py-6">
         <div className="grid grid-cols-4 gap-4">
           <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <p className="text-sm text-gray-600">Total Stages</p>
+            <p className="text-sm text-gray-600">Total Active Stages</p>
             <p className="text-2xl font-bold text-gray-900 mt-1">{stages.length}</p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-4">
@@ -193,11 +179,65 @@ const AdminSelectionProcessManagement = () => {
             <p className="text-2xl font-bold text-purple-600 mt-1">{premiumStages.length}</p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <p className="text-sm text-gray-600">Default Stages</p>
-            <p className="text-2xl font-bold text-teal-600 mt-1">{stages.filter(s => s.isDefault).length}</p>
+            <p className="text-sm text-gray-600">Inactive Stages</p>
+            <p className="text-2xl font-bold text-orange-600 mt-1">{inactiveStages.length}</p>
           </div>
         </div>
       </div>
+
+      {/* Inactive Stages Section */}
+      {showInactive && inactiveStages.length > 0 && (
+        <div className="px-6 pb-6">
+          <div className="bg-orange-50 rounded-lg border border-orange-200 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <AlertCircle className="w-5 h-5 text-orange-600" />
+              <h2 className="text-lg font-semibold text-gray-900">Inactive Stages</h2>
+              <span className="text-sm text-gray-600">
+                (These stages are hidden from users but can be reactivated)
+              </span>
+            </div>
+            <div className="space-y-3">
+              {inactiveStages.map((stage) => {
+                const Icon = iconMap[stage.icon];
+                return (
+                  <div key={stage.id} className="bg-white rounded-xl p-5 border border-orange-300 hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start space-x-4 flex-1">
+                        <div className="p-2 bg-gray-100 rounded-lg opacity-60">
+                          <Icon className="w-6 h-6 text-gray-600" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3">
+                            <h3 className="text-base font-semibold text-gray-700">{stage.name}</h3>
+                            {getTierBadge(stage.tier)}
+                            <span className="px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 rounded">
+                              Inactive
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">{stage.description}</p>
+                          {stage.duration && (
+                            <p className="text-xs text-gray-500 mt-2">Duration: {stage.duration}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 ml-4">
+                        <button
+                          onClick={() => handleReactivate(stage.id)}
+                          className="flex items-center gap-1 px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+                          title="Reactivate this stage"
+                        >
+                          <RefreshCw className="w-4 h-4" />
+                          Reactivate
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Free Stages Section */}
       <div className="px-6 pb-6">
@@ -304,8 +344,7 @@ const AdminSelectionProcessManagement = () => {
       {/* Stage Modal */}
       <CreateStageModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSave}
+        onClose={handleModalClose}
         editingStage={editingStage}
         isCreating={isCreating}
       />

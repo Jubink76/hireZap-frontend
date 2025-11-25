@@ -61,7 +61,8 @@ const AdminLayout = () => {
       {/* Header */}
       <div className="fixed top-0 left-0 right-0 z-50">
         {(isSettingsPage || isVerificationPage || isRecruiterManagement || 
-          isCandidateManagement || isCompanyManagement || isJobPostManagement) ? (
+          isCandidateManagement || isCompanyManagement || isJobPostManagement || isSubscriptionManagement ||
+        isSelectionProcessManagement) ? (
           <AdminPageHeader pageName={getPageName()} />
         ) : (
           <AdminDashboardHeader

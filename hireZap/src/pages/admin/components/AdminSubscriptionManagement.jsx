@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Plus, Edit2, Save, X, CheckCircle2, Lock, Zap, Award, Users, Crown, Briefcase, Trash2 } from 'lucide-react';
-import AddSubscriptionPlanModal from '../../../modals/AddCompanyDetailsModal';
+import AddSubscriptionPlanModal from '../../../modals/AddSubscriptionPlanModal';
 
 const AdminSubscriptionManagement = () => {
   const [selectedUserType, setSelectedUserType] = useState('candidate');
@@ -205,9 +205,30 @@ const AdminSubscriptionManagement = () => {
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Subscription Management</h1>
-            <p className="text-sm text-gray-600 mt-1">Configure premium plans for candidates and recruiters</p>
+          <div> 
+            <h3 className="text-sm font-medium text-gray-600 mb-2">Configure premium plans for candidates and recruiters</h3>
+            <div className="bg-white rounded-lg border border-gray-200 p-1 inline-flex">
+            <button
+              onClick={() => setSelectedUserType('candidate')}
+              className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
+                selectedUserType === 'candidate'
+                  ? 'bg-teal-600 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Candidate Plans
+            </button>
+            <button
+              onClick={() => setSelectedUserType('recruiter')}
+              className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
+                selectedUserType === 'recruiter'
+                  ? 'bg-teal-600 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Recruiter Plans
+            </button>
+          </div>
           </div>
           <button
             onClick={handleCreateNew}
@@ -221,28 +242,7 @@ const AdminSubscriptionManagement = () => {
 
       {/* User Type Selector */}
       <div className="px-6 py-6">
-        <div className="bg-white rounded-lg border border-gray-200 p-1 inline-flex">
-          <button
-            onClick={() => setSelectedUserType('candidate')}
-            className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
-              selectedUserType === 'candidate'
-                ? 'bg-teal-600 text-white'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Candidate Plans
-          </button>
-          <button
-            onClick={() => setSelectedUserType('recruiter')}
-            className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
-              selectedUserType === 'recruiter'
-                ? 'bg-teal-600 text-white'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Recruiter Plans
-          </button>
-        </div>
+        
       </div>
 
       {/* Plans Grid */}

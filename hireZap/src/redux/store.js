@@ -7,6 +7,7 @@ import jobReducer from './slices/jobSlice';
 import candidateReducer from './slices/candidateSlice'
 import applicationReducer from './slices/applicationSlice'
 import adminReducer from './slices/adminSlice'
+import selectionStageReducer from './slices/selectionStageSlice';
 
 const persistConfig = {
   key: 'root',
@@ -21,6 +22,7 @@ const rootReducer = combineReducers({
   candidate:candidateReducer,
   application:applicationReducer,
   admin:adminReducer,
+  selectionStage:selectionStageReducer,
 
 });
 
