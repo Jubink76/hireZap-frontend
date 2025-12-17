@@ -7,6 +7,9 @@ const selectionStageApi = {
     fetchInactiveStages:() => axiosInstance.get('/selection-process/stages/inactive/'),
     reactivateSelectionStage:(id) => axiosInstance.patch(`/selection-process/stages/${id}/reactivate/`),
     updateSelectionStage : ({stageId,stageData}) => axiosInstance.put(`/selection-process/update-stage/${stageId}`, stageData),
-    deleteSelectionStage : (stageId) => axiosInstance.delete(`/selection-process/delete-stage/${stageId}`)
+    deleteSelectionStage : (stageId) => axiosInstance.delete(`/selection-process/delete-stage/${stageId}`),
+    getJobSelectionProcess: (jobId) => axiosInstance.get(`/selection-process/jobs/${jobId}/`),
+    saveJobSelectionProcess: (jobId,stageIds) => axiosInstance.post(`/selection-process/jobs/${jobId}/save/`, {stage_ids: stageIds}),
+    deleteJobSelectionProcess:(jobId) => axiosInstance.delete(`/selection-process/jobs/${jobId}`),
 }
 export default selectionStageApi;

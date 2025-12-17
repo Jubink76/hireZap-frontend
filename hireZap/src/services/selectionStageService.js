@@ -28,6 +28,23 @@ const selectionStageService = {
     reactivateSelectionStage: async (stageId) => {
         const res = await selectionStageApi.reactivateSelectionStage(stageId);
         return res;
+    },
+    saveJobSelectionProcess: async (jobId, stageIds) => {
+        const response = await selectionStageApi.saveJobSelectionProcess(jobId, stageIds);
+        return response;
+    },
+    
+    getJobSelectionProcess: async (jobId) => {
+        console.log('Fetching stages for job:', jobId);
+        const response = await selectionStageApi.getJobSelectionProcess(jobId);
+        console.log('API response:', response);
+        return response;
+    },
+    
+    deleteJobSelectionProcess: async (jobId) => {
+        const response = await selectionStageApi.deleteJobSelectionProcess(jobId);
+        return response;
     }
 }
+
 export default selectionStageService;
