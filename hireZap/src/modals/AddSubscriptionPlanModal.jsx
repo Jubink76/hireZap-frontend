@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import {useDispatch} from 'react-redux';
 import { Plus, Edit2, Save, X, CheckCircle2, Lock, Zap, Award, Users, Crown, Briefcase, Trash2 } from 'lucide-react';
+import { createSubscriptionPlan,updatePlan } from '../redux/slices/subscriptionPlanSlice';
 
-// Create/Edit Plan Modal Component
-const  AddSubscriptionPlanModal= ({ isOpen, onClose, onSave, editingPlan, isCreating, userType }) => {
-  const [formData, setFormData] = useState(editingPlan || {
-    id: `new-${Date.now()}`,
+const AddSubscriptionPlanModal = ({ isOpen, onClose, editingPlan, isCreating, userType }) => {
+
+  const dispatch = useDispatch();
+  
+  // ✅ Fixed: Use snake_case to match backend expectations
+  const [formData, setFormData] = useState({
     name: '',
     price: '',
     period: 'month',
@@ -12,17 +16,71 @@ const  AddSubscriptionPlanModal= ({ isOpen, onClose, onSave, editingPlan, isCrea
     features: [
       { icon: 'CheckCircle2', text: '', available: true }
     ],
-    buttonText: '',
-    cardColor: 'cyan',
+    button_text: '', // ✅ Changed from buttonText
+    card_color: 'cyan', // ✅ Changed from cardColor
     badge: null,
-    isDefault: false
+    is_default: false,
+    is_free: false,
+    user_type: userType
   });
+
+  // Load editing plan data
+  useEffect(() => {
+    console.log("📝 Effect triggered:", { editingPlan, isOpen, userType });
+    
+    if (editingPlan) {
+      const loadedData = {
+        name: editingPlan.name || '',
+        price: editingPlan.price || '',
+        period: editingPlan.period || 'month',
+        description: editingPlan.description || '',
+        features: editingPlan.features || [{ icon: 'CheckCircle2', text: '', available: true }],
+        button_text: editingPlan.buttonText || editingPlan.button_text || '', // ✅ Handle both cases
+        card_color: editingPlan.cardColor || editingPlan.card_color || 'cyan', // ✅ Handle both cases
+        badge: editingPlan.badge || null,
+        is_default: editingPlan.isDefault || editingPlan.is_default || false,
+        is_free: editingPlan.isFree || editingPlan.is_free || false,
+        user_type: editingPlan.userType || editingPlan.user_type || userType
+      };
+      console.log("📥 Loading plan data:", loadedData);
+      setFormData(loadedData);
+    } else {
+      // Reset form for new plan
+      const resetData = {
+        name: '',
+        price: '',
+        period: 'month',
+        description: '',
+        features: [{ icon: 'CheckCircle2', text: '', available: true }],
+        button_text: '',
+        card_color: 'cyan',
+        badge: null,
+        is_default: false,
+        is_free: false,
+        user_type: userType
+      };
+      console.log("🆕 Resetting form:", resetData);
+      setFormData(resetData);
+    }
+  }, [editingPlan, userType, isOpen]);
 
   const iconMap = {
     Lock, CheckCircle2, Zap, Award, Users, Crown, Briefcase
   };
 
+  const handleFreePlanChange = (isFree) =>{
+    setFormData({
+      ...formData,
+      is_free: isFree,
+      is_default:isFree,
+      price:isFree? '0':formData.price,
+      card_color:isFree?'gray':formData.card_color,
+      button_text:isFree? 'Current Plan':formData.button_text
+    });
+  };
+
   const addFeature = () => {
+    console.log("➕ Adding feature");
     setFormData({
       ...formData,
       features: [...formData.features, { icon: 'CheckCircle2', text: '', available: true }]
@@ -30,6 +88,7 @@ const  AddSubscriptionPlanModal= ({ isOpen, onClose, onSave, editingPlan, isCrea
   };
 
   const removeFeature = (index) => {
+    console.log("🗑️ Removing feature at index:", index);
     setFormData({
       ...formData,
       features: formData.features.filter((_, i) => i !== index)
@@ -37,21 +96,77 @@ const  AddSubscriptionPlanModal= ({ isOpen, onClose, onSave, editingPlan, isCrea
   };
 
   const updateFeature = (index, field, value) => {
+    console.log(`✏️ Updating feature ${index}, ${field}:`, value);
     const newFeatures = [...formData.features];
     newFeatures[index] = { ...newFeatures[index], [field]: value };
     setFormData({ ...formData, features: newFeatures });
   };
 
-  const handleSave = () => {
-    if (!formData.name || !formData.price || !formData.buttonText) {
-      alert('Please fill in all required fields (Name, Price, Button Text)');
+  const handleSave = async () => {
+    console.log("=== 💾 SAVE BUTTON CLICKED ===");
+    console.log("📋 Form Data:", JSON.stringify(formData, null, 2));
+    console.log("🆕 Is Creating:", isCreating);
+    console.log("✏️ Editing Plan:", editingPlan);
+    
+    // Validation
+    console.log("🔍 Starting validation...");
+    
+    if (!formData.name) {
+      console.log("❌ Validation failed: name is empty");
+      alert('Please enter a plan name');
       return;
     }
-    onSave(formData);
-    onClose();
+    
+    if (!formData.price) {
+      console.log("❌ Validation failed: price is empty");
+      alert('Please enter a price');
+      return;
+    }
+    
+    if (!formData.button_text) {
+      console.log("❌ Validation failed: button_text is empty");
+      alert('Please enter button text');
+      return;
+    }
+
+    // Validate features
+    console.log("🔍 Validating features...", formData.features);
+    const hasEmptyFeatures = formData.features.some(f => !f.text || !f.text.trim());
+    if (hasEmptyFeatures) {
+      console.log("❌ Validation failed: empty features found");
+      alert('Please fill in all feature texts or remove empty features');
+      return;
+    }
+
+    console.log("✅ All validations passed!");
+
+    try {
+      if (isCreating) {
+        console.log("🆕 Creating new plan with data:", formData);
+        const result = await dispatch(createSubscriptionPlan(formData)).unwrap();
+        console.log("✅ Plan created successfully:", result);
+      } else {
+        console.log("✏️ Updating plan ID:", editingPlan.id);
+        const result = await dispatch(updatePlan({
+          planId: editingPlan.id,
+          planData: formData
+        })).unwrap();
+        console.log("✅ Plan updated successfully:", result);
+      }
+      console.log("🚪 Closing modal...");
+      onClose();
+    } catch (error) {
+      console.error('❌ Failed to save plan:', error);
+      alert(error || 'Failed to save plan. Please try again.');
+    }
   };
 
-  if (!isOpen) return null;
+  console.log("🎨 Rendering modal, isOpen:", isOpen);
+  
+  if (!isOpen) {
+    console.log("⏸️ Modal closed, not rendering");
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -67,7 +182,11 @@ const  AddSubscriptionPlanModal= ({ isOpen, onClose, onSave, editingPlan, isCrea
             </p>
           </div>
           <button 
-            onClick={onClose}
+            onClick={() => {
+              console.log("❌ Close button clicked");
+              onClose();
+            }}
+            type="button"
             className="text-gray-400 hover:text-red-700 transition-colors p-2 hover:bg-gray-100 rounded-lg"
           >
             <X className="w-6 h-6" />
@@ -80,7 +199,26 @@ const  AddSubscriptionPlanModal= ({ isOpen, onClose, onSave, editingPlan, isCrea
             {/* Basic Information Section */}
             <div className="bg-gray-50 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
-              
+              <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <label className="flex items-start cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.is_free}
+                    onChange={(e) => handleFreePlanChange(e.target.checked)}
+                    className="mt-1 w-5 h-5 text-teal-600 rounded focus:ring-2 focus:ring-teal-500"
+                  />
+                  <div className="ml-3">
+                    <span className="text-sm font-semibold text-gray-900">
+                      This is a Free Plan
+                    </span>
+                    <p className="text-xs text-gray-600 mt-1">
+                      Free plans are automatically set as the default plan for all users. 
+                      Only one free plan can exist per user type.
+                    </p>
+                  </div>
+                </label>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -89,7 +227,10 @@ const  AddSubscriptionPlanModal= ({ isOpen, onClose, onSave, editingPlan, isCrea
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) => {
+                      console.log("Name changed:", e.target.value);
+                      setFormData({ ...formData, name: e.target.value });
+                    }}
                     placeholder="e.g., Premium, Professional"
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                   />
@@ -102,10 +243,17 @@ const  AddSubscriptionPlanModal= ({ isOpen, onClose, onSave, editingPlan, isCrea
                   <input
                     type="number"
                     value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    onChange={(e) => {
+                      console.log("Price changed:", e.target.value);
+                      setFormData({ ...formData, price: e.target.value });
+                    }}
                     placeholder="e.g., 1499"
+                    disabled={formData.is_free}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                   />
+                  {formData.is_free && (
+                    <p className="text-xs text-gray-500 mt-1">Price is automatically set to ₹0 for free plans</p>
+                  )}
                 </div>
 
                 <div>
@@ -115,6 +263,7 @@ const  AddSubscriptionPlanModal= ({ isOpen, onClose, onSave, editingPlan, isCrea
                   <select
                     value={formData.period}
                     onChange={(e) => setFormData({ ...formData, period: e.target.value })}
+                    disabled={formData.is_free}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                   >
                     <option value="month">Monthly</option>
@@ -130,13 +279,17 @@ const  AddSubscriptionPlanModal= ({ isOpen, onClose, onSave, editingPlan, isCrea
                     Card Color Theme
                   </label>
                   <select
-                    value={formData.cardColor}
-                    onChange={(e) => setFormData({ ...formData, cardColor: e.target.value })}
+                    value={formData.card_color} // ✅ Fixed field name
+                    onChange={(e) => setFormData({ ...formData, card_color: e.target.value })}
+                    disabled={formData.is_free}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                   >
                     <option value="cyan">Cyan (Popular)</option>
                     <option value="emerald">Emerald (Premium)</option>
                     <option value="gray">Gray (Basic)</option>
+                    {formData.is_free && (
+                      <p className="text-xs text-gray-500 mt-1">Free plans automatically use gray theme</p>
+                    )}
                   </select>
                 </div>
 
@@ -159,8 +312,11 @@ const  AddSubscriptionPlanModal= ({ isOpen, onClose, onSave, editingPlan, isCrea
                   </label>
                   <input
                     type="text"
-                    value={formData.buttonText}
-                    onChange={(e) => setFormData({ ...formData, buttonText: e.target.value })}
+                    value={formData.button_text} // ✅ Fixed field name
+                    onChange={(e) => {
+                      console.log("Button text changed:", e.target.value);
+                      setFormData({ ...formData, button_text: e.target.value });
+                    }}
                     placeholder="e.g., Start Free Trial, Subscribe"
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                   />
@@ -174,9 +330,13 @@ const  AddSubscriptionPlanModal= ({ isOpen, onClose, onSave, editingPlan, isCrea
                     type="text"
                     value={formData.badge || ''}
                     onChange={(e) => setFormData({ ...formData, badge: e.target.value || null })}
+                    disabled={formData.is_free}
                     placeholder="e.g., Most Popular, Save ₹499"
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                   />
+                  {formData.is_free && (
+                    <p className="text-xs text-gray-500 mt-1">Free plans don't display badges</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -187,6 +347,7 @@ const  AddSubscriptionPlanModal= ({ isOpen, onClose, onSave, editingPlan, isCrea
                 <h3 className="text-lg font-semibold text-gray-900">Plan Features</h3>
                 <button
                   onClick={addFeature}
+                  type="button"
                   className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors text-sm"
                 >
                   <Plus className="w-4 h-4" />
@@ -242,6 +403,7 @@ const  AddSubscriptionPlanModal= ({ isOpen, onClose, onSave, editingPlan, isCrea
 
                       <button
                         onClick={() => removeFeature(idx)}
+                        type="button"
                         className="flex-shrink-0 mt-6 p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         title="Remove feature"
                       >
@@ -278,15 +440,15 @@ const  AddSubscriptionPlanModal= ({ isOpen, onClose, onSave, editingPlan, isCrea
             <div className="bg-gray-50 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Preview</h3>
               <div className={`${
-                formData.cardColor === 'cyan' ? 'bg-cyan-50' :
-                formData.cardColor === 'emerald' ? 'bg-emerald-50' :
+                formData.card_color === 'cyan' ? 'bg-cyan-50' :
+                formData.card_color === 'emerald' ? 'bg-emerald-50' :
                 'bg-gray-50'
               } rounded-2xl p-6 border-2 border-gray-200 relative max-w-sm mx-auto`}>
                 {formData.badge && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                     <span className={`${
-                      formData.cardColor === 'cyan' ? 'bg-cyan-500' :
-                      formData.cardColor === 'emerald' ? 'bg-emerald-600' :
+                      formData.card_color === 'cyan' ? 'bg-cyan-500' :
+                      formData.card_color === 'emerald' ? 'bg-emerald-600' :
                       'bg-gray-500'
                     } text-white text-xs font-bold px-4 py-1 rounded-full`}>
                       {formData.badge}
@@ -311,7 +473,7 @@ const  AddSubscriptionPlanModal= ({ isOpen, onClose, onSave, editingPlan, isCrea
 
                 <div className="mb-6">
                   <div className="w-full bg-teal-600 text-white font-semibold py-3 px-4 rounded-lg text-center">
-                    {formData.buttonText || 'Button Text'}
+                    {formData.button_text || 'Button Text'}
                   </div>
                 </div>
 
@@ -345,13 +507,22 @@ const  AddSubscriptionPlanModal= ({ isOpen, onClose, onSave, editingPlan, isCrea
         {/* Modal Footer */}
         <div className="bg-gray-50 border-t border-gray-200 px-8 py-5 flex items-center justify-end gap-3">
           <button
-            onClick={onClose}
+            onClick={() => {
+              console.log("🚫 Cancel clicked");
+              onClose();
+            }}
+            type="button"
             className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
           >
             Cancel
           </button>
           <button
-            onClick={handleSave}
+            onClick={(e) => {
+              console.log("🖱️ Save button clicked, event:", e.type);
+              e.preventDefault();
+              handleSave();
+            }}
+            type="button"
             className="flex items-center gap-2 px-6 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium"
           >
             <Save className="w-4 h-4" />
@@ -362,4 +533,5 @@ const  AddSubscriptionPlanModal= ({ isOpen, onClose, onSave, editingPlan, isCrea
     </div>
   );
 };
+
 export default AddSubscriptionPlanModal;

@@ -215,7 +215,7 @@ const selectionStageSlice = createSlice({
             state.stages = state.stages.filter(s => s.id !== action.payload.stageId)
             state.freeStages = state.freeStages.filter(s => s.id !== action.payload.stageId)
             state.premiumStages = state.premiumStages.filter(s => s.id !== action.payload.stageId)
-            state.successMessage = state.payload.message || 'Stage deleted successfully';
+            state.successMessage = action.payload.message || 'Stage deleted successfully';
             state.error = null;
         })
         .addCase(deleteSelectionStage.rejected, (state,action)=>{
