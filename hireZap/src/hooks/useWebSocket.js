@@ -139,7 +139,63 @@ export const useWebSocket = () => {
       case 'new_job_posted':
         notify.info(`New job posted: ${data.job_title}`, { duration: 5000 });
         break;
+      
+      // ==================== Bulk Screening Started ====================
+      case 'bulk_screening_started':
+        console.log('🚀 Bulk screening started:', data);
+        notify.info(`🚀 Resume screening started for ${job_title || 'job'}`, { duration: 5000 });
+        break;
 
+      // ==================== Screening Progress ====================
+      case 'screening_progress':
+        console.log('📊 Screening progress update:', data.progress || data);
+        
+        // This is primarily handled in RecruiterHiringProcess component
+        // Show milestone notifications
+        const progressData = data.progress || data;
+        if (progressData) {
+          // Show notifications at 25%, 50%, 75%
+          if ([25, 50, 75].includes(Math.floor(progressData.percentage))) {
+            notify.info(`Screening ${Math.floor(progressData.percentage)}% complete`, { duration: 3000 });
+          }
+          
+          // Completion notification
+          if (progressData.status === 'completed') {
+            notify.success(
+              `✅ Resume screening completed! ${progressData.screened_applications || 0} candidates screened.`, 
+              { duration: 7000 }
+            );
+          }
+          
+          // Failure notification
+          if (progressData.status === 'failed') {
+            notify.error(
+              `❌ Screening failed: ${progressData.error || 'Unknown error'}`, 
+              { duration: 7000 }
+            );
+          }
+        }
+        break;
+
+      // ==================== Screening Progress Update ====================
+      case 'screening_progress_update':
+        console.log('📈 Screening progress update (individual):', data);
+        // This is for real-time individual candidate updates
+        // You can dispatch an action here if needed
+        break;
+
+      // ==================== Screening Paused ====================
+      case 'screening_paused':
+        notify.warning(`⏸️ Screening paused for ${job_title || 'job'}`, { duration: 5000 });
+        break;
+
+      // ==================== Individual Candidate Screened ====================
+      case 'candidate_screened':
+        console.log('✅ Candidate screened:', data);
+        // Optional: Show individual notifications
+        // Uncomment if you want real-time per-candidate notifications:
+        // notify.info(`Candidate screened: ${data.candidate_name || 'Unknown'}`, { duration: 2000 });
+        break;
       default:
         console.log('Unknown message type:', type);
     }

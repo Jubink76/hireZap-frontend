@@ -32,9 +32,9 @@ import {
   deleteCertification,
 } from '../../../redux/slices/candidateSlice'
 
-import useCloudinaryUpload from '../../../hooks/useCloudinaryUpload';
 import { notify } from '../../../utils/toast';
 import { useDispatch, useSelector } from 'react-redux';
+import useFileUpload from '../../../hooks/useFileUpload';
 
 const CandidateProfessionalProfile = () => {
 
@@ -52,7 +52,7 @@ const CandidateProfessionalProfile = () => {
     profileLoaded 
   } = useSelector((state) => state.candidate);
 
-  const { uploadFile, loading: uploading } = useCloudinaryUpload();
+  const { uploadFile, loading: uploading } = useFileUpload();
   const fileInputRef = useRef(null);
   const resumeInputRef = useRef(null);
 
