@@ -24,6 +24,8 @@ const applicationApi = {
     
     getApplicationStatistics: (jobId) => 
         axiosInstance.get(`/application/job/${jobId}/statistics/`),
+    getApplicationProgres:(applicationId) =>
+        axiosInstance.get(`/application/${applicationId}/stage-progress/`),
 }
 
 export default applicationApi;

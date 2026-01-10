@@ -226,6 +226,10 @@ const resumeScreeningSlice = createSlice({
       .addCase(moveToNextStage.fulfilled, (state, action) => {
         state.loading = false;
         state.successMessage = `${action.payload.total_moved} candidates moved to next stage`;
+        //for next stage
+        state.screeningProgress = null;
+        state.screeningInProgress = false;
+        state.screeningResults = [];
       })
       .addCase(moveToNextStage.rejected, (state, action) => {
         state.loading = false;

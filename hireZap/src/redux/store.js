@@ -10,6 +10,7 @@ import adminReducer from './slices/adminSlice'
 import selectionStageReducer from './slices/selectionStageSlice';
 import subscriptionPlanReducer from './slices/subscriptionPlanSlice';
 import resumeScreeningReducer from './slices/resumeScreeningSlice';
+import telephonicReducer from './slices/telephonicSlice';
 
 const persistConfig = {
   key: 'root',
@@ -27,6 +28,7 @@ const rootReducer = combineReducers({
   selectionStage:selectionStageReducer,
   subscriptionPlan:subscriptionPlanReducer,
   resumeScreener:resumeScreeningReducer,
+  telephonic:telephonicReducer,
 
 });
 

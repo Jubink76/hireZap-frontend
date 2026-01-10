@@ -196,6 +196,155 @@ export const useWebSocket = () => {
         // Uncomment if you want real-time per-candidate notifications:
         // notify.info(`Candidate screened: ${data.candidate_name || 'Unknown'}`, { duration: 2000 });
         break;
+
+      // ==================== TELEPHONIC ROUND ====================
+      
+      // Interview Scheduled
+      case 'interview_scheduled':
+        console.log('📅 Interview scheduled:', data);
+        notify.success(
+          `📞 Interview scheduled for ${data.candidate_name || 'candidate'}`, 
+          { duration: 5000 }
+        );
+        // Update candidate in Redux
+        if (data.interview_id) {
+          dispatch(updateCandidateFromWebSocket({
+            interview_id: data.interview_id,
+            interview_status: 'scheduled',
+            scheduled_at: data.scheduled_at,
+            duration_minutes: data.duration,
+          }));
+        }
+        break;
+
+      // Interview Rescheduled
+      case 'interview_rescheduled':
+        console.log('🔄 Interview rescheduled:', data);
+        notify.info(
+          `Interview rescheduled for ${data.candidate_name || 'candidate'}`, 
+          { duration: 5000 }
+        );
+        if (data.interview_id) {
+          dispatch(updateCandidateFromWebSocket({
+            interview_id: data.interview_id,
+            scheduled_at: data.new_scheduled_at,
+          }));
+        }
+        break;
+
+      // Call Started
+      case 'call_started':
+        console.log('📞 Call started:', data);
+        notify.info(
+          `Call started with ${data.candidate_name || 'candidate'}`, 
+          { duration: 3000 }
+        );
+        if (data.interview_id) {
+          dispatch(updateCandidateFromWebSocket({
+            interview_id: data.interview_id,
+            interview_status: 'in_progress',
+            started_at: new Date().toISOString(),
+          }));
+        }
+        break;
+
+      // Call Ended
+      case 'call_ended':
+        console.log('✅ Call ended:', data);
+        notify.success(
+          `Call ended with ${data.candidate_name || 'candidate'}`, 
+          { duration: 5000 }
+        );
+        if (data.interview_id) {
+          dispatch(updateCandidateFromWebSocket({
+            interview_id: data.interview_id,
+            interview_status: 'completed',
+            ended_at: new Date().toISOString(),
+            call_duration: data.duration,
+          }));
+        }
+        break;
+
+      // Interview Completed (with results)
+      case 'interview_completed':
+        console.log('🎉 Interview completed with results:', data);
+        notify.success(
+          `Interview evaluated for ${data.candidate_name || 'candidate'}`, 
+          { duration: 7000 }
+        );
+        if (data.interview_id) {
+          dispatch(updateCandidateFromWebSocket({
+            interview_id: data.interview_id,
+            interview_status: 'completed',
+            call_score: data.score,
+            decision: data.decision,
+          }));
+          
+          // Update stats
+          dispatch(updateStatsFromWebSocket({
+            completed: (data.stats?.completed || 0) + 1,
+            average_score: data.stats?.average_score,
+            qualified_count: data.stats?.qualified_count,
+          }));
+        }
+        break;
+
+      // Interview Analyzed (AI analysis complete)
+      case 'interview_analyzed':
+        console.log('🤖 Interview analyzed:', data);
+        notify.info(
+          `AI analysis completed for ${data.candidate_name || 'candidate'}`, 
+          { duration: 5000 }
+        );
+        if (data.interview_id) {
+          dispatch(updateCandidateFromWebSocket({
+            interview_id: data.interview_id,
+            call_score: data.score,
+            decision: data.decision,
+          }));
+        }
+        break;
+
+      // Score Overridden
+      case 'score_overridden':
+        console.log('✏️ Score overridden:', data);
+        notify.info(
+          `Score updated for ${data.candidate_name || 'candidate'}`, 
+          { duration: 5000 }
+        );
+        if (data.interview_id) {
+          dispatch(updateCandidateFromWebSocket({
+            interview_id: data.interview_id,
+            call_score: data.new_score,
+            decision: data.new_decision,
+          }));
+        }
+        break;
+
+      // Interview Status Updated
+      case 'interview_status_updated':
+        console.log('📊 Interview status updated:', data);
+        if (data.decision === 'qualified') {
+          notify.success(
+            `Good news! Your interview for ${data.job_title} was successful`, 
+            { duration: 7000 }
+          );
+        } else {
+          notify.info(
+            `Interview status updated for ${data.job_title}`, 
+            { duration: 5000 }
+          );
+        }
+        break;
+
+      // Stage Progression
+      case 'stage_progression':
+        console.log('🚀 Stage progression:', data);
+        notify.success(
+          `Congratulations! You've been moved to ${data.next_stage}`, 
+          { duration: 7000 }
+        );
+        break;
       default:
         console.log('Unknown message type:', type);
     }

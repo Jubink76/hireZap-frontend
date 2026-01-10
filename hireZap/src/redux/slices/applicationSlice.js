@@ -109,9 +109,19 @@ export const updateApplicationStatus = createAsyncThunk(
     }
 );
 
+export const fetchApplicationProgress = createAsyncThunk('fetch/applicationProgres', async(applicationId, thunkAPI)=>{
+    try{
+        const res = await applicationServices.getApplicationProgress(applicationId);
+        return res
+    }catch(err){
+        const friendly = getFriendlyError(err, 'Failed to fetch application progress')
+        return thunkAPI.rejectWithValue(friendly);
+    }
+})
 
 const initialState = {
     currentApplication: null,
+    applicationData:null,
     myApplications:[],
     jobApplications:[],
     loading:false,
@@ -312,6 +322,20 @@ const applicationSlice = createSlice({
                 state.error = null;
             })
             .addCase(updateApplicationStatus.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+            // fetch application progress
+            .addCase(fetchApplicationProgress.pending, (state)=>{
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchApplicationProgress.fulfilled, (state,action)=>{
+                state.loading = false;
+                state.applicationData = action.payload
+                state.error = null
+            })
+            .addCase(fetchApplicationProgress.rejected, (state,action)=>{
                 state.loading = false;
                 state.error = action.payload;
             });

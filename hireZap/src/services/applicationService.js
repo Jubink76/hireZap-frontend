@@ -37,6 +37,10 @@ const applicationServices = {
     async updateApplicationStatus(id, statusData) {
         const res = await applicationApi.updateApplicationStatus(id, statusData);
         return res;
+    }, 
+    async getApplicationProgress(applicationId) {
+        const res = await applicationApi.getApplicationProgres(applicationId);
+        return res
     },
 }
 export default applicationServices;
