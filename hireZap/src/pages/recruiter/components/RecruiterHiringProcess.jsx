@@ -17,6 +17,7 @@ import {
   clearSuccessMessage,
   updateProgressFromWebSocket,
 } from '../../../redux/slices/resumeScreeningSlice';
+import HRInterviewRound from '../stages/HRInterviewRound';
 
 const RecruiterHiringProcess = () => {
   const dispatch = useDispatch();
@@ -549,6 +550,16 @@ const RecruiterHiringProcess = () => {
                 }
               }}
             />
+          ) :selectedStage?.slug === 'hr-round' ?(
+              <HRInterviewRound 
+              jobId={selectedJob.id}
+              onRefresh={fetchScreeningData}
+              onMoveToNext={() => {
+                const currentIndex = jobStages.findIndex(s => s.id === expandedStage);
+                if (currentIndex !== -1 && currentIndex < jobStages.length - 1) {
+                  setExpandedStage(jobStages[currentIndex + 1].id);
+                }
+              }}/>
           ) : (
             // Default stage view for other stages
             <div className="bg-white rounded-lg border border-gray-200">

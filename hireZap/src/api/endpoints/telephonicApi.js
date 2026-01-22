@@ -34,21 +34,74 @@ const telephonicApi = {
         const response = await axiosInstance.post('/telephonic-round/start-call/', {interview_id: interviewId});
         return response;
     },
+    joinCall: async (interviewId) => {
+        const response = await axiosInstance.post('/telephonic-round/join-call/', { 
+            interview_id: interviewId 
+        });
+        
+        console.log('📍 telephonicApi.joinCall - Raw axios response:', response);
+        
+        return response; // Or response.data - check which one you're returning
+    },
     endCall: async (sessionId, durationSeconds, recordingFile = null, connectionQuality = 'good') => {
+        console.log('🔍 endCall API called with:', {
+            sessionId,
+            durationSeconds,
+            hasRecording: !!recordingFile,
+            recordingSize: recordingFile?.size,
+            recordingType: recordingFile?.type,
+            connectionQuality
+        });
+        
         const formData = new FormData();
         formData.append('call_session_id', sessionId);
-        formData.append('duration_seconds', durationSeconds);
+        formData.append('duration_seconds', durationSeconds.toString());
         formData.append('connection_quality', connectionQuality);
         
         if (recordingFile) {
-        formData.append('recording_file', recordingFile);
+            // Make sure it's a File object
+            if (recordingFile instanceof File || recordingFile instanceof Blob) {
+                formData.append('recording_file', recordingFile, recordingFile.name || 'recording.webm');
+                console.log('✅ Recording file appended to FormData');
+            } else {
+                console.error('❌ Invalid recording file type:', typeof recordingFile);
+            }
         }
-
-        const response = await axiosInstance.post('/telephonic-round/end-call/', formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-        },
-        });
+        
+        // Log FormData contents
+        console.log('📦 FormData contents:');
+        for (let [key, value] of formData.entries()) {
+            if (value instanceof File) {
+                console.log(`  ${key}:`, {
+                    name: value.name,
+                    size: value.size,
+                    type: value.type
+                });
+            } else {
+                console.log(`  ${key}:`, value);
+            }
+        }
+        
+        try {
+            const response = await axiosInstance.post('/telephonic-round/end-call/', formData, {
+                headers: {
+                    // Let browser set Content-Type with boundary for multipart/form-data
+                    'Content-Type': undefined
+                },
+                // Increase timeout for file upload
+                timeout: 60000, // 60 seconds
+            });
+            
+            console.log('✅ End call API response:', response);
+            return response;
+            
+        } catch (error) {
+            console.error('❌ End call API error:', error);
+            throw error;
+        }
+    },
+    getInterviewStatus:async(interviewId) =>{
+        const response = await axiosInstance.get(`/telephonic-round/status/${interviewId}`)
         return response;
     },
     getInterviewDetails: async (interviewId) => {

@@ -85,6 +85,19 @@ export const startCall = createAsyncThunk('start/call', async(interviewId, thunk
     }
 })
 
+export const joinCall = createAsyncThunk(
+  'telephonic/joinCall',
+  async (interviewId, thunkAPI) => {
+    try {
+      const response = await telephonicService.joinCall(interviewId); 
+      return response; 
+    } catch (err) {
+      const friendly = getFriendlyError(err, 'Failed to join call');
+      return thunkAPI.rejectWithValue(friendly);
+    }
+  }
+);
+
 export const endCall = createAsyncThunk('end/call', async({sessionId, durationSeconds, recordingFile, connectionQuality}, thunkAPI)=>{
     try{
         const response = await telephonicService.endCall(sessionId,durationSeconds,recordingFile, connectionQuality);
@@ -96,6 +109,16 @@ export const endCall = createAsyncThunk('end/call', async({sessionId, durationSe
 })
 
 // interview details
+
+export const getInterviewStatus = createAsyncThunk('get/interview-status', async(interviewId, thunkAPI)=>{
+    try{
+        const response = await telephonicService.getInterviewStatus(interviewId);
+        return response
+    }catch(err){
+        const friendly = getFriendlyError(err, 'failed to fetch interview status')
+        return thunkAPI.rejectWithValue(friendly)
+    }
+})
 export const fetchInterviewDetails = createAsyncThunk('fetch/interviewDetail', async(interviewId, thunkAPI)=>{
     try{
         const response = await telephonicService.getInterviewDetails(interviewId);
@@ -153,7 +176,8 @@ const initialState = {
   statsError: null,
 
   // Active Interview
-  activeInterview: null,
+  currentCall: null,
+  currentCallStatus:null,
   interviewDetails: null,
   interviewDetailsLoading: false,
   interviewDetailsError: null,
@@ -346,6 +370,19 @@ const telephonicSlice =  createSlice({
             state.callLoading = false;
             state.callError = action.payload;
         })
+        .addCase(joinCall.pending, (state)=>{
+            state.callLoading = false;
+            state.callError = null;
+        })
+        .addCase(joinCall.fulfilled,(state,action)=>{
+            state.callLoading = false;
+            state.currentCall = action.payload;
+            state.successMessage = 'Successfully joined the interview'
+        })
+        .addCase(joinCall.rejected, (state,action)=>{
+            state.callLoading = false;
+            state.callError = action.payload;
+        })
         .addCase(endCall.pending, (state) => {
             state.callLoading = true;
             state.callError = null;
@@ -356,6 +393,19 @@ const telephonicSlice =  createSlice({
             state.successMessage = action.payload.message || 'Call ended successfully';
         })
         .addCase(endCall.rejected, (state, action) => {
+            state.callLoading = false;
+            state.callError = action.payload;
+        })
+        .addCase(getInterviewStatus.pending, (state)=>{
+            state.callLoading = true;
+            state.callError = null;
+        })
+        .addCase(getInterviewStatus.fulfilled,(state,action)=>{
+            state.callLoading = false;
+            state.currentCallStatus = action.payload;
+            state.callError = null;
+        })
+        .addCase(getInterviewStatus.rejected,(state,action)=>{
             state.callLoading = false;
             state.callError = action.payload;
         })

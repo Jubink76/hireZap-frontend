@@ -1,33 +1,116 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Bell,Loader2, MessageSquare, Briefcase , Calendar, CheckCircle, Clock, AlertCircle, ArrowRight,RefreshCw, FileText,Phone,Video,Users,Award       } from 'lucide-react';
+import { ChevronLeft, Bell, Loader2, MessageSquare, Briefcase, Calendar, CheckCircle, Clock, AlertCircle, ArrowRight, RefreshCw, FileText, Phone, Video, Users, Award } from 'lucide-react';
 import { fetchApplicationProgress } from '../../../redux/slices/applicationSlice';
+import { joinCall } from '../../../redux/slices/telephonicSlice'; 
+import InterviewCallInterface from '../../../modals/InterviewCallInterface'; 
 import { useDispatch, useSelector } from 'react-redux';
+import { notify } from '../../../utils/toast';
 
 const JobApplicationTracker = () => {
   const { applicationId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const {applicationData, loading, error} = useSelector(
+  // ✅ Get application data from Redux
+  const { applicationData, loading, error } = useSelector(
     (state) => state.application
-  )
+  );
 
-  
+  // ✅ Get telephonic state (for activeCallSession if you store it)
+  const { currentCall } = useSelector((state) => state.telephonic);
+
+  const [showCallInterface, setShowCallInterface] = useState(false);
+  const [currentInterview, setCurrentInterview] = useState(null);
+  const [joiningCall, setJoiningCall] = useState(false);
 
   // Fetch application progress on mount and set up polling
   useEffect(() => {
     if (applicationId) {
       dispatch(fetchApplicationProgress(applicationId));
       
-      // Poll every 30 seconds for updates
+      // Poll every 10 seconds for updates (faster polling for real-time feel)
       const interval = setInterval(() => {
         dispatch(fetchApplicationProgress(applicationId));
-      }, 30000);
+      }, 10000);
       
       return () => clearInterval(interval);
     }
   }, [applicationId, dispatch]);
+
+  // ✅ Auto-open call interface if interview is active (in_progress or joined)
+  useEffect(() => {
+    if (applicationData?.stages) {
+      // Find a stage that is 'in_progress' or 'joined' with session_id from backend
+      const activeStage = applicationData.stages.find(
+        stage => (stage.status === 'in_progress' || stage.status === 'joined') && 
+                 stage.interview_id && 
+                 stage.session_id
+      );
+      
+      if (activeStage) {
+        // Only update if interview changes or we don't have current interview set
+        if (!currentInterview || currentInterview.interview_id !== activeStage.interview_id) {
+          setCurrentInterview({
+            interview_id: activeStage.interview_id,
+            recruiter_name: 'Recruiter', // You can get this from backend if needed
+            job_title: applicationData.job_title,
+            session_id: activeStage.session_id,
+            status: activeStage.status
+          });
+        }
+        
+        // Always ensure modal is open if there's an active interview
+        if (!showCallInterface) {
+          setShowCallInterface(true);
+        }
+      } else {
+        // No active interview, close the modal
+        if (showCallInterface) {
+          setShowCallInterface(false);
+          setCurrentInterview(null);
+        }
+      }
+    }
+  }, [applicationData]);
+
+  // Listen for WebSocket notifications
+  useEffect(() => {
+    if (!applicationData?.candidate_id) return;
+
+    const ws = new WebSocket(
+      `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws/notifications/${applicationData.candidate_id}/`
+    );
+
+    ws.onopen = () => {
+      console.log('WebSocket connected');
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      
+      if (data.type === 'call_started') {
+        notify.info('Interview call has started! You can join now.');
+        dispatch(fetchApplicationProgress(applicationId));
+      }
+      
+      if (data.type === 'call_ended') {
+        notify.info('Interview call has ended');
+        setShowCallInterface(false);
+        setCurrentInterview(null); // ✅ Clear interview on call end
+        dispatch(fetchApplicationProgress(applicationId));
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    return () => {
+      console.log('WebSocket disconnecting');
+      ws.close();
+    };
+  }, [applicationData?.candidate_id, applicationId, dispatch]);
 
   // Helper function to get stage icon
   const getStageIconComponent = (slug) => {
@@ -48,6 +131,7 @@ const JobApplicationTracker = () => {
       completed: { text: 'Completed', color: 'bg-green-500 text-white', icon: CheckCircle },
       passed: { text: 'Passed', color: 'bg-green-500 text-white', icon: CheckCircle },
       in_progress: { text: 'In Progress', color: 'bg-orange-500 text-white', icon: Clock },
+      joined: { text: 'Interview Active', color: 'bg-green-500 text-white', icon: Phone },
       scheduled: { text: 'Scheduled', color: 'bg-blue-500 text-white', icon: Calendar },
       pending: { text: 'Pending', color: 'bg-gray-400 text-white', icon: Clock }
     };
@@ -70,7 +154,7 @@ const JobApplicationTracker = () => {
     if (stage.status === 'completed') {
       return <CheckCircle className={`${iconClass} text-white`} />;
     }
-    if (stage.status === 'in_progress') {
+    if (stage.status === 'in_progress' || stage.status === 'joined') {
       return <Clock className={`${iconClass} text-white`} />;
     }
     if (stage.status === 'scheduled') {
@@ -83,12 +167,12 @@ const JobApplicationTracker = () => {
     const bgMap = {
       completed: 'bg-teal-600',
       in_progress: 'bg-orange-500',
+      joined: 'bg-green-600',
       scheduled: 'bg-blue-500',
       pending: 'bg-gray-400'
     };
     return bgMap[status] || 'bg-gray-400';
   };
-
 
   const formatDateTime = (dateString) => {
     if (!dateString) return '';
@@ -112,61 +196,85 @@ const JobApplicationTracker = () => {
     });
   };
 
-  const handleJoinInterview = (stage) => {
-    if (stage.interview_id && stage.stage_slug === 'telephonic-round') {
-      // Navigate to telephonic interview page
-      navigate(`/candidate/telephonic-interview/${stage.interview_id}`);
+  const handleJoinInterview = async (stage) => {
+    if (!stage.interview_id) {
+      notify.error('Interview ID not found');
+      return;
     }
-    // Add more interview types as needed
+
+    setJoiningCall(true);
+    
+    try {
+      const result = await dispatch(joinCall(stage.interview_id)).unwrap();
+      
+      if (result.success) {
+        setCurrentInterview({
+          interview_id: stage.interview_id,
+          recruiter_name: result.recruiter_name,
+          job_title: result.job_title,
+          session_id: result.session_id,
+          status: 'joined'
+        });
+        setShowCallInterface(true);
+        notify.success('Successfully joined the interview');
+      }
+    } catch (error) {
+      notify.error(error || 'Failed to join interview');
+    } finally {
+      setJoiningCall(false);
+    }
+  };
+
+  const handleCallInterfaceClose = () => {
+    // Don't close the modal, just minimize it
+    // User can reopen by clicking on the stage or a "Resume Call" button
+    setShowCallInterface(false);
+    // Keep currentInterview in state so we can reopen
   };
 
   const canJoinInterview = (stage) => {
-  // Only show join button if interview is actually in progress (started by recruiter)
-  return stage.status === 'in_progress' && stage.interview_id;
-};
+    // Only show join button if interview is in progress (started by recruiter)
+    return stage.status === 'in_progress' && stage.interview_id;
+  };
 
-// Add a helper function to check if we should show reminder
-const shouldShowReminder = (stage) => {
-  if (stage.status !== 'scheduled' || !stage.scheduled_at) return false;
+  const shouldShowReminder = (stage) => {
+    if (stage.status !== 'scheduled' || !stage.scheduled_at) return false;
 
-  const scheduledTime = new Date(stage.scheduled_at);
-  const now = new Date();
+    const scheduledTime = new Date(stage.scheduled_at);
+    const now = new Date();
+    const diffMs = scheduledTime - now;
+    const diffHours = diffMs / (1000 * 60 * 60);
+    
+    return diffHours <= 24 && diffHours > -0.25;
+  };
 
-  const diffMs = scheduledTime - now;
-  const diffHours = diffMs / (1000 * 60 * 60);
-  
-  // Show reminder from 24h before until interview starts
-  return diffHours <= 24 && diffHours > -0.25;
-};
+  const getTimeUntilInterview = (scheduledAt) => {
+    const scheduledTime = new Date(scheduledAt);
+    const now = new Date();
+    const diffMs = scheduledTime - now;
+    
+    if (diffMs < 0) return 'Interview time has passed';
+    
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (hours > 24) {
+      const days = Math.floor(hours / 24);
+      return `in ${days} day${days > 1 ? 's' : ''}`;
+    } else if (hours > 0) {
+      return `in ${hours} hour${hours > 1 ? 's' : ''} ${minutes > 0 ? `${minutes} min` : ''}`;
+    } else if (minutes > 0) {
+      return `in ${minutes} minute${minutes > 1 ? 's' : ''}`;
+    } else {
+      return 'starting soon';
+    }
+  };
 
-// Format time remaining until interview
-const getTimeUntilInterview = (scheduledAt) => {
-  const scheduledTime = new Date(scheduledAt);
-  const now = new Date();
-  const diffMs = scheduledTime - now;
-  
-  if (diffMs < 0) return 'Interview time has passed';
-  
-  const hours = Math.floor(diffMs / (1000 * 60 * 60));
-  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-  
-  if (hours > 24) {
-    const days = Math.floor(hours / 24);
-    return `in ${days} day${days > 1 ? 's' : ''}`;
-  } else if (hours > 0) {
-    return `in ${hours} hour${hours > 1 ? 's' : ''} ${minutes > 0 ? `${minutes} min` : ''}`;
-  } else if (minutes > 0) {
-    return `in ${minutes} minute${minutes > 1 ? 's' : ''}`;
-  } else {
-    return 'starting soon';
-  }
-};
-
-  // Find current and next stages
-  const currentStage = applicationData?.stages?.find(s => s.status === 'in_progress' || s.status === 'scheduled');
-  const nextStageIndex = applicationData?.stages?.findIndex(s => s.status === 'in_progress' || s.status === 'scheduled');
+  const currentStage = applicationData?.stages?.find(s =>
+    s.status === 'in_progress' || s.status === 'joined' || s.status === 'scheduled');
+  const nextStageIndex = applicationData?.stages?.findIndex(s => 
+    s.status === 'in_progress' || s.status === 'joined' || s.status === 'scheduled');
   const nextStage = nextStageIndex >= 0 && nextStageIndex < (applicationData?.stages?.length - 1) 
-
     ? applicationData?.stages[nextStageIndex + 1] 
     : null;
 
@@ -219,7 +327,6 @@ const getTimeUntilInterview = (scheduledAt) => {
           </button>
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-4">
-              {/* Company Logo */}
               <div className="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
                 {applicationData.company_logo ? (
                   <img
@@ -267,9 +374,7 @@ const getTimeUntilInterview = (scheduledAt) => {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Application Progress */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Application Progress Card */}
             <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl p-6 border border-teal-100">
               <h2 className="text-lg font-bold text-gray-900 mb-2">Application Progress</h2>
               <p className="text-sm text-gray-600 mb-4">
@@ -295,7 +400,6 @@ const getTimeUntilInterview = (scheduledAt) => {
               </div>
             </div>
 
-            {/* Stages List */}
             {hasNoStages ? (
               <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
                 <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
@@ -313,32 +417,26 @@ const getTimeUntilInterview = (scheduledAt) => {
                   <div className="space-y-4">
                     {applicationData.stages?.map((stage, index) => (
                       <div key={stage.stage_id} className="relative">
-                        {/* Connector Line */}
                         {index < applicationData.stages.length - 1 && (
                           <div className="absolute left-6 top-12 bottom-0 w-0.5 bg-gray-200" />
                         )}
                         
-                        {/* Stage Card */}
                         <div className="relative flex items-start gap-4 bg-gray-50 rounded-lg p-4 hover:shadow-sm transition-shadow">
-                          {/* Icon */}
                           <div className={`w-12 h-12 rounded-lg ${getStageIconBg(stage.status)} flex items-center justify-center flex-shrink-0 relative z-10`}>
                             {getStageIcon(stage)}
                           </div>
 
-                          {/* Content */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-3">
                               <div className="flex-1">
                                 <h3 className="text-base font-semibold text-gray-900">{stage.stage_name}</h3>
                                 
-                                {/* Scheduled Info - Show reminder */}
                                 {stage.scheduled_at && stage.status === 'scheduled' && (
                                   <div className="mt-2 space-y-2">
                                     <p className="text-sm text-blue-600 font-medium">
                                       Scheduled for {formatDateTime(stage.scheduled_at)}
                                     </p>
                                     
-                                    {/* Reminder Card */}
                                     {shouldShowReminder(stage) && (
                                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
                                         <div className="flex items-start gap-2">
@@ -351,7 +449,7 @@ const getTimeUntilInterview = (scheduledAt) => {
                                               Your interview is scheduled {getTimeUntilInterview(stage.scheduled_at)}
                                             </p>
                                             <p className="text-xs text-blue-600 mt-1">
-                                              The recruiter will start the call at the scheduled time. You'll be able to join once they begin.
+                                              The recruiter will start the call at the scheduled time.
                                             </p>
                                           </div>
                                         </div>
@@ -360,18 +458,19 @@ const getTimeUntilInterview = (scheduledAt) => {
                                   </div>
                                 )}
                                 
-                                {/* In Progress Info */}
-                                {stage.status === 'in_progress' && (
+                                {(stage.status === 'in_progress' || stage.status === 'joined') && (
                                   <div className="mt-2">
                                     <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                                       <div className="flex items-start gap-2">
                                         <div className="w-2 h-2 bg-green-500 rounded-full mt-1.5 animate-pulse" />
                                         <div className="flex-1">
                                           <p className="text-xs font-semibold text-green-900">
-                                            Interview is Live
+                                            {stage.status === 'joined' ? 'Interview Active' : 'Interview Ready'}
                                           </p>
                                           <p className="text-xs text-green-700 mt-1">
-                                            The recruiter has started the interview. Click below to join now.
+                                            {stage.status === 'joined' 
+                                              ? 'You are currently in the interview call'
+                                              : 'The recruiter has started the interview. Click below to join now.'}
                                           </p>
                                         </div>
                                       </div>
@@ -379,14 +478,12 @@ const getTimeUntilInterview = (scheduledAt) => {
                                   </div>
                                 )}
                                 
-                                {/* Completed Info */}
                                 {stage.completed_at && (
                                   <p className="text-xs text-gray-500 mt-2">
                                     Completed on {formatDate(stage.completed_at)}
                                   </p>
                                 )}
                                 
-                                {/* Score */}
                                 {stage.score !== null && stage.score !== undefined && (
                                   <p className="text-sm text-teal-600 font-semibold mt-2">
                                     Score: {stage.score}%
@@ -398,7 +495,6 @@ const getTimeUntilInterview = (scheduledAt) => {
                                   </p>
                                 )}
                                 
-                                {/* Feedback */}
                                 {stage.feedback && (
                                   <p className="text-xs text-gray-600 mt-2 italic bg-white p-2 rounded border border-gray-200">
                                     "{stage.feedback}"
@@ -410,15 +506,35 @@ const getTimeUntilInterview = (scheduledAt) => {
                               </div>
                             </div>
 
-                            {/* Action Button - Only show when interview is in progress */}
                             {canJoinInterview(stage) && (
                               <button 
                                 onClick={() => handleJoinInterview(stage)}
-                                className="mt-3 flex items-center gap-2 px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition-colors animate-pulse"
+                                disabled={joiningCall}
+                                className="mt-3 flex items-center gap-2 px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition-colors animate-pulse disabled:opacity-50"
+                              >
+                                {joiningCall ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    Joining...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Phone className="w-4 h-4" />
+                                    Join Interview Now
+                                    <ArrowRight className="w-4 h-4" />
+                                  </>
+                                )}
+                              </button>
+                            )}
+
+                            {/* Resume Call Button - Show when interview is active but modal is closed */}
+                            {stage.status === 'joined' && currentInterview && !showCallInterface && (
+                              <button 
+                                onClick={() => setShowCallInterface(true)}
+                                className="mt-3 flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
                               >
                                 <Phone className="w-4 h-4" />
-                                Join Interview Now
-                                <ArrowRight className="w-4 h-4" />
+                                Resume Call
                               </button>
                             )}
                           </div>
@@ -431,9 +547,7 @@ const getTimeUntilInterview = (scheduledAt) => {
             )}
           </div>
 
-          {/* Right Column - Status & Actions */}
           <div className="space-y-6">
-            {/* Current Status Card */}
             {currentStage && (
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <h2 className="text-lg font-bold text-gray-900 mb-4">Current Status</h2>
@@ -448,15 +562,16 @@ const getTimeUntilInterview = (scheduledAt) => {
                         Scheduled: {formatDateTime(currentStage.scheduled_at)}
                       </p>
                     )}
-                    {currentStage.status === 'in_progress' && !currentStage.scheduled_at && (
-                      <p className="text-xs text-gray-600 mt-1">In progress</p>
+                    {(currentStage.status === 'in_progress' || currentStage.status === 'joined') && !currentStage.scheduled_at && (
+                      <p className="text-xs text-gray-600 mt-1">
+                        {currentStage.status === 'joined' ? 'Interview active' : 'Ready to join'}
+                      </p>
                     )}
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Application Info Card - Show when no stages */}
             {hasNoStages && (
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <h2 className="text-lg font-bold text-gray-900 mb-4">Application Status</h2>
@@ -483,7 +598,6 @@ const getTimeUntilInterview = (scheduledAt) => {
               </div>
             )}
 
-            {/* Next Step Card */}
             {nextStage && (
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-6">
                 <h2 className="text-lg font-bold text-gray-900 mb-4">Next Step</h2>
@@ -506,7 +620,6 @@ const getTimeUntilInterview = (scheduledAt) => {
               </div>
             )}
 
-            {/* Application Stats Card */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-4">Application Stats</h2>
               <div className="grid grid-cols-3 gap-4">
@@ -518,7 +631,7 @@ const getTimeUntilInterview = (scheduledAt) => {
                   <div className="text-2xl font-bold text-gray-900">
                     {Math.round(
                       applicationData.stages
-                        .filter(s => s.score !== null)
+                        ?.filter(s => s.score !== null)
                         .reduce((sum, s, _, arr) => sum + s.score / arr.length, 0)
                     ) || 0}%
                   </div>
@@ -533,7 +646,6 @@ const getTimeUntilInterview = (scheduledAt) => {
               </div>
             </div>
 
-            {/* Quick Actions Card */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h2>
               <div className="space-y-3">
@@ -562,6 +674,14 @@ const getTimeUntilInterview = (scheduledAt) => {
           </div>
         </div>
       </div>
+
+      {showCallInterface && currentInterview && (
+        <InterviewCallInterface
+          interview={currentInterview}
+          isRecruiter={false}
+          onClose={handleCallInterfaceClose}
+        />
+      )}
     </div>
   );
 };

@@ -33,6 +33,10 @@ const telephonicService = {
         const response = await telephonicApi.startCall(interviewId);
         return response;
     },
+    joinCall: async (interviewId) => {
+        const response = await telephonicApi.joinCall(interviewId);
+        return response; 
+    },
     endCall: async(sessionId, durationSeconds, recordingFile = null, connectionQuality = 'good') =>{
         const response = await telephonicApi.endCall(
             sessionId,
@@ -41,6 +45,10 @@ const telephonicService = {
             connectionQuality
         );
         return response
+    },
+    getInterviewStatus:async(interviewId)=>{
+        const response = await telephonicApi.getInterviewStatus(interviewId);
+        return response;
     },
     getInterviewDetails: async(interviewId) => {
         const response = await telephonicApi.getInterviewDetails(interviewId);
