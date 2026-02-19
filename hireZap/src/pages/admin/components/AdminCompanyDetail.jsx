@@ -20,12 +20,11 @@ const AdminCompanyDetail = () => {
   const [rejectionReason, setRejectionReason] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Get company data from Redux or fetch it
+  // Get company data from Redux 
   const { selectedCompany, loading, error } = useSelector((state) => state.company);
   const company = selectedCompany;
 
   useEffect(() => {
-    // If company not in state, fetch it
     if (!company && !loading) {
       dispatch(fetchCompanyById(companyId))
     }
@@ -35,7 +34,6 @@ const AdminCompanyDetail = () => {
     if (window.confirm('Are you sure you want to approve this company?')) {
       setIsProcessing(true);
       try {
-        // TODO: Dispatch approve action
         // await dispatch(approveCompany(companyId));
         await dispatch(approveCompany(companyId)).unwrap()
         console.log('Approving company:', companyId);
@@ -56,7 +54,6 @@ const AdminCompanyDetail = () => {
     
     setIsProcessing(true);
     try {
-      // TODO: Dispatch reject action
       // await dispatch(rejectCompany({ companyId, reason: rejectionReason }));
       await dispatch(rejectCompany({companyId,reason:rejectionReason })).unwrap()
       console.log('Rejecting company:', companyId, rejectionReason);

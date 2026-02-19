@@ -12,7 +12,7 @@ const AddCompanyDetailsModal = ({ isOpen, onClose,editMode = false }) => {
   const dispatch = useDispatch();
   const { company, isLoading: isCreating } = useSelector((state) => state.company);
   
-  // Create two separate instances for logo and certificate
+
   const { 
     uploadFile: uploadLogo, 
     loading: isUploadingLogo, 
@@ -80,7 +80,7 @@ const AddCompanyDetailsModal = ({ isOpen, onClose,editMode = false }) => {
       }
       
       if (company.business_certificate) {
-        // Extract filename from URL if possible
+        
         const urlParts = company.business_certificate.split('/');
         const filename = urlParts[urlParts.length - 1];
         setCertificateName(filename || 'Existing Certificate');
@@ -98,18 +98,18 @@ const AddCompanyDetailsModal = ({ isOpen, onClose,editMode = false }) => {
     }
   }, [formData, initialFormData, editMode]);
 
-  // Update formData when logo upload completes
+  
   useEffect(() => {
     if (logoUrl) {
-      console.log('🖼️ Logo uploaded successfully:', logoUrl);
+      console.log(' Logo uploaded successfully:', logoUrl);
       setFormData(prev => ({ ...prev, logo_url: logoUrl }));
     }
   }, [logoUrl]);
 
-  // Update formData when certificate upload completes
+  
   useEffect(() => {
     if (certUrl) {
-      console.log('📄 Certificate uploaded successfully:', certUrl);
+      console.log(' Certificate uploaded successfully:', certUrl);
       setFormData(prev => ({ ...prev, business_certificate: certUrl }));
     }
   }, [certUrl]);
@@ -138,14 +138,14 @@ const AddCompanyDetailsModal = ({ isOpen, onClose,editMode = false }) => {
     reader.onload = (e) => setPreviewLogo(e.target.result);
     reader.readAsDataURL(file);
 
-    // Upload to Cloudinary with 'company_logos' folder
+   
     try {
       console.log('📁 Uploading logo to Cloudinary...');
       const url = await uploadLogo(file, 'company_logos', 'image');
       
       if (url) {
         notify.success('Logo uploaded successfully');
-        setPreviewLogo(url); // Update preview with actual URL
+        setPreviewLogo(url); 
         setFormData(prev => ({ ...prev, logo_url: url }));
       }
     } catch (error) {
@@ -170,12 +170,12 @@ const AddCompanyDetailsModal = ({ isOpen, onClose,editMode = false }) => {
 
     setCertificateName(file.name);
 
-    // Upload to Cloudinary with 'company_certificates' folder
-    // Use 'auto' or 'raw' for PDFs, 'image' for images
+
+    // 'auto' or 'raw' for PDFs, 'image' for images
     const resourceType = file.type === 'application/pdf' ? 'raw' : 'image';
     
     try {
-      console.log('📁 Uploading certificate to Cloudinary...');
+      console.log(' Uploading certificate to Cloudinary...');
       const url = await uploadCertificate(file, 'company_certificates', resourceType);
       
       if (url) {
@@ -183,7 +183,7 @@ const AddCompanyDetailsModal = ({ isOpen, onClose,editMode = false }) => {
         setFormData(prev => ({ ...prev, business_certificate: url }));
       }
     } catch (error) {
-      console.error('❌ Certificate upload failed:', error);
+      console.error(' Certificate upload failed:', error);
       notify.error(error.message || 'Failed to upload certificate');
       setCertificateName('');
       setErrors(prev => ({ ...prev, business_certificate: error.message || 'Upload failed' }));

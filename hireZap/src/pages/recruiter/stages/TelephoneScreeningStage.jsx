@@ -72,7 +72,7 @@ const TelephoneScreeningStage = ({ jobId, onRefresh, onMoveToNext }) => {
   useEffect(() => {
     if (activeInterview) {
       const pollInterval = setInterval(() => {
-        console.log('🔄 Polling for interview updates...');
+        console.log(' Polling for interview updates...');
         dispatch(fetchTelephonicCandidates({ jobId, statusFilter: null }));
       }, 5000); // Poll every 5 seconds
 
@@ -88,7 +88,7 @@ const TelephoneScreeningStage = ({ jobId, onRefresh, onMoveToNext }) => {
       );
       
       if (activeCall) {
-        console.log('🔍 Found active call on load:', activeCall);
+        console.log(' Found active call on load:', activeCall);
         
         // Only set if we don't already have this interview active
         if (!activeInterview || activeInterview.interview_id !== activeCall.interview_id) {
@@ -104,14 +104,14 @@ const TelephoneScreeningStage = ({ jobId, onRefresh, onMoveToNext }) => {
           
           // Auto-show the call interface if it was minimized
           if (!showCallInterface) {
-            console.log('📞 Auto-opening call interface for active call');
+            console.log(' Auto-opening call interface for active call');
             setShowCallInterface(true);
             setIsCallMinimized(false);
           }
         }
       } else if (activeInterview && activeInterview.status !== 'completed') {
         // Call ended, clear the active interview
-        console.log('✅ Call ended, clearing active interview');
+        console.log(' Call ended, clearing active interview');
         setActiveInterview(null);
         setShowCallInterface(false);
         setIsCallMinimized(false);
@@ -234,11 +234,11 @@ const TelephoneScreeningStage = ({ jobId, onRefresh, onMoveToNext }) => {
 
   const handleStartCall = async (interview) => {
     try {
-      console.log('📞 Starting call for interview:', interview.interview_id);
+      console.log(' Starting call for interview:', interview.interview_id);
       const result = await dispatch(startCall(interview.interview_id)).unwrap();
       
       if (result.success) {
-        console.log('✅ Call started, session_id:', result.session_id);
+        console.log(' Call started, session_id:', result.session_id);
         setActiveInterview({
           interview_id: interview.interview_id,
           session_id: result.session_id,
@@ -254,13 +254,13 @@ const TelephoneScreeningStage = ({ jobId, onRefresh, onMoveToNext }) => {
         handleRefresh();
       }
     } catch (err) {
-      console.error('❌ Failed to start call:', err);
+      console.error(' Failed to start call:', err);
       notify.error(err || 'Failed to start call');
     }
   };
 
   const handleResumeCall = (interview) => {
-    console.log('📞 Resuming call for interview:', interview);
+    console.log(' Resuming call for interview:', interview);
     setActiveInterview({
       interview_id: interview.interview_id,
       session_id: interview.session_id,
@@ -275,14 +275,14 @@ const TelephoneScreeningStage = ({ jobId, onRefresh, onMoveToNext }) => {
   };
 
   const handleCallInterfaceClose = () => {
-    console.log('📦 Minimizing call interface');
+    console.log(' Minimizing call interface');
     setShowCallInterface(false);
     setIsCallMinimized(true);
     // Don't clear activeInterview - call continues in background
   };
 
   const handleCallEnd = () => {
-    console.log('✅ Call ended successfully');
+    console.log(' Call ended successfully');
     setShowCallInterface(false);
     setIsCallMinimized(false);
     setActiveInterview(null);
@@ -615,6 +615,7 @@ const TelephoneScreeningStage = ({ jobId, onRefresh, onMoveToNext }) => {
           notes: selectedCandidate.notes
         } : null}
         onSchedule={handleScheduleInterview}
+        roundType='telephonic'
       />
       
       <TelephoneConfigModal 

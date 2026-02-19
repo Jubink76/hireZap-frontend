@@ -12,7 +12,7 @@ const AdminLogin = () => {
     const [formData, setFormData] = useState({
         email: '',
         password: '',
-        rememberMe: false  // Added missing property
+        rememberMe: false  
     })
 
     const dispatch = useDispatch()

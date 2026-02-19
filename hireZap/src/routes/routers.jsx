@@ -10,6 +10,7 @@ import ResetPassword from '../pages/auth/ResetPassword';
 import ForgotPassword from '../pages/auth/ForgotPassword';
 import AdminLogin from '../pages/auth/AdminLogin';
 import GithubCallback from '../pages/auth/GithubCallback';
+import NotFound from '../components/NotFound';
 export const routes = [
   {
     element: <PublicRoutes />,
@@ -38,4 +39,5 @@ export const routes = [
     children: [adminRoutes],
   },
   { path: '/unauthorized', element: <h2>Not authorized</h2> },
+  { path: '*', element: <NotFound />}
 ];

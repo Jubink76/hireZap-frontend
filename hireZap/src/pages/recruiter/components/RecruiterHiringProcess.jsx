@@ -55,14 +55,14 @@ const RecruiterHiringProcess = () => {
     const handleMessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('📨 WebSocket message received:', data);
+        console.log(' WebSocket message received:', data);
         
         if (data.type === 'screening_progress' && data.job_id === selectedJob?.id) {
-          console.log('✅ Processing screening_progress message');
+          console.log(' Processing screening_progress message');
           dispatch(updateProgressFromWebSocket(data.progress));
 
           if (data.progress.status === 'completed' && lastProgressStatus !== 'completed') {
-            console.log('🎉 Screening completed! Refreshing data...');
+            console.log(' Screening completed! Refreshing data...');
             
             setTimeout(async () => {
               await dispatch(fetchJobApplications({ 
@@ -80,7 +80,7 @@ const RecruiterHiringProcess = () => {
           setLastProgressStatus(data.progress.status);
         }
       } catch (error) {
-        console.error('❌ Error parsing WebSocket message:', error);
+        console.error(' Error parsing WebSocket message:', error);
       }
     };
 
@@ -119,7 +119,7 @@ const RecruiterHiringProcess = () => {
 
         if (candidatesInStage.length > 0) {
           defaultStage = stage;
-          console.log('🎯 Current working stage:', stage.name, 'with', candidatesInStage.length, 'candidates');
+          console.log(' Current working stage:', stage.name, 'with', candidatesInStage.length, 'candidates');
           break; // Stop at the first stage with candidates
         }
       }
@@ -127,13 +127,13 @@ const RecruiterHiringProcess = () => {
       // If no stage has candidates, default to first stage
       if (!defaultStage) {
         defaultStage = jobStages[0];
-        console.log('📍 No candidates yet, defaulting to first stage:', defaultStage.name);
+        console.log(' No candidates yet, defaulting to first stage:', defaultStage.name);
       }
 
       setExpandedStage(defaultStage.id);
     } else if (jobStages && jobStages.length > 0 && !expandedStage) {
       // Fallback to first stage if no applications yet
-      console.log('📍 No applications, defaulting to first stage:', jobStages[0].name);
+      console.log(' No applications, defaulting to first stage:', jobStages[0].name);
       setExpandedStage(jobStages[0].id);
     }
   }, [jobStages, jobApplications, expandedStage]);

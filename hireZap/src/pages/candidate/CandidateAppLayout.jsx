@@ -27,7 +27,6 @@ const CandidateAppLayout = () => {
 
   const handleSearch = (query) => {
     console.log('Search:', query);
-    // Implement search functionality
   };
 
   const handleNavigate = (path) => {

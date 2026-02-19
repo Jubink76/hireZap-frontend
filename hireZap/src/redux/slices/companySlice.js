@@ -33,7 +33,7 @@ export const fetchCompany = createAsyncThunk('company/fetch',async(_,thunkAPI)=>
 export const fetchPendingCompanies = createAsyncThunk('company/fetchPending',async(_,thunkAPI)=>{
     try{
         const res = await companyService.fetchPendingCompanies();
-        console.log("🎯 Thunk received from service:", res);
+        console.log(" Thunk received from service:", res);
         return res
     }catch(err){
         const friendly = getFriendlyError(err, "Pending companies fetching failed")

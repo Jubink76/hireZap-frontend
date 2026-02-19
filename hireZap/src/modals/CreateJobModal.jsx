@@ -192,7 +192,6 @@ const CreateJobModal = ({ isOpen, onClose, editMode = false, jobData = null }) =
     };
 
     try {
-      // Dispatch create/update job action here
       dispatch(createJob(submissionData))
       console.log('Submitting job:', submissionData);
       notify.success('Job posted successfully!');

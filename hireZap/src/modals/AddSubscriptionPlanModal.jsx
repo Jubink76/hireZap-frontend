@@ -7,7 +7,7 @@ const AddSubscriptionPlanModal = ({ isOpen, onClose, editingPlan, isCreating, us
 
   const dispatch = useDispatch();
   
-  // ✅ Fixed: Use snake_case to match backend expectations
+
   const [formData, setFormData] = useState({
     name: '',
     price: '',
@@ -16,8 +16,8 @@ const AddSubscriptionPlanModal = ({ isOpen, onClose, editingPlan, isCreating, us
     features: [
       { icon: 'CheckCircle2', text: '', available: true }
     ],
-    button_text: '', // ✅ Changed from buttonText
-    card_color: 'cyan', // ✅ Changed from cardColor
+    button_text: '', 
+    card_color: 'cyan', 
     badge: null,
     is_default: false,
     is_free: false,
@@ -26,7 +26,7 @@ const AddSubscriptionPlanModal = ({ isOpen, onClose, editingPlan, isCreating, us
 
   // Load editing plan data
   useEffect(() => {
-    console.log("📝 Effect triggered:", { editingPlan, isOpen, userType });
+    console.log(" Effect triggered:", { editingPlan, isOpen, userType });
     
     if (editingPlan) {
       const loadedData = {
@@ -35,17 +35,16 @@ const AddSubscriptionPlanModal = ({ isOpen, onClose, editingPlan, isCreating, us
         period: editingPlan.period || 'month',
         description: editingPlan.description || '',
         features: editingPlan.features || [{ icon: 'CheckCircle2', text: '', available: true }],
-        button_text: editingPlan.buttonText || editingPlan.button_text || '', // ✅ Handle both cases
-        card_color: editingPlan.cardColor || editingPlan.card_color || 'cyan', // ✅ Handle both cases
+        button_text: editingPlan.buttonText || editingPlan.button_text || '', 
+        card_color: editingPlan.cardColor || editingPlan.card_color || 'cyan', 
         badge: editingPlan.badge || null,
         is_default: editingPlan.isDefault || editingPlan.is_default || false,
         is_free: editingPlan.isFree || editingPlan.is_free || false,
         user_type: editingPlan.userType || editingPlan.user_type || userType
       };
-      console.log("📥 Loading plan data:", loadedData);
+      console.log(" Loading plan data:", loadedData);
       setFormData(loadedData);
     } else {
-      // Reset form for new plan
       const resetData = {
         name: '',
         price: '',
@@ -59,7 +58,7 @@ const AddSubscriptionPlanModal = ({ isOpen, onClose, editingPlan, isCreating, us
         is_free: false,
         user_type: userType
       };
-      console.log("🆕 Resetting form:", resetData);
+      console.log(" Resetting form:", resetData);
       setFormData(resetData);
     }
   }, [editingPlan, userType, isOpen]);
@@ -80,7 +79,7 @@ const AddSubscriptionPlanModal = ({ isOpen, onClose, editingPlan, isCreating, us
   };
 
   const addFeature = () => {
-    console.log("➕ Adding feature");
+    console.log(" Adding feature");
     setFormData({
       ...formData,
       features: [...formData.features, { icon: 'CheckCircle2', text: '', available: true }]
@@ -88,7 +87,7 @@ const AddSubscriptionPlanModal = ({ isOpen, onClose, editingPlan, isCreating, us
   };
 
   const removeFeature = (index) => {
-    console.log("🗑️ Removing feature at index:", index);
+    console.log(" Removing feature at index:", index);
     setFormData({
       ...formData,
       features: formData.features.filter((_, i) => i !== index)
@@ -96,75 +95,74 @@ const AddSubscriptionPlanModal = ({ isOpen, onClose, editingPlan, isCreating, us
   };
 
   const updateFeature = (index, field, value) => {
-    console.log(`✏️ Updating feature ${index}, ${field}:`, value);
+    console.log(` Updating feature ${index}, ${field}:`, value);
     const newFeatures = [...formData.features];
     newFeatures[index] = { ...newFeatures[index], [field]: value };
     setFormData({ ...formData, features: newFeatures });
   };
 
   const handleSave = async () => {
-    console.log("=== 💾 SAVE BUTTON CLICKED ===");
-    console.log("📋 Form Data:", JSON.stringify(formData, null, 2));
-    console.log("🆕 Is Creating:", isCreating);
-    console.log("✏️ Editing Plan:", editingPlan);
+    console.log(" Form Data:", JSON.stringify(formData, null, 2));
+    console.log(" Is Creating:", isCreating);
+    console.log(" Editing Plan:", editingPlan);
     
     // Validation
-    console.log("🔍 Starting validation...");
+    console.log(" Starting validation...");
     
     if (!formData.name) {
-      console.log("❌ Validation failed: name is empty");
+      console.log(" Validation failed: name is empty");
       alert('Please enter a plan name');
       return;
     }
     
     if (!formData.price) {
-      console.log("❌ Validation failed: price is empty");
+      console.log(" Validation failed: price is empty");
       alert('Please enter a price');
       return;
     }
     
     if (!formData.button_text) {
-      console.log("❌ Validation failed: button_text is empty");
+      console.log(" Validation failed: button_text is empty");
       alert('Please enter button text');
       return;
     }
 
     // Validate features
-    console.log("🔍 Validating features...", formData.features);
+    console.log(" Validating features...", formData.features);
     const hasEmptyFeatures = formData.features.some(f => !f.text || !f.text.trim());
     if (hasEmptyFeatures) {
-      console.log("❌ Validation failed: empty features found");
+      console.log(" Validation failed: empty features found");
       alert('Please fill in all feature texts or remove empty features');
       return;
     }
 
-    console.log("✅ All validations passed!");
+    console.log(" All validations passed!");
 
     try {
       if (isCreating) {
-        console.log("🆕 Creating new plan with data:", formData);
+        console.log(" Creating new plan with data:", formData);
         const result = await dispatch(createSubscriptionPlan(formData)).unwrap();
-        console.log("✅ Plan created successfully:", result);
+        console.log(" Plan created successfully:", result);
       } else {
-        console.log("✏️ Updating plan ID:", editingPlan.id);
+        console.log(" Updating plan ID:", editingPlan.id);
         const result = await dispatch(updatePlan({
           planId: editingPlan.id,
           planData: formData
         })).unwrap();
-        console.log("✅ Plan updated successfully:", result);
+        console.log(" Plan updated successfully:", result);
       }
-      console.log("🚪 Closing modal...");
+      console.log(" Closing modal...");
       onClose();
     } catch (error) {
-      console.error('❌ Failed to save plan:', error);
+      console.error(' Failed to save plan:', error);
       alert(error || 'Failed to save plan. Please try again.');
     }
   };
 
-  console.log("🎨 Rendering modal, isOpen:", isOpen);
+  console.log(" Rendering modal, isOpen:", isOpen);
   
   if (!isOpen) {
-    console.log("⏸️ Modal closed, not rendering");
+    console.log(" Modal closed, not rendering");
     return null;
   }
 

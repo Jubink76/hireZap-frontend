@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Bell, Loader2, MessageSquare, Briefcase, Calendar, CheckCircle, Clock, AlertCircle, ArrowRight, RefreshCw, FileText, Phone, Video, Users, Award } from 'lucide-react';
 import { fetchApplicationProgress } from '../../../redux/slices/applicationSlice';
+import VideoInterviewInterface from '../../../modals/VideoInterviewInterface';
+import { joinHRMeeting } from '../../../redux/slices/hrRoundSlice';
 import { joinCall } from '../../../redux/slices/telephonicSlice'; 
 import InterviewCallInterface from '../../../modals/InterviewCallInterface'; 
 import { useDispatch, useSelector } from 'react-redux';
@@ -19,10 +21,16 @@ const JobApplicationTracker = () => {
 
   // ✅ Get telephonic state (for activeCallSession if you store it)
   const { currentCall } = useSelector((state) => state.telephonic);
+  // get hr round
+  const { activeMeeting } = useSelector((state) => state.hrRound);
 
   const [showCallInterface, setShowCallInterface] = useState(false);
   const [currentInterview, setCurrentInterview] = useState(null);
   const [joiningCall, setJoiningCall] = useState(false);
+
+  const [interviewType, setInterviewType] = useState(null);
+
+  const hasManuallyMinimizedRef = useRef(false);
 
   // Fetch application progress on mount and set up polling
   useEffect(() => {
@@ -38,41 +46,68 @@ const JobApplicationTracker = () => {
     }
   }, [applicationId, dispatch]);
 
-  // ✅ Auto-open call interface if interview is active (in_progress or joined)
+  //auto open interface
   useEffect(() => {
-    if (applicationData?.stages) {
-      // Find a stage that is 'in_progress' or 'joined' with session_id from backend
-      const activeStage = applicationData.stages.find(
-        stage => (stage.status === 'in_progress' || stage.status === 'joined') && 
-                 stage.interview_id && 
-                 stage.session_id
-      );
+    if (!applicationData?.stages) {
+      return;
+    }
+    
+    const activeStage = applicationData.stages.find(
+      stage => {
+        const isActive = (stage.status === 'in_progress' || stage.status === 'joined');
+        const hasRequiredData = stage.interview_id && stage.session_id;
+        const isNotCompleted = stage.status !== 'completed';
+        return isActive && hasRequiredData && isNotCompleted;
+      }
+    );
+    
+    if (activeStage) {
+      const type = activeStage.stage_slug === 'hr-round' ? 'hr_video' : 'telephonic';
       
-      if (activeStage) {
-        // Only update if interview changes or we don't have current interview set
-        if (!currentInterview || currentInterview.interview_id !== activeStage.interview_id) {
-          setCurrentInterview({
-            interview_id: activeStage.interview_id,
-            recruiter_name: 'Recruiter', // You can get this from backend if needed
-            job_title: applicationData.job_title,
-            session_id: activeStage.session_id,
-            status: activeStage.status
+      // New interview detected (different from current)
+      if (!currentInterview || currentInterview.interview_id !== activeStage.interview_id) {
+        const interviewData = {
+          interview_id: activeStage.interview_id,
+          recruiter_name: 'Recruiter',
+          job_title: applicationData.job_title,
+          session_id: activeStage.session_id,
+          status: activeStage.status,
+          stage_slug: activeStage.stage_slug,
+          zegoConfig: activeStage.zegocloud_config ? {
+            appID: Number(activeStage.zegocloud_config.app_id),
+            roomID: activeStage.zegocloud_config.room_id,
+            token: activeStage.zegocloud_config.token,
+            userID: activeStage.zegocloud_config.user_id,
+            userName: 'Candidate'
+          } : null,
+          session_started_at: activeStage.session_started_at || null,
+        };
+        
+        if (type === 'hr_video') {
+          if (!interviewData.zegoConfig || !interviewData.zegoConfig.appID) {
+            console.error('❌ Missing ZegoCloud config');
+            notify.error('Unable to join HR interview: Missing video configuration');
+            return;
+          }
+          console.log('✅ ZegoConfig validated successfully:', {
+            appID: interviewData.zegoConfig.appID,
+            roomID: interviewData.zegoConfig.roomID,
+            userID: interviewData.zegoConfig.userID,
+            tokenLength: interviewData.zegoConfig.token?.length
           });
         }
-        
-        // Always ensure modal is open if there's an active interview
-        if (!showCallInterface) {
-          setShowCallInterface(true);
-        }
-      } else {
-        // No active interview, close the modal
-        if (showCallInterface) {
-          setShowCallInterface(false);
-          setCurrentInterview(null);
-        }
+        hasManuallyMinimizedRef.current = false;
+        setCurrentInterview(interviewData);
+        setInterviewType(type);
+      }
+    } else {
+      // No active interview - clear state if interview ended
+      if (currentInterview && !showCallInterface) {
+        setCurrentInterview(null);
+        setInterviewType(null);
       }
     }
-  }, [applicationData]);
+  }, [applicationData]); 
 
   // Listen for WebSocket notifications
   useEffect(() => {
@@ -205,35 +240,55 @@ const JobApplicationTracker = () => {
     setJoiningCall(true);
     
     try {
-      const result = await dispatch(joinCall(stage.interview_id)).unwrap();
+      // ✅ Detect interview type
+      const isHRRound = stage.stage_slug === 'hr-round';
+      const type = isHRRound ? 'hr_video' : 'telephonic';
+      
+      let result;
+      
+      if (isHRRound) {
+        // ✅ Join HR video meeting
+        result = await dispatch(joinHRMeeting(stage.session_id)).unwrap();
+      } else {
+        // Join telephonic call
+        result = await dispatch(joinCall(stage.interview_id)).unwrap();
+      }
       
       if (result.success) {
         setCurrentInterview({
           interview_id: stage.interview_id,
-          recruiter_name: result.recruiter_name,
-          job_title: result.job_title,
-          session_id: result.session_id,
-          status: 'joined'
+          recruiter_name: result.recruiter_name || 'Recruiter',
+          job_title: result.job_title || applicationData.job_title,
+          session_id: result.session?.session_id || result.session_id,
+          status: 'joined',
+          stage_slug: stage.stage_slug,
+          zegoConfig: isHRRound ? {
+            appID: Number(result.zegocloud_config.app_id),
+            roomID: result.zegocloud_config.room_id,
+            token: result.zegocloud_config.token,
+            userID: result.zegocloud_config.user_id,
+            userName: 'Candidate'
+          } : null,
+          session_started_at: result.session?.started_at || null,
         });
+        setInterviewType(type);
         setShowCallInterface(true);
         notify.success('Successfully joined the interview');
       }
     } catch (error) {
-      notify.error(error || 'Failed to join interview');
+      console.error('Failed to join interview:', error);
+      notify.error(error?.message || 'Failed to join interview');
     } finally {
       setJoiningCall(false);
     }
   };
 
   const handleCallInterfaceClose = () => {
-    // Don't close the modal, just minimize it
-    // User can reopen by clicking on the stage or a "Resume Call" button
+    hasManuallyMinimizedRef.current = true; 
     setShowCallInterface(false);
-    // Keep currentInterview in state so we can reopen
   };
 
   const canJoinInterview = (stage) => {
-    // Only show join button if interview is in progress (started by recruiter)
     return stage.status === 'in_progress' && stage.interview_id;
   };
 
@@ -430,23 +485,28 @@ const JobApplicationTracker = () => {
                             <div className="flex items-start justify-between gap-3">
                               <div className="flex-1">
                                 <h3 className="text-base font-semibold text-gray-900">{stage.stage_name}</h3>
-                                
-                                {stage.scheduled_at && stage.status === 'scheduled' && (
+
+                                {/* ✅ SCHEDULED - show scheduled time + reminder only */}
+                                {stage.status === 'scheduled' && stage.scheduled_at && (
                                   <div className="mt-2 space-y-2">
-                                    <p className="text-sm text-blue-600 font-medium">
+                                    <p className="text-sm text-blue-600 font-medium flex items-center gap-1">
+                                      <Calendar className="w-3.5 h-3.5" />
                                       Scheduled for {formatDateTime(stage.scheduled_at)}
                                     </p>
-                                    
-                                    {shouldShowReminder(stage) && (
-                                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+                                    {stage.scheduled_duration_minutes && (
+                                      <p className="text-xs text-gray-500">
+                                        Duration: {stage.scheduled_duration_minutes} minutes
+                                      </p>
+                                    )}
+
+                                    {shouldShowReminder(stage) ? (
+                                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                                         <div className="flex items-start gap-2">
                                           <Bell className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
                                           <div className="flex-1">
-                                            <p className="text-xs font-semibold text-blue-900">
-                                              Upcoming Interview
-                                            </p>
+                                            <p className="text-xs font-semibold text-blue-900">Upcoming Interview</p>
                                             <p className="text-xs text-blue-700 mt-1">
-                                              Your interview is scheduled {getTimeUntilInterview(stage.scheduled_at)}
+                                              Your interview is {getTimeUntilInterview(stage.scheduled_at)}
                                             </p>
                                             <p className="text-xs text-blue-600 mt-1">
                                               The recruiter will start the call at the scheduled time.
@@ -454,21 +514,39 @@ const JobApplicationTracker = () => {
                                           </div>
                                         </div>
                                       </div>
+                                    ) : (
+                                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                        <div className="flex items-start gap-2">
+                                          <Clock className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                                          <p className="text-xs text-gray-600">
+                                            Interview scheduled {getTimeUntilInterview(stage.scheduled_at)}.
+                                            You'll be notified when the recruiter starts the call.
+                                          </p>
+                                        </div>
+                                      </div>
                                     )}
                                   </div>
                                 )}
-                                
+
+                                {/* ✅ IN PROGRESS / JOINED - show ready banner only */}
                                 {(stage.status === 'in_progress' || stage.status === 'joined') && (
                                   <div className="mt-2">
+                                    {/* Show scheduled time if exists */}
+                                    {stage.scheduled_at && (
+                                      <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                                        <Calendar className="w-3 h-3" />
+                                        Scheduled for {formatDateTime(stage.scheduled_at)}
+                                      </p>
+                                    )}
                                     <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                                       <div className="flex items-start gap-2">
-                                        <div className="w-2 h-2 bg-green-500 rounded-full mt-1.5 animate-pulse" />
+                                        <div className="w-2 h-2 bg-green-500 rounded-full mt-1.5 animate-pulse flex-shrink-0" />
                                         <div className="flex-1">
                                           <p className="text-xs font-semibold text-green-900">
                                             {stage.status === 'joined' ? 'Interview Active' : 'Interview Ready'}
                                           </p>
                                           <p className="text-xs text-green-700 mt-1">
-                                            {stage.status === 'joined' 
+                                            {stage.status === 'joined'
                                               ? 'You are currently in the interview call'
                                               : 'The recruiter has started the interview. Click below to join now.'}
                                           </p>
@@ -477,37 +555,46 @@ const JobApplicationTracker = () => {
                                     </div>
                                   </div>
                                 )}
-                                
-                                {stage.completed_at && (
-                                  <p className="text-xs text-gray-500 mt-2">
-                                    Completed on {formatDate(stage.completed_at)}
-                                  </p>
-                                )}
-                                
-                                {stage.score !== null && stage.score !== undefined && (
-                                  <p className="text-sm text-teal-600 font-semibold mt-2">
-                                    Score: {stage.score}%
-                                    {stage.result && (
-                                      <span className={`ml-2 ${stage.result === 'passed' ? 'text-green-600' : 'text-red-600'}`}>
-                                        ({stage.result})
-                                      </span>
+
+                                {/* ✅ COMPLETED - show completed date only, NO scheduled date */}
+                                {(stage.status === 'completed' || stage.status === 'passed') && (
+                                  <div className="mt-2">
+                                    {stage.completed_at && (
+                                      <p className="text-xs text-gray-500 flex items-center gap-1">
+                                        <CheckCircle className="w-3 h-3 text-green-500" />
+                                        Completed on {formatDate(stage.completed_at)}
+                                      </p>
                                     )}
-                                  </p>
+                                    {stage.score !== null && stage.score !== undefined && (
+                                      <p className="text-sm text-teal-600 font-semibold mt-2">
+                                        Score: {stage.score}%
+                                        {stage.result && (
+                                          <span className={`ml-2 ${stage.result === 'passed' ? 'text-green-600' : 'text-red-600'}`}>
+                                            ({stage.result})
+                                          </span>
+                                        )}
+                                      </p>
+                                    )}
+                                    {/* ✅ Only show feedback for THIS stage */}
+                                    {stage.feedback && (
+                                      <p className="text-xs text-gray-600 mt-2 italic bg-white p-2 rounded border border-gray-200">
+                                        "{stage.feedback}"
+                                      </p>
+                                    )}
+                                  </div>
                                 )}
-                                
-                                {stage.feedback && (
-                                  <p className="text-xs text-gray-600 mt-2 italic bg-white p-2 rounded border border-gray-200">
-                                    "{stage.feedback}"
-                                  </p>
-                                )}
+
+                                {/* ✅ PENDING - show nothing extra */}
+
                               </div>
                               <div className="flex-shrink-0">
                                 {getStatusBadge(stage.status)}
                               </div>
                             </div>
 
+                            {/* Join button - only in_progress */}
                             {canJoinInterview(stage) && (
-                              <button 
+                              <button
                                 onClick={() => handleJoinInterview(stage)}
                                 disabled={joiningCall}
                                 className="mt-3 flex items-center gap-2 px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition-colors animate-pulse disabled:opacity-50"
@@ -527,9 +614,9 @@ const JobApplicationTracker = () => {
                               </button>
                             )}
 
-                            {/* Resume Call Button - Show when interview is active but modal is closed */}
+                            {/* Resume button - only when joined but modal closed */}
                             {stage.status === 'joined' && currentInterview && !showCallInterface && (
-                              <button 
+                              <button
                                 onClick={() => setShowCallInterface(true)}
                                 className="mt-3 flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
                               >
@@ -674,13 +761,49 @@ const JobApplicationTracker = () => {
           </div>
         </div>
       </div>
-
-      {showCallInterface && currentInterview && (
-        <InterviewCallInterface
-          interview={currentInterview}
-          isRecruiter={false}
-          onClose={handleCallInterfaceClose}
-        />
+      {currentInterview && (
+        <div style={{ display: showCallInterface ? 'block' : 'none' }}>
+          {console.log('📦 Rendering VideoInterviewInterface with:', {
+            showCallInterface,
+            currentInterview,
+            interviewType,
+            zegoConfig: currentInterview?.zegoConfig,
+            appID: currentInterview?.zegoConfig?.appID,
+            roomID: currentInterview?.zegoConfig?.roomID,
+            token: currentInterview?.zegoConfig?.token ? `${currentInterview.zegoConfig.token.substring(0, 30)}...` : 'UNDEFINED',
+            userID: currentInterview?.zegoConfig?.userID,
+          })}
+          {interviewType === 'hr_video' ? (
+            <VideoInterviewInterface
+              interview={currentInterview}
+              zegoConfig={currentInterview.zegoConfig}
+              sessionStartedAt={currentInterview.session_started_at}
+              isRecruiter={false}
+              onClose={handleCallInterfaceClose}
+              onMinimize={handleCallInterfaceClose}
+              onCallEnd={() => {
+                setShowCallInterface(false);
+                setCurrentInterview(null);
+                setInterviewType(null);
+                hasManuallyMinimizedRef.current = false;
+                dispatch(fetchApplicationProgress(applicationId));
+              }}
+            />
+          ) : (
+            <InterviewCallInterface
+              interview={currentInterview}
+              isRecruiter={false}
+              onClose={handleCallInterfaceClose}
+              onCallEnd={() => {
+                setShowCallInterface(false);
+                setCurrentInterview(null);
+                setInterviewType(null);
+                hasManuallyMinimizedRef.current = false;
+                dispatch(fetchApplicationProgress(applicationId));
+              }}
+            />
+          )}
+        </div>
       )}
     </div>
   );

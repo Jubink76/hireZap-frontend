@@ -39,7 +39,7 @@ const CandidateDashboard = () => {
   const closePremiumModal = () => setIsOpenPremiumModal(false);
 
   useEffect(() => {
-    console.log("🔄 Fetching active jobs...");
+    console.log(" Fetching active jobs...");
     dispatch(fetchActiveJobs());
   }, [dispatch]);
 
@@ -92,7 +92,6 @@ const CandidateDashboard = () => {
 
   const handleSearch = (query) => {
     console.log('Search query:', query);
-    // Implement search functionality
   };
 
   const handleViewProfile = () => {
@@ -101,22 +100,18 @@ const CandidateDashboard = () => {
 
   const handleQuickApply = (job) => {
     console.log('Quick apply for job:', job);
-    // Handle quick apply functionality
   };
 
   const handlePremiumUpgrade = () => {
     console.log('Premium upgrade clicked');
-    // Handle premium upgrade
   };
 
   const handleMessageRecruiter = (recruiter) => {
     console.log('Message recruiter:', recruiter);
-    // Handle messaging functionality
   };
 
   const handleViewAllRecruiters = () => {
     console.log('View all recruiters clicked');
-    // Navigate to recruiters page
   };
 
   const transformJob = (job) => {

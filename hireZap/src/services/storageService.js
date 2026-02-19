@@ -9,7 +9,7 @@ const storageService = {
    */
   uploadFile: async (file, folder = 'profiles', fileType = 'image') => {
     try {
-      console.log(`☁️ Uploading ${fileType} to ${folder}...`);
+      console.log(` Uploading ${fileType} to ${folder}...`);
       
       const formData = new FormData();
       formData.append('file', file);
@@ -20,11 +20,11 @@ const storageService = {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
-      console.log('✅ Upload complete:', response.url);
+      console.log(' Upload complete:', response.url);
       return response.url;
       
     } catch (error) {
-      console.error('❌ Upload error:', error);
+      console.error(' Upload error:', error);
       throw error;
     }
   },
@@ -34,7 +34,7 @@ const storageService = {
       await axiosInstance.post('/auth/delete-file/', { file_key: fileKey });
       return true;
     } catch (error) {
-      console.error('❌ Delete error:', error);
+      console.error(' Delete error:', error);
       return false;
     }
   }

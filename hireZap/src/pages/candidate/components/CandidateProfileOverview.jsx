@@ -14,7 +14,7 @@ const CandidateProfileOverview = () => {
   const dispatch = useDispatch()
 
   useEffect(() => {
-      dispatch(fetchMyApplications(false)); // Don't include drafts
+      dispatch(fetchMyApplications(false));
     }, [dispatch]);
 
   const profileData = {
@@ -23,7 +23,7 @@ const CandidateProfileOverview = () => {
       month: "long",
       year: "numeric"
     }),
-    profileComplete: 85, // you can compute this later
+    profileComplete: 85, 
     avatar: user?.profile_image_url || profileAvatar,
     stats: {
       totalApplications: 7,

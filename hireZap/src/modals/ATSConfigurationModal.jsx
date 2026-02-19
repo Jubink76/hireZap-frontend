@@ -36,15 +36,13 @@ const ATSConfigurationModal = ({ isOpen, onClose, jobId, onSave }) => {
   const fetchATSConfig = async () => {
     try {
       const response = await dispatch(getATSConfig(jobId)).unwrap();
-      console.log('📋 Fetched ATS Config:', response);
+      console.log(' Fetched ATS Config:', response);
       
-      // If config exists and is not default, load it
       if (response.config && !response.is_default) {
         setConfig(response.config);
       }
     } catch (err) {
       console.error('Failed to fetch ATS config:', err);
-      // Keep default config on error
     }
   };
 
@@ -105,21 +103,19 @@ const ATSConfigurationModal = ({ isOpen, onClose, jobId, onSave }) => {
     setError(null);
 
     try {
-      console.log('💾 Saving ATS Config:', { jobId, config });
+      console.log(' Saving ATS Config:', { jobId, config });
       const response = await dispatch(configureATS({ jobId, configData: config })).unwrap();
       
-      console.log('✅ ATS Config saved:', response);
+      console.log(' ATS Config saved:', response);
       
-      // Show success message
       alert('ATS Configuration saved successfully!');
       
-      // Call onSave callback to refresh parent component
       if (onSave) {
         await onSave(response.config || response.data);
       }
       
     } catch (err) {
-      console.error('❌ Failed to save ATS config:', err);
+      console.error(' Failed to save ATS config:', err);
       setError(err.message || err.error || 'Failed to save configuration');
     } finally {
       setLoading(false);

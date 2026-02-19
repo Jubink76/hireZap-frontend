@@ -171,7 +171,7 @@ const ResumeScreeningStage = ({
 
   // ==================== Reset Screening ====================
   const handleResetScreening = async () => {
-    if (!window.confirm('⚠️ This will clear all screening results and start fresh. Continue?')) {
+    if (!window.confirm(' This will clear all screening results and start fresh. Continue?')) {
       return;
     }
 

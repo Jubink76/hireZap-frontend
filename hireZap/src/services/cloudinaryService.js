@@ -4,7 +4,7 @@ import axiosInstance from "../api/axiosInstance";
 const cloudinaryService = {
   uploadFile: async (file, folder = 'profiles', resourceType = 'image') => {
     try {
-      console.log('🔐 Requesting signature from Django...');
+      console.log(' Requesting signature from Django...');
       
       // Since axiosInstance returns response.data directly, we don't destructure
       const data = await axiosInstance.get('/auth/cloudinary/get-signature/', {
@@ -15,7 +15,7 @@ const cloudinaryService = {
         withCredentials: true,
       });
 
-      console.log('✅ Signature received:', data);
+      console.log(' Signature received:', data);
 
       if (!data || !data.signature) {
         throw new Error('Invalid signature response from server');
@@ -31,7 +31,7 @@ const cloudinaryService = {
       formData.append('api_key', api_key);
       formData.append('folder', folder);
 
-      console.log('☁️ Uploading to Cloudinary...');
+      console.log(' Uploading to Cloudinary...');
       
       const uploadResponse = await fetch(
         `https://api.cloudinary.com/v1_1/${cloud_name}/${resourceType}/upload`,
@@ -47,11 +47,11 @@ const cloudinaryService = {
       }
 
       const result = await uploadResponse.json();
-      console.log('✅ Cloudinary upload complete:', result.secure_url);
+      console.log(' Cloudinary upload complete:', result.secure_url);
       
       return result.secure_url;
     } catch (error) {
-      console.error('❌ Cloudinary service error:', error);
+      console.error(' Cloudinary service error:', error);
       throw error;
     }
   },

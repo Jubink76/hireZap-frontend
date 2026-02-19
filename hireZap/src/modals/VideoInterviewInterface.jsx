@@ -21,28 +21,35 @@ import {
   User,
   Circle,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  AlertCircle
 } from 'lucide-react';
+
+import zegoCloudService from '../services/zegoCloudService';
 
 const VideoInterviewInterface = ({ 
   interview,
+  zegoConfig,
   isRecruiter = true,
   onClose,
   onMinimize,
-  onCallEnd
+  onCallEnd,
+  sessionStartedAt 
 }) => {
   // State
-  const [callState, setCallState] = useState('connected');
+  const [callState, setCallState] = useState('connecting'); // connecting, connected, ending, ended
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
   const [callDuration, setCallDuration] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState('connected');
+  const [connectionStatus, setConnectionStatus] = useState('connecting');
   const [showChat, setShowChat] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
   const [messageInput, setMessageInput] = useState('');
+  const [remoteUserConnected, setRemoteUserConnected] = useState(false);
+  const [error, setError] = useState(null);
   
   // Notes state
   const [notes, setNotes] = useState({
@@ -59,14 +66,174 @@ const VideoInterviewInterface = ({
   });
   
   // Refs
-  const callStartTimeRef = useRef(Date.now());
+  const callStartTimeRef = useRef(sessionStartedAt ? new Date(sessionStartedAt).getTime() : Date.now());
   const durationIntervalRef = useRef(null);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const chatEndRef = useRef(null);
+  const isInitializedRef = useRef(false);
   
-  // Timer
   useEffect(() => {
+    const initZegoCloud = async () => {
+      if (!zegoConfig) {
+        console.log('⚠️ No zegoConfig provided');
+        return;
+      }
+      
+      if (isInitializedRef.current) {
+        console.log('✅ Already initialized, skipping');
+        return;
+      }
+
+      try {
+        console.log('🚀 Initializing ZegoCloud...', zegoConfig);
+        console.log('🔍 ZegoConfig breakdown:', {
+          appID: zegoConfig.appID,
+          roomID: zegoConfig.roomID,
+          token: zegoConfig.token ? `${zegoConfig.token.substring(0, 20)}...` : 'UNDEFINED',
+          userID: zegoConfig.userID,
+          userName: zegoConfig.userName
+        });
+        if (!zegoConfig.appID || !zegoConfig.roomID || !zegoConfig.token || !zegoConfig.userID) {
+          console.error('❌ Invalid ZegoCloud config:', zegoConfig);
+          setError('Invalid video configuration');
+          setCallState('ended');
+          return;
+        }
+
+        console.log('✅ ZegoConfig validation passed');
+        setConnectionStatus('connecting');
+
+        // Initialize ZegoCloud
+        await zegoCloudService.init(Number(zegoConfig.appID));
+
+        // Register event listeners
+        zegoCloudService.on({
+          // Room state changes
+          roomStateUpdate: (roomID, state, errorCode) => {
+            console.log('🏠 Room state:', { state, errorCode });
+            if (state === 'CONNECTED') {
+              setConnectionStatus('connected');
+              setCallState('connected');
+            } else if (state === 'DISCONNECTED') {
+              setConnectionStatus('disconnected');
+              if (errorCode !== 0) {
+                setError(`Connection failed: ${errorCode}`);
+              }
+            }
+          },
+
+          // User joined/left
+          roomUserUpdate: (roomID, updateType, userList) => {
+            console.log('👥 User update:', { updateType, userList });
+            if (updateType === 'ADD') {
+              console.log('✅ Remote user joined:', userList);
+              setRemoteUserConnected(true);
+            } else if (updateType === 'DELETE') {
+              console.log('❌ Remote user left:', userList);
+              setRemoteUserConnected(false);
+            }
+          },
+
+          // Stream added/removed
+          roomStreamUpdate: async (roomID, updateType, streamList) => {
+            console.log('📡 Stream update:', { updateType, streamList });
+            
+            if (updateType === 'ADD') {
+              // Remote user started publishing
+              for (const stream of streamList) {
+                console.log('▶️ Playing remote stream:', stream.streamID);
+                if (remoteVideoRef.current) {
+                  await zegoCloudService.startPlaying(
+                    stream.streamID,
+                    remoteVideoRef.current
+                  );
+                }
+              }
+            } else if (updateType === 'DELETE') {
+              // Remote user stopped publishing
+              for (const stream of streamList) {
+                console.log('⏹️ Stopping remote stream:', stream.streamID);
+                await zegoCloudService.stopPlaying(stream.streamID);
+              }
+            }
+          },
+
+          // Chat messages
+          IMRecvBroadcastMessage: (roomID, chatData) => {
+            console.log('💬 Message received:', chatData);
+            chatData.forEach(msg => {
+              setChatMessages(prev => [...prev, {
+                id: Date.now() + Math.random(),
+                sender: msg.fromUser.userID === zegoConfig.userID ? 'self' : 'other',
+                senderName: msg.fromUser.userName,
+                text: msg.message,
+                timestamp: new Date().toISOString()
+              }]);
+            });
+          },
+
+          // Connection quality monitoring
+          publishQualityUpdate: (streamID, stats) => {
+            // Update connection quality UI if needed
+          },
+
+          playQualityUpdate: (streamID, stats) => {
+            // Update connection quality UI if needed
+          }
+        });
+
+        // Login to room
+        await zegoCloudService.loginRoom(
+          zegoConfig.roomID,
+          zegoConfig.token,
+          zegoConfig.userID,
+          zegoConfig.userName || (isRecruiter ? 'Recruiter' : 'Candidate')
+        );
+
+        // Create and publish local stream
+        const localStream = await zegoCloudService.createLocalStream(
+          `${zegoConfig.userID}_main`,
+          { camera: true, audio: true }
+        );
+
+        // Play local video
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = localStream;
+        }
+
+        // Start publishing
+        await zegoCloudService.startPublishing(`${zegoConfig.userID}_main`, localVideoRef.current);
+
+        console.log('✅ ZegoCloud initialized and publishing');
+        isInitializedRef.current = true;
+
+      } catch (error) {
+        console.error('❌ Failed to initialize ZegoCloud:', error);
+        setError(error.message || 'Failed to connect to interview');
+        setCallState('ended');
+      }
+    };
+
+    initZegoCloud();
+
+    return () => {
+      if (isInitializedRef.current && zegoConfig) {
+        // logout first (releases server room slot), then destroy
+        zegoCloudService.logoutRoom(zegoConfig.roomID)
+          .catch(console.error)
+          .finally(() => {
+            zegoCloudService.destroy();
+            isInitializedRef.current = false;
+          });
+      }
+    };
+  }, [zegoConfig]);
+  
+  // ==================== TIMER ====================
+  useEffect(() => {
+    if (callState !== 'connected') return;
+
     durationIntervalRef.current = setInterval(() => {
       const elapsed = Math.floor((Date.now() - callStartTimeRef.current) / 1000);
       setCallDuration(elapsed);
@@ -77,21 +244,14 @@ const VideoInterviewInterface = ({
         clearInterval(durationIntervalRef.current);
       }
     };
-  }, []);
+  }, [callState]);
   
-  // Auto-scroll chat
+  // ==================== AUTO-SCROLL CHAT ====================
   useEffect(() => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [chatMessages]);
-  
-  // Mock video stream
-  useEffect(() => {
-    if (localVideoRef.current && isVideoOn) {
-      // In production: navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-    }
-  }, [isVideoOn]);
   
   const formatDuration = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -99,32 +259,68 @@ const VideoInterviewInterface = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
   
-  const handleToggleMute = () => setIsMuted(!isMuted);
-  const handleToggleVideo = () => setIsVideoOn(!isVideoOn);
-  const handleToggleSpeaker = () => setIsSpeakerOn(!isSpeakerOn);
+  const handleToggleMute = async () => {
+    try {
+      await zegoCloudService.muteAudio(!isMuted);
+      setIsMuted(!isMuted);
+    } catch (error) {
+      console.error('Failed to toggle mute:', error);
+    }
+  };
+
+  const handleToggleVideo = async () => {
+    try {
+      await zegoCloudService.enableCamera(!isVideoOn);
+      setIsVideoOn(!isVideoOn);
+    } catch (error) {
+      console.error('Failed to toggle video:', error);
+    }
+  };
+
+  const handleToggleSpeaker = () => {
+    setIsSpeakerOn(!isSpeakerOn);
+    // Mute/unmute remote audio playback
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.muted = !isSpeakerOn;
+    }
+  };
   
-  const handleStartRecording = () => {
-    setIsRecording(true);
-    console.log('🔴 Recording started');
+  const handleStartRecording = async () => {
+    try {
+      setIsRecording(true);
+      await zegoCloudService.startRecording(`${zegoConfig.userID}_main`);
+      console.log('🔴 Recording started');
+    } catch (error) {
+      console.error('Failed to start recording:', error);
+      setIsRecording(false);
+    }
   };
   
   const handleStopRecording = () => {
     setIsRecording(false);
     console.log('⏹️ Recording stopped');
+    // ZegoCloud handles recording automatically
   };
   
-  const handleSendMessage = () => {
-    if (!messageInput.trim()) return;
+  const handleSendMessage = async () => {
+    if (!messageInput.trim() || !zegoConfig) return;
     
-    const newMessage = {
-      id: Date.now(),
-      sender: isRecruiter ? 'recruiter' : 'candidate',
-      text: messageInput,
-      timestamp: new Date().toISOString()
-    };
-    
-    setChatMessages([...chatMessages, newMessage]);
-    setMessageInput('');
+    try {
+      await zegoCloudService.sendBroadcastMessage(zegoConfig.roomID, messageInput);
+      
+      // Add to local chat (will also be received via event)
+      setChatMessages(prev => [...prev, {
+        id: Date.now(),
+        sender: 'self',
+        senderName: zegoConfig.userName || 'You',
+        text: messageInput,
+        timestamp: new Date().toISOString()
+      }]);
+      
+      setMessageInput('');
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    }
   };
   
   const handleSaveNotes = async () => {
@@ -170,7 +366,7 @@ const VideoInterviewInterface = ({
       calculated_score: calculatedScore
     };
     
-    console.log('💾 Saving notes:', notesData);
+    console.log(' Saving notes:', notesData);
     alert('Notes saved successfully!');
   };
   
@@ -192,6 +388,15 @@ const VideoInterviewInterface = ({
     const durationSeconds = Math.floor((Date.now() - callStartTimeRef.current) / 1000);
     console.log('📞 Ending call...', { durationSeconds });
     
+    try {
+      // Logout from ZegoCloud room
+      if (zegoConfig) {
+        await zegoCloudService.logoutRoom(zegoConfig.roomID);
+      }
+    } catch (error) {
+      console.error('Error ending call:', error);
+    }
+    
     setTimeout(() => {
       setCallState('ended');
       if (onCallEnd) {
@@ -209,7 +414,8 @@ const VideoInterviewInterface = ({
       }
     }));
   };
-  
+
+
   const updateNoteRating = (section, rating) => {
     setNotes(prev => ({
       ...prev,
@@ -229,8 +435,29 @@ const VideoInterviewInterface = ({
       }
     }));
   };
+
   
   // Ended state
+  if (error) {
+    return (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-md w-full p-8 text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-8 h-8 text-red-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Connection Error</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={onClose}
+            className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (callState === 'ended') {
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -254,6 +481,18 @@ const VideoInterviewInterface = ({
           <Loader2 className="w-12 h-12 text-teal-600 animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Ending interview...</p>
           <p className="text-sm text-gray-500 mt-2">Saving recording and notes</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (callState === 'connecting') {
+    return (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-md w-full p-8 text-center">
+          <Loader2 className="w-12 h-12 text-teal-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Connecting to interview...</p>
+          <p className="text-sm text-gray-500 mt-2">Please wait</p>
         </div>
       </div>
     );
@@ -315,34 +554,36 @@ const VideoInterviewInterface = ({
         {/* Video Area */}
         <div className="flex-1 bg-gray-900 relative">
           {/* Remote Video (Candidate) */}
-          <div className="absolute inset-0">
-            <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-32 h-32 bg-gradient-to-br from-teal-500 to-teal-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <User className="w-16 h-16 text-white" />
+          <div className="absolute inset-0 bg-gray-900">
+            <video
+              ref={remoteVideoRef}
+              autoPlay
+              playsInline
+              className="w-full h-full object-cover"
+            />
+            {/* Show placeholder only when no remote user connected */}
+            {!remoteUserConnected && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-32 h-32 bg-gradient-to-br from-teal-500 to-teal-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <User className="w-16 h-16 text-white" />
+                  </div>
+                  <p className="text-gray-400">Waiting for {isRecruiter ? 'Candidate' : 'Recruiter'} to join...</p>
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-2">
-                  {/* {isRecruiter ? (interview.candidate_name || 'Candidate') : (interview.recruiter_name || 'Recruiter')} */}
-                </h3>
-                <p className="text-gray-400">
-                  {isRecruiter ? 'Candidate' : 'Recruiter'}
-                </p>
               </div>
-            </div>
+            )}
           </div>
-          
+
           {/* Local Video (Self) - Picture in Picture */}
           <div className="absolute top-4 right-4 w-64 h-48 bg-gray-800 rounded-lg overflow-hidden shadow-2xl border-2 border-gray-700">
-            {isVideoOn ? (
-              <div className="w-full h-full bg-gradient-to-br from-blue-900 to-blue-700 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <User className="w-8 h-8 text-white" />
-                  </div>
-                  <p className="text-white text-sm">You</p>
-                </div>
-              </div>
-            ) : (
+            <video
+              ref={localVideoRef}
+              autoPlay
+              playsInline
+              muted
+              className={`w-full h-full object-cover ${!isVideoOn ? 'hidden' : ''}`}
+            />
+            {!isVideoOn && (
               <div className="w-full h-full bg-gray-900 flex items-center justify-center">
                 <div className="text-center text-gray-500">
                   <CameraOff className="w-8 h-8 mx-auto mb-2" />
@@ -350,6 +591,9 @@ const VideoInterviewInterface = ({
                 </div>
               </div>
             )}
+            <div className="absolute bottom-2 left-2">
+              <span className="text-white text-xs bg-black/50 px-2 py-1 rounded">You</span>
+            </div>
           </div>
           
           {/* Control Bar */}

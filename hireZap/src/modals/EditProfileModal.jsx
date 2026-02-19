@@ -3,7 +3,7 @@ import { Camera, Save, X, User, Mail, Phone, MapPin, Upload } from 'lucide-react
 import useCloudinaryUpload from '../hooks/useCloudinaryUpload';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateUserProfile } from '../redux/slices/authSlice';
-import ImageCropModal from './ImageCropModal'; // Import the crop modal
+import ImageCropModal from './ImageCropModal'; 
 
 const EditProfileModal = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
@@ -30,10 +30,10 @@ const EditProfileModal = ({ isOpen, onClose }) => {
 
   const { uploadFile, loading: uploadLoading, error: uploadError, uploadedUrl } = useCloudinaryUpload();
 
-  // Update preview when upload finishes
+  
   useEffect(() => {
     if (uploadedUrl) {
-      console.log('🖼️ UseEffect: Setting preview from uploadedUrl:', uploadedUrl);
+      console.log(' UseEffect: Setting preview from uploadedUrl:', uploadedUrl);
       setFormData(prev => ({ ...prev, profile_image_url: uploadedUrl }));
       setPreviewImage(uploadedUrl);
     }
@@ -59,38 +59,35 @@ const EditProfileModal = ({ isOpen, onClose }) => {
     }
   };
 
-  // Step 1: When user selects a file, open crop modal
   const handleImageSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    console.log('📁 File selected:', file.name, file.size);
+    console.log(' File selected:', file.name, file.size);
 
     if (file.size > 5 * 1024 * 1024) {
       setErrors(prev => ({ ...prev, profile_image_url: 'File size must be < 5MB' }));
       return;
     }
-
-    // Open crop modal with selected file
     setSelectedFile(file);
     setShowCropModal(true);
   };
 
-  // Step 2: After cropping, upload to Cloudinary
+  // upload to Cloudinary
   const handleCropConfirm = async (croppedFile) => {
     setShowCropModal(false);
     
     try {
-      console.log('☁️ Starting upload to Cloudinary...');
+      console.log(' Starting upload to Cloudinary...');
       const url = await uploadFile(croppedFile, 'profiles', 'image');
-      console.log('✅ Upload successful! URL:', url);
+      console.log(' Upload successful! URL:', url);
       
       if (url) {
         setPreviewImage(url);
         setFormData(prev => ({ ...prev, profile_image_url: url }));
       }
     } catch (err) {
-      console.error('❌ Upload failed:', err);
+      console.error(' Upload failed:', err);
       setErrors(prev => ({ ...prev, profile_image_url: err.message || 'Upload failed' }));
     }
   };
@@ -98,7 +95,6 @@ const EditProfileModal = ({ isOpen, onClose }) => {
   const handleCropCancel = () => {
     setShowCropModal(false);
     setSelectedFile(null);
-    // Reset file inputs
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (cameraInputRef.current) cameraInputRef.current.value = '';
   };
@@ -129,7 +125,7 @@ const EditProfileModal = ({ isOpen, onClose }) => {
     setErrors({});
 
     try {
-      console.log('💾 Saving profile data:', formData);
+      console.log(' Saving profile data:', formData);
 
       const cleanedData = {
         full_name: formData.full_name?.trim(),
@@ -141,10 +137,10 @@ const EditProfileModal = ({ isOpen, onClose }) => {
       
       const updatedUser = await dispatch(updateUserProfile(cleanedData)).unwrap();
 
-      console.log('✅ Profile updated successfully:', updatedUser);
+      console.log(' Profile updated successfully:', updatedUser);
       onClose();
     } catch (err) {
-      console.error('❌ Update failed:', err);
+      console.error(' Update failed:', err);
       setErrors({ general: err.message || 'Failed to update profile' });
     } finally {
       setIsSaving(false);

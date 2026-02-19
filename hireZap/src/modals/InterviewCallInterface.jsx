@@ -45,15 +45,12 @@ const InterviewCallInterface = ({
   const durationIntervalRef = useRef(null);
   const audioStreamRef = useRef(null);
 
-  console.log('🔍 InterviewCallInterface - interview:', interview);
-  console.log('🔍 InterviewCallInterface - session_id:', interview?.session_id);
-
   // ==================== INITIALIZE CALL STATE ====================
   useEffect(() => {
     if (!interview) return;
     
     if (isRecruiter && interview.status === 'in_progress') {
-      setCallState('waiting'); // Waiting for candidate
+      setCallState('waiting'); 
       setConnectionStatus('waiting');
     } else if (interview.status === 'joined') {
       setCallState('connected'); // Both parties connected
@@ -61,7 +58,7 @@ const InterviewCallInterface = ({
     }
   }, [interview?.status, isRecruiter]);
 
-  // ==================== START CALL TIMER ====================
+  //START CALL TIMER
   useEffect(() => {
     callStartTimeRef.current = Date.now();
     
@@ -77,14 +74,11 @@ const InterviewCallInterface = ({
     };
   }, []);
 
-  // ==================== INITIALIZE AUDIO RECORDING ====================
+  //INITIALIZE AUDIO RECORDING
   useEffect(() => {
-    // Only start recording when connected
     if (callState === 'connected' && !isRecording) {
       initAudioRecording();
     }
-    
-    // Cleanup on unmount
     return () => {
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
         mediaRecorderRef.current.stop();
@@ -99,7 +93,7 @@ const InterviewCallInterface = ({
     if (isRecording || mediaRecorderRef.current) return;
     
     try {
-      console.log('🎤 Requesting microphone access...');
+      console.log(' Requesting microphone access...');
       
       // Request microphone access with optimal settings
       const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -120,7 +114,7 @@ const InterviewCallInterface = ({
         ? 'audio/mp4'
         : 'audio/wav';
       
-      console.log('🎙️ Using MIME type:', mimeType);
+      console.log(' Using MIME type:', mimeType);
       
       // Create MediaRecorder
       const mediaRecorder = new MediaRecorder(stream, {
@@ -134,20 +128,20 @@ const InterviewCallInterface = ({
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
-          console.log('📦 Audio chunk recorded:', event.data.size, 'bytes');
+          console.log(' Audio chunk recorded:', event.data.size, 'bytes');
         }
       };
       
       // Handle recording stop
       mediaRecorder.onstop = () => {
-        console.log('🛑 Recording stopped. Total chunks:', audioChunksRef.current.length);
+        console.log(' Recording stopped. Total chunks:', audioChunksRef.current.length);
         const totalSize = audioChunksRef.current.reduce((sum, chunk) => sum + chunk.size, 0);
-        console.log('📊 Total recording size:', totalSize, 'bytes');
+        console.log(' Total recording size:', totalSize, 'bytes');
       };
       
       // Handle errors
       mediaRecorder.onerror = (error) => {
-        console.error('❌ MediaRecorder error:', error);
+        console.error(' MediaRecorder error:', error);
         notify.error('Recording error occurred');
       };
       
@@ -155,35 +149,35 @@ const InterviewCallInterface = ({
       mediaRecorder.start(1000);
       setIsRecording(true);
       setConnectionStatus('connected');
-      console.log('🔴 Recording started successfully');
+      console.log(' Recording started successfully');
       
     } catch (error) {
-      console.error('❌ Failed to initialize audio:', error);
+      console.error(' Failed to initialize audio:', error);
       notify.error('Failed to access microphone. Please check permissions.');
       setConnectionStatus('error');
     }
   };
 
-  // ==================== TOGGLE MUTE ====================
+  // TOGGLE MUTE
   const handleToggleMute = () => {
     if (audioStreamRef.current) {
       audioStreamRef.current.getAudioTracks().forEach(track => {
         track.enabled = isMuted; // Toggle enable/disable
       });
       setIsMuted(!isMuted);
-      console.log('🎤', isMuted ? 'Unmuted' : 'Muted');
+      console.log( isMuted ? 'Unmuted' : 'Muted');
     }
   };
 
   // ==================== TOGGLE SPEAKER ====================
   const handleToggleSpeaker = () => {
     setIsSpeakerOn(!isSpeakerOn);
-    console.log('🔊', isSpeakerOn ? 'Speaker off' : 'Speaker on');
+    console.log( isSpeakerOn ? 'Speaker off' : 'Speaker on');
   };
 
   // ==================== MINIMIZE ====================
   const handleMinimize = () => {
-    console.log('📦 Minimizing call interface (call continues in background)');
+    console.log(' Minimizing call interface (call continues in background)');
     if (onMinimize) {
       onMinimize();
     } else {
@@ -194,7 +188,7 @@ const InterviewCallInterface = ({
   // ==================== END CALL ====================
   const handleEndCall = async () => {
     if (!interview?.session_id) {
-      console.error('❌ ERROR: session_id is missing!');
+      console.error(' ERROR: session_id is missing!');
       alert('Cannot end call: Session ID is missing. Please refresh and try again.');
       return;
     }
@@ -210,7 +204,7 @@ const InterviewCallInterface = ({
     setCallState('ending');
     
     try {
-      console.log('📞 Ending call...');
+      console.log(' Ending call...');
       
       // Stop recording
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
@@ -232,13 +226,13 @@ const InterviewCallInterface = ({
       
       // Calculate final duration
       const durationSeconds = Math.floor((Date.now() - callStartTimeRef.current) / 1000);
-      console.log('⏱️ Final call duration:', durationSeconds, 'seconds');
+      console.log(' Final call duration:', durationSeconds, 'seconds');
       
       // Create audio file from chunks
       let recordingFile = null;
       
       if (audioChunksRef.current.length > 0) {
-        console.log('🎵 Creating audio file from', audioChunksRef.current.length, 'chunks');
+        console.log(' Creating audio file from', audioChunksRef.current.length, 'chunks');
         
         // Determine MIME type from MediaRecorder
         const mimeType = mediaRecorderRef.current?.mimeType || 'audio/webm';
@@ -247,14 +241,14 @@ const InterviewCallInterface = ({
         
         // Create blob from all chunks
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-        console.log('📼 Audio blob created:', {
+        console.log(' Audio blob created:', {
           size: audioBlob.size,
           type: mimeType
         });
         
         // Validate blob size
         if (audioBlob.size === 0) {
-          console.warn('⚠️ Warning: Audio blob is empty!');
+          console.warn(' Warning: Audio blob is empty!');
           notify.warning('No audio was recorded. Call will end without recording.');
         }
         
@@ -267,13 +261,13 @@ const InterviewCallInterface = ({
           lastModified: timestamp
         });
         
-        console.log('📁 Recording file created:', {
+        console.log(' Recording file created:', {
           name: recordingFile.name,
           size: recordingFile.size,
           type: recordingFile.type
         });
       } else {
-        console.warn('⚠️ No audio chunks recorded');
+        console.warn(' No audio chunks recorded');
         notify.warning('No audio was recorded. Call will end without recording.');
       }
       
@@ -282,7 +276,7 @@ const InterviewCallInterface = ({
                      connectionStatus === 'error' ? 'poor' : 'fair';
       
       // End call via API
-      console.log('📤 Sending end call request...');
+      console.log(' Sending end call request...');
       console.log('  - sessionId:', interview.session_id);
       console.log('  - durationSeconds:', durationSeconds);
       console.log('  - recordingFile:', recordingFile ? `${recordingFile.name} (${recordingFile.size} bytes)` : 'null');
@@ -295,7 +289,7 @@ const InterviewCallInterface = ({
         connectionQuality: quality
       })).unwrap();
       
-      console.log('✅ Call ended successfully:', result);
+      console.log(' Call ended successfully:', result);
       setCallState('ended');
       
       // Show success message
@@ -307,7 +301,7 @@ const InterviewCallInterface = ({
       
       // Call the onCallEnd callback
       if (onCallEnd) {
-        console.log('✅ Calling onCallEnd callback');
+        console.log(' Calling onCallEnd callback');
         setTimeout(() => {
           onCallEnd();
         }, 2000);
@@ -318,13 +312,13 @@ const InterviewCallInterface = ({
       }
       
     } catch (error) {
-      console.error('❌ Failed to end call:', error);
+      console.error(' Failed to end call:', error);
       setCallState('connected');
       notify.error(error.message || 'Failed to end call');
       
       // Restart recording if it was stopped
       if (audioStreamRef.current) {
-        console.log('🔄 Restarting recording after error...');
+        console.log(' Restarting recording after error...');
         initAudioRecording();
       }
       
@@ -339,7 +333,7 @@ const InterviewCallInterface = ({
     }
   };
 
-  // ==================== FORMAT DURATION ====================
+  //FORMAT DURATION
   const formatDuration = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;

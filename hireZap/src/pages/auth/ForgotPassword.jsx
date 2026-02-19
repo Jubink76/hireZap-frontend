@@ -33,10 +33,10 @@ const ForgotPassword = () => {
         };
         
         try{
-            console.log("🔍 Sending OTP to:", emailForm);
+            console.log(" Sending OTP to:", emailForm);
             const res = await dispatch(forgotPassword(data)).unwrap();
             
-            console.log("✅ OTP sent successfully");
+            console.log(" OTP sent successfully");
             
             const otpExpiryTime = new Date().getTime() + 60 * 1000;
             localStorage.setItem("otpExpiryTime", otpExpiryTime);
@@ -44,7 +44,7 @@ const ForgotPassword = () => {
             // Small delay to ensure any state updates complete
             await new Promise(resolve => setTimeout(resolve, 50));
             
-            console.log("🔍 Navigating to verify-otp with state:", {
+            console.log(" Navigating to verify-otp with state:", {
                 email: emailForm,
                 role,
                 action_type: "forgot_password"

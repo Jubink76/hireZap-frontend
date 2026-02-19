@@ -142,7 +142,7 @@ const resumeScreeningSlice = createSlice({
         }
         state.screeningInProgress = action.payload.status === 'in_progress';
     
-        console.log('✅ Redux: Updated state', {
+        console.log(' Redux: Updated state', {
             status: state.screeningProgress.status,
             screeningInProgress: state.screeningInProgress
         });

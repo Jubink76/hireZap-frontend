@@ -52,10 +52,9 @@ const CreateStageModal = ({ isOpen, onClose, onSave, editingStage, isCreating })
     }
   }, [editingStage, isCreating, isOpen]);
 
-  // Close modal on success
+  
   useEffect(() => {
     if (successMessage && isOpen) {
-      // Wait a bit to show success, then close
       const timer = setTimeout(() => {
         onClose();
       }, 1000);
@@ -64,7 +63,6 @@ const CreateStageModal = ({ isOpen, onClose, onSave, editingStage, isCreating })
   }, [successMessage, isOpen, onClose]);
 
   const handleSave = async () => {
-    // Clear previous errors
     setValidationError('');
     
     // Validation
@@ -78,7 +76,6 @@ const CreateStageModal = ({ isOpen, onClose, onSave, editingStage, isCreating })
       return;
     }
     
-    // Dispatch create or update
     if (isCreating) {
       await dispatch(createSelectionStage(formData)).unwrap();
     } else {

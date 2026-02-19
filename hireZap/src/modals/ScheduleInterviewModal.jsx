@@ -6,8 +6,43 @@ const ScheduleInterviewModal = ({
   onClose, 
   candidate, 
   onSchedule,
-  existingSchedule = null 
+  existingSchedule = null,
+  roundType= null,
 }) => {
+
+  const roundConfig = {
+    telephonic: {
+      title: 'Schedule Telephonic Interview',
+      updateTitle: 'Reschedule Telephonic Interview',
+      description: 'Set up a telephonic round interview',
+      updateDescription: 'Update telephonic interview schedule',
+      icon: '📞'
+    },
+    hr_round: {
+      title: 'Schedule HR Video Interview',
+      updateTitle: 'Reschedule HR Video Interview',
+      description: 'Set up an HR video interview',
+      updateDescription: 'Update HR video interview schedule',
+      icon: '🎥'
+    },
+    technical: {
+      title: 'Schedule Technical Interview',
+      updateTitle: 'Reschedule Technical Interview',
+      description: 'Set up a technical round interview',
+      updateDescription: 'Update technical interview schedule',
+      icon: '💻'
+    },
+    final: {
+      title: 'Schedule Final Interview',
+      updateTitle: 'Reschedule Final Interview',
+      description: 'Set up a final round interview',
+      updateDescription: 'Update final interview schedule',
+      icon: '🎯'
+    }
+  };
+
+  const config = roundConfig[roundType] || roundConfig.telephonic;
+
   const [formData, setFormData] = useState({
     date: '',
     time: '',
@@ -121,10 +156,11 @@ const ScheduleInterviewModal = ({
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-gray-900">
-              {existingSchedule ? 'Reschedule Interview' : 'Schedule Telephonic Interview'}
+              <span>{config.icon}</span>
+              {existingSchedule ? config.updateTitle : config.title}
             </h2>
             <p className="text-sm text-gray-600 mt-1">
-              {existingSchedule ? 'Update interview schedule' : 'Set up a telephonic round interview'}
+              {existingSchedule ? config.updateDescription : config.description}
             </p>
           </div>
           <button
