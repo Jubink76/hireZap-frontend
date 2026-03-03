@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Bell, Loader2, MessageSquare, Briefcase, Calendar, CheckCircle, Clock, AlertCircle, ArrowRight, RefreshCw, FileText, Phone, Video, Users, Award } from 'lucide-react';
 import { fetchApplicationProgress } from '../../../redux/slices/applicationSlice';
 import VideoInterviewInterface from '../../../modals/VideoInterviewInterface';
-import { joinHRMeeting } from '../../../redux/slices/hrRoundSlice';
+import { joinHRMeeting, leaveHRMeeting } from '../../../redux/slices/hrRoundSlice';
 import { joinCall } from '../../../redux/slices/telephonicSlice'; 
 import InterviewCallInterface from '../../../modals/InterviewCallInterface'; 
 import { useDispatch, useSelector } from 'react-redux';
@@ -132,7 +132,23 @@ const JobApplicationTracker = () => {
       if (data.type === 'call_ended') {
         notify.info('Interview call has ended');
         setShowCallInterface(false);
-        setCurrentInterview(null); // ✅ Clear interview on call end
+        setCurrentInterview(null);
+        dispatch(fetchApplicationProgress(applicationId));
+      }
+
+      if (data.type === 'interview_ended') {
+        notify.info('The interview has been completed by the recruiter.');
+        setShowCallInterface(false);
+        setCurrentInterview(null);
+        setInterviewType(null);
+        hasManuallyMinimizedRef.current = false;
+        dispatch(fetchApplicationProgress(applicationId));
+      }
+
+      if(data.type === 'interview_rescheduled'){
+        notify.warning('The interview session was interrupted. The recruiter will reschedule your interview');
+        setShowCallInterface(false);
+        setCurrentInterview(null);
         dispatch(fetchApplicationProgress(applicationId));
       }
     };
@@ -761,18 +777,8 @@ const JobApplicationTracker = () => {
           </div>
         </div>
       </div>
-      {currentInterview && (
-        <div style={{ display: showCallInterface ? 'block' : 'none' }}>
-          {console.log('📦 Rendering VideoInterviewInterface with:', {
-            showCallInterface,
-            currentInterview,
-            interviewType,
-            zegoConfig: currentInterview?.zegoConfig,
-            appID: currentInterview?.zegoConfig?.appID,
-            roomID: currentInterview?.zegoConfig?.roomID,
-            token: currentInterview?.zegoConfig?.token ? `${currentInterview.zegoConfig.token.substring(0, 30)}...` : 'UNDEFINED',
-            userID: currentInterview?.zegoConfig?.userID,
-          })}
+      {currentInterview && showCallInterface && (
+        <>
           {interviewType === 'hr_video' ? (
             <VideoInterviewInterface
               interview={currentInterview}
@@ -787,6 +793,13 @@ const JobApplicationTracker = () => {
                 setInterviewType(null);
                 hasManuallyMinimizedRef.current = false;
                 dispatch(fetchApplicationProgress(applicationId));
+              }}
+              onLeaveMeeting={async (sessionId) => {
+                try {
+                  await dispatch(leaveHRMeeting(sessionId)).unwrap();
+                } catch (err) {
+                  console.error('Failed to notify leave:', err);
+                }
               }}
             />
           ) : (
@@ -803,7 +816,7 @@ const JobApplicationTracker = () => {
               }}
             />
           )}
-        </div>
+        </>
       )}
     </div>
   );

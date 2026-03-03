@@ -111,15 +111,35 @@ export const joinHRMeeting = createAsyncThunk('hrRound/joinMeeting',async (sessi
     }
 });
 
-export const endHRMeeting = createAsyncThunk('hrRound/endMeeting',async (sessionId, thunkAPI) => {
+export const endHRMeeting = createAsyncThunk('hrRound/endMeeting',async ({sessionId, notesData, recommendation}, thunkAPI) => {
     try {
-        const response = await hrRoundService.endMeeting(sessionId);
+        const response = await hrRoundService.endMeeting(sessionId,notesData, recommendation);
         return response;
     } catch (err) {
         const friendly = getFriendlyError(err, 'Failed to end meeting');
         return thunkAPI.rejectWithValue(friendly);
     }
 });
+
+export const leaveHRMeeting = createAsyncThunk('hrRound/leaveMeeting', async(sessionId, thunkAPI)=>{
+    try{
+        const response = await hrRoundService.leaveMeeting(sessionId);
+        return response;
+    }catch(err){
+        const friendly = getFriendlyError(err, 'Failed to leave meeting');
+        return thunkAPI.rejectWithValue(friendly);
+    }
+});
+
+export const resetHRMeetingSession = createAsyncThunk('hrRound/resetSession', async(sessionId, thunkAPI)=>{
+    try{
+        const response = await hrRoundService.resetMeetingSession(sessionId);
+        return response;
+    }catch(err){
+        const friendly = getFriendlyError(err, 'Failed to reset session');
+        return thunkAPI.rejectWithValue(friendly);
+    }
+})
 
 export const startRecording = createAsyncThunk('hrRound/startRecording',async (sessionId, thunkAPI) => {
     try {
@@ -238,9 +258,9 @@ export const finalizeResult = createAsyncThunk('hrRound/finalizeResult',async (r
     }
 });
 
-export const moveToNextStage = createAsyncThunk('hrRoun/moveToNextStage',async ({ interviewId, nextStageId }, thunkAPI) => {
+export const moveToNextStage = createAsyncThunk('hrRoun/moveToNextStage',async ({ interviewIds, feedback }, thunkAPI) => {
     try {
-        const response = await hrRoundService.moveToNextStage(interviewId, nextStageId);
+        const response = await hrRoundService.moveToNextStage(interviewIds, feedback);
         return response;
     } catch (err) {
         const friendly = getFriendlyError(err, 'Failed to move to next stage');
@@ -500,6 +520,31 @@ const hrRoundSlice = createSlice({
             state.meetingLoading = false;
             state.meetingError = action.payload;
         })
+        .addCase(leaveHRMeeting.pending, (state)=>{
+            state.meetingLoading = true;
+            state.meetingError = null;
+        })
+        .addCase(leaveHRMeeting.fulfilled,(state)=>{
+            state.meetingLoading = false;
+        })
+        .addCase(leaveHRMeeting.rejected, (state,action)=>{
+            state.meetingLoading = false;
+            state.meetingError = action.payload;
+        })
+        .addCase(resetHRMeetingSession.pending, (state)=>{
+            state.meetingLoading = true;
+            state.meetingError = null;
+        })
+        .addCase(resetHRMeetingSession.fulfilled, (state,action)=>{
+            state.meetingLoading = false;
+            state.activeMeeting = null;
+            state.isRecording = false;
+            state.successMessage = 'session reset.  Interview can be rescheduled';
+        })
+        .addCase(resetHRMeetingSession.rejected, (state,action)=>{
+            state.meetingLoading = false;
+            state.meetingError = action.payload;
+        })
         .addCase(startRecording.pending, (state) => {
             state.recordingLoading = true;
             state.recordingError = null;
@@ -640,7 +685,7 @@ const hrRoundSlice = createSlice({
         .addCase(moveToNextStage.rejected, (state, action) => {
             state.loading = false;
             state.error = action.payload;
-        });
+        })
     }
 })
 

@@ -7,7 +7,12 @@ class ZegoCloudService {
     this.remoteStreams = new Map();
     this.isInitialized = false;
   }
-
+  reset() {
+    this.localStream = null;
+    this.remoteStreams = new Map();
+    this.isInitialized = false;
+    this.zg = null;
+  }
   /**
    * Initialize ZegoCloud Engine
    * @param {number} appID - Your ZegoCloud App ID
@@ -15,16 +20,14 @@ class ZegoCloudService {
    */
   async init(appID) {
     try {
-      if (this.isInitialized) {
+      if (this.isInitialized && this.zg) {
         console.log(' ZegoCloud already initialized');
         return;
       }
 
       //Destroy any previous instance before creating new one
       if (this.zg) {
-        try {
-          this.zg = null;
-        } catch(e) {}
+        this.destroy();
       }
 
       console.log(' Initializing ZegoCloud...', { appID });
@@ -193,7 +196,17 @@ class ZegoCloudService {
         throw new Error('ZegoCloud not initialized');
       }
 
-      console.log(' Starting to play stream...', { streamID });
+      // ✅ Don't re-subscribe if already playing this stream
+      if (this.remoteStreams.has(streamID)) {
+        console.log('⚠️ Stream already playing, reattaching:', streamID);
+        const existingStream = this.remoteStreams.get(streamID);
+        if (videoElement && existingStream) {
+          videoElement.srcObject = existingStream;
+        }
+        return existingStream;
+      }
+
+      console.log('▶️ Starting to play stream...', { streamID });
 
       const remoteStream = await this.zg.startPlayingStream(streamID, {
         video: true,
@@ -202,16 +215,28 @@ class ZegoCloudService {
 
       this.remoteStreams.set(streamID, remoteStream);
 
-      // Play in video element
       if (videoElement) {
-        videoElement.srcObject = remoteStream;  // ← not this.zg.playStream()
+        videoElement.srcObject = remoteStream;
       }
 
-      console.log(' Playing stream started');
+      console.log('✅ Playing stream started');
       return remoteStream;
     } catch (error) {
-      console.error(' Failed to start playing:', error);
+      console.error('❌ Failed to start playing:', error);
       throw error;
+    }
+  }
+
+  async updateStreamExtraInfo(cameraOn) {
+    try {
+      if (!this.zg || !this.localStream) return;
+      const streamID = this.localStream.streamID;
+      if (!streamID) return;
+      const extraInfo = JSON.stringify({ isCameraOn: cameraOn });
+      await this.zg.setStreamExtraInfo(extraInfo);
+      console.log('Stream extra info updated:', extraInfo);
+    } catch (error) {
+      console.error('Failed to update stream extra info:', error);
     }
   }
 
@@ -232,6 +257,20 @@ class ZegoCloudService {
     } catch (error) {
       console.error(' Failed to stop playing:', error);
       throw error;
+    }
+  }
+
+  clearRemoteVideo(videoElement) {
+    if (videoElement) {
+      videoElement.srcObject = null;
+    }
+  }
+
+  reattachRemoteVideo(streamID, videoElement) {
+    const stream = this.remoteStreams.get(streamID);
+    if (stream && videoElement) {
+      videoElement.srcObject = stream;
+      console.log('🔁 Re-attached remote stream to video element');
     }
   }
 
@@ -262,11 +301,9 @@ class ZegoCloudService {
     try {
       if (!this.zg || !this.localStream) return;
 
-      console.log(` ${enable ? 'Enabling' : 'Disabling'} camera...`);
-
       this.zg.mutePublishStreamVideo(this.localStream, !enable);
-
-      console.log(` Camera ${enable ? 'enabled' : 'disabled'}`);
+      await this.updateStreamExtraInfo(enable);
+      console.log(`✅ Camera ${enable ? 'enabled' : 'disabled'}`);
     } catch (error) {
       console.error(' Failed to toggle camera:', error);
       throw error;
@@ -382,6 +419,13 @@ class ZegoCloudService {
         callbacks.playQualityUpdate(streamID, stats);
       });
     }
+
+    if (callbacks.roomStreamExtraInfoUpdate) {
+      this.zg.on('roomStreamExtraInfoUpdate', (roomID, streamList) => {
+        console.log('📡 Stream extra info update:', { roomID, streamList });
+        callbacks.roomStreamExtraInfoUpdate(roomID, streamList);
+      });
+    }
   }
 
   /**
@@ -414,14 +458,15 @@ class ZegoCloudService {
           this.zg.off('playerStateUpdate');
           this.zg.off('publishQualityUpdate');
           this.zg.off('playQualityUpdate');
+          this.zg.off('roomStreamExtraInfoUpdate');
         } catch(e) {}
         this.zg = null;
       }
 
       this.isInitialized = false;
-      console.log('✅ ZegoCloud destroyed');
+      console.log('ZegoCloud destroyed');
     } catch (error) {
-      console.error('❌ Failed to destroy ZegoCloud:', error);
+      console.error('Failed to destroy ZegoCloud:', error);
     }
   }
 }

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   CheckCircle,
   Loader2,
@@ -22,10 +22,17 @@ import {
   Circle,
   ChevronDown,
   ChevronUp,
-  AlertCircle
+  AlertCircle,
+  PhoneOff,
+  LogOut,
+  RefreshCw
+
 } from 'lucide-react';
 
+import EndMeetingModal from './EndMeetingModal';
 import zegoCloudService from '../services/zegoCloudService';
+import endHRMeeting, { joinHRMeeting } from '../redux/slices/hrRoundSlice'
+import { useDispatch } from 'react-redux';
 
 const VideoInterviewInterface = ({ 
   interview,
@@ -34,7 +41,11 @@ const VideoInterviewInterface = ({
   onClose,
   onMinimize,
   onCallEnd,
-  sessionStartedAt 
+  sessionStartedAt,
+  onEndMeeting,
+  onLeaveMeeting,
+  onReschedule,
+
 }) => {
   // State
   const [callState, setCallState] = useState('connecting'); // connecting, connected, ending, ended
@@ -49,8 +60,18 @@ const VideoInterviewInterface = ({
   const [chatMessages, setChatMessages] = useState([]);
   const [messageInput, setMessageInput] = useState('');
   const [remoteUserConnected, setRemoteUserConnected] = useState(false);
+  const [remoteVideoOn, setRemoteVideoOn] = useState(true);
   const [error, setError] = useState(null);
-  
+
+  const [showEndModal, setShowEndModal] = useState(false);
+  const [candidateLeft, setCandidateLeft] = useState(false);
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
+
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const [isReconnecting,    setIsReconnecting]    = useState(false);
+  const MAX_RECONNECT = 3;
+  const [localZegoConfig, setLocalZegoConfig] = useState(zegoConfig);
+  const dispatch = useDispatch()
   // Notes state
   const [notes, setNotes] = useState({
     communication: { rating: null, notes: '', expanded: false },
@@ -72,226 +93,292 @@ const VideoInterviewInterface = ({
   const remoteVideoRef = useRef(null);
   const chatEndRef = useRef(null);
   const isInitializedRef = useRef(false);
+  const reconnectTimerRef     = useRef(null);
+  const reconnectAttemptsRef  = useRef(0);
+  const pendingRemoteStreamRef = useRef(null);
   
-  useEffect(() => {
-    const initZegoCloud = async () => {
-      if (!zegoConfig) {
-        console.log('⚠️ No zegoConfig provided');
-        return;
-      }
-      
-      if (isInitializedRef.current) {
-        console.log('✅ Already initialized, skipping');
-        return;
-      }
+  const formatDuration = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  };
 
+  const broadcastMediaState = useCallback((cameraOn, micOn) => {
+    if (!zegoCloudService.zg || !zegoCloudService.localStream) return;
+    
+    // ✅ Use the streamID string, not the stream object
+    const streamID = zegoCloudService.localStream.streamID;
+    if (!streamID) return;
+    
+    zegoCloudService.zg
+      .setStreamExtraInfo(streamID, JSON.stringify({ isCameraOn: cameraOn, isMicOn: micOn }))
+      .catch(e => console.error('setStreamExtraInfo failed:', e));
+  }, []);
+
+  const handleNetworkDisconnect = useCallback(() => {
+    setIsReconnecting(true);
+    reconnectAttemptsRef.current += 1;
+    const attempt = reconnectAttemptsRef.current;
+    setReconnectAttempts(attempt);
+
+    if (attempt <= MAX_RECONNECT) {
+      console.log(`🔄 Reconnect attempt ${attempt}/${MAX_RECONNECT}`);
+      reconnectTimerRef.current = setTimeout(async () => {
+        try {
+          await zegoCloudService.loginRoom(
+            localZegoConfig.roomID,
+            localZegoConfig.token,
+            localZegoConfig.userID,
+            localZegoConfig.userName || (isRecruiter ? 'Recruiter' : 'Candidate')
+          );
+          setIsReconnecting(false);
+          reconnectAttemptsRef.current = 0;
+          setReconnectAttempts(0);
+        } catch (err) {
+          console.error('Reconnect failed:', err);
+          handleNetworkDisconnect();
+        }
+      }, 3000 * attempt); // 3 s, 6 s, 9 s back-off
+    } else {
+      setIsReconnecting(false);
+      setCallState('disconnected');
+    }
+  }, [localZegoConfig, isRecruiter]);
+
+  useEffect(() => {
+    const init = async () => {
+      if (!localZegoConfig  || isInitializedRef.current) return;
+      if (!localZegoConfig .token) return;
       try {
-        console.log('🚀 Initializing ZegoCloud...', zegoConfig);
-        console.log('🔍 ZegoConfig breakdown:', {
-          appID: zegoConfig.appID,
-          roomID: zegoConfig.roomID,
-          token: zegoConfig.token ? `${zegoConfig.token.substring(0, 20)}...` : 'UNDEFINED',
-          userID: zegoConfig.userID,
-          userName: zegoConfig.userName
+
+        zegoCloudService.reset();
+        console.log('🚀 Initialising ZegoCloud…', {
+          appID:  localZegoConfig .appID,
+          roomID: localZegoConfig .roomID,
+          token:  localZegoConfig .token ? `${localZegoConfig.token.substring(0, 20)}…` : 'UNDEFINED',
+          userID: localZegoConfig .userID,
         });
-        if (!zegoConfig.appID || !zegoConfig.roomID || !zegoConfig.token || !zegoConfig.userID) {
-          console.error('❌ Invalid ZegoCloud config:', zegoConfig);
+
+        if (!localZegoConfig .appID || !localZegoConfig .roomID || !localZegoConfig .token || !localZegoConfig .userID) {
           setError('Invalid video configuration');
           setCallState('ended');
           return;
         }
 
-        console.log('✅ ZegoConfig validation passed');
         setConnectionStatus('connecting');
+        await zegoCloudService.init(Number(localZegoConfig .appID));
 
-        // Initialize ZegoCloud
-        await zegoCloudService.init(Number(zegoConfig.appID));
-
-        // Register event listeners
         zegoCloudService.on({
-          // Room state changes
           roomStateUpdate: (roomID, state, errorCode) => {
             console.log('🏠 Room state:', { state, errorCode });
             if (state === 'CONNECTED') {
               setConnectionStatus('connected');
               setCallState('connected');
+              setIsReconnecting(false);
+              reconnectAttemptsRef.current = 0;
+              setReconnectAttempts(0);
+            } else if (state === 'CONNECTING') {
+              setConnectionStatus('reconnecting');
             } else if (state === 'DISCONNECTED') {
               setConnectionStatus('disconnected');
-              if (errorCode !== 0) {
-                setError(`Connection failed: ${errorCode}`);
-              }
+              if (errorCode !== 0) handleNetworkDisconnect();
             }
           },
 
-          // User joined/left
           roomUserUpdate: (roomID, updateType, userList) => {
             console.log('👥 User update:', { updateType, userList });
             if (updateType === 'ADD') {
-              console.log('✅ Remote user joined:', userList);
               setRemoteUserConnected(true);
+              setCandidateLeft(false);
+
             } else if (updateType === 'DELETE') {
-              console.log('❌ Remote user left:', userList);
               setRemoteUserConnected(false);
+              if (isRecruiter) {
+                // ✅ Only set candidateLeft if the leaving user is NOT the current user
+                const deletedIDs = userList.map(u => u.userID);
+                const isRemoteLeaving = deletedIDs.some(id => id !== localZegoConfig ?.userID);
+                if (isRemoteLeaving) {
+                  setCandidateLeft(true);
+                }
+              }
             }
           },
 
-          // Stream added/removed
           roomStreamUpdate: async (roomID, updateType, streamList) => {
             console.log('📡 Stream update:', { updateType, streamList });
-            
             if (updateType === 'ADD') {
-              // Remote user started publishing
               for (const stream of streamList) {
-                console.log('▶️ Playing remote stream:', stream.streamID);
                 if (remoteVideoRef.current) {
-                  await zegoCloudService.startPlaying(
-                    stream.streamID,
-                    remoteVideoRef.current
-                  );
+                  await zegoCloudService.startPlaying(stream.streamID, remoteVideoRef.current);
+                } else {
+                  // ✅ Video element not ready yet — store for later
+                  pendingRemoteStreamRef.current = stream.streamID;
+                  console.log('⏳ Stored pending stream:', stream.streamID);
                 }
               }
             } else if (updateType === 'DELETE') {
-              // Remote user stopped publishing
               for (const stream of streamList) {
-                console.log('⏹️ Stopping remote stream:', stream.streamID);
                 await zegoCloudService.stopPlaying(stream.streamID);
+                if (pendingRemoteStreamRef.current === stream.streamID) {
+                  pendingRemoteStreamRef.current = null;
+                }
               }
             }
           },
 
-          // Chat messages
-          IMRecvBroadcastMessage: (roomID, chatData) => {
-            console.log('💬 Message received:', chatData);
+          roomStreamExtraInfoUpdate: (_roomID, streamList) => {
+            streamList.forEach(stream => {
+              try {
+                const info = JSON.parse(stream.extraInfo || '{}');
+                if (typeof info.isCameraOn !== 'undefined') {
+                  setRemoteVideoOn(info.isCameraOn);
+
+                  if (!info.isCameraOn && remoteVideoRef.current) {
+                    remoteVideoRef.current.srcObject = null;
+                  } else if (info.isCameraOn && remoteVideoRef.current) {
+                    const existingStream = zegoCloudService.remoteStreams.get(stream.streamID);
+                    if (existingStream) {
+                      remoteVideoRef.current.srcObject = existingStream;
+                    }
+                  }
+                }
+              } catch (_) {}
+            });
+          },
+
+          IMRecvBroadcastMessage: (_roomID, chatData) => {
             chatData.forEach(msg => {
               setChatMessages(prev => [...prev, {
-                id: Date.now() + Math.random(),
-                sender: msg.fromUser.userID === zegoConfig.userID ? 'self' : 'other',
+                id:         Date.now() + Math.random(),
+                sender:     msg.fromUser.userID === localZegoConfig.userID ? 'self' : 'other',
                 senderName: msg.fromUser.userName,
-                text: msg.message,
-                timestamp: new Date().toISOString()
+                text:       msg.message,
+                timestamp:  new Date().toISOString(),
               }]);
             });
           },
 
-          // Connection quality monitoring
-          publishQualityUpdate: (streamID, stats) => {
-            // Update connection quality UI if needed
-          },
-
-          playQualityUpdate: (streamID, stats) => {
-            // Update connection quality UI if needed
-          }
+          publishQualityUpdate: () => {},
+          playQualityUpdate:    () => {},
         });
 
-        // Login to room
         await zegoCloudService.loginRoom(
-          zegoConfig.roomID,
-          zegoConfig.token,
-          zegoConfig.userID,
-          zegoConfig.userName || (isRecruiter ? 'Recruiter' : 'Candidate')
+          localZegoConfig.roomID,
+          localZegoConfig.token,
+          localZegoConfig.userID,
+          localZegoConfig.userName || (isRecruiter ? 'Recruiter' : 'Candidate')
         );
 
-        // Create and publish local stream
         const localStream = await zegoCloudService.createLocalStream(
-          `${zegoConfig.userID}_main`,
+          `${localZegoConfig.userID}_main`,
           { camera: true, audio: true }
         );
 
-        // Play local video
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = localStream;
-        }
+        if (localVideoRef.current) localVideoRef.current.srcObject = localStream;
 
-        // Start publishing
-        await zegoCloudService.startPublishing(`${zegoConfig.userID}_main`, localVideoRef.current);
+        await zegoCloudService.startPublishing(`${localZegoConfig.userID}_main`, localVideoRef.current);
 
-        console.log('✅ ZegoCloud initialized and publishing');
+        // broadcast initial camera/mic state to remote user
+        broadcastMediaState(true, true);
+
+        console.log('✅ ZegoCloud initialised and publishing');
         isInitializedRef.current = true;
 
-      } catch (error) {
-        console.error('❌ Failed to initialize ZegoCloud:', error);
-        setError(error.message || 'Failed to connect to interview');
+      } catch (err) {
+        console.error('Failed to initialise ZegoCloud:', err);
+        setError(err.message || 'Failed to connect to interview');
         setCallState('ended');
       }
     };
 
-    initZegoCloud();
+    init();
 
     return () => {
-      if (isInitializedRef.current && zegoConfig) {
-        // logout first (releases server room slot), then destroy
-        zegoCloudService.logoutRoom(zegoConfig.roomID)
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      if (isInitializedRef.current && localZegoConfig ) {
+        zegoCloudService.logoutRoom(localZegoConfig.roomID)
           .catch(console.error)
-          .finally(() => {
-            zegoCloudService.destroy();
-            isInitializedRef.current = false;
-          });
+          .finally(() => { zegoCloudService.destroy(); isInitializedRef.current = false; });
       }
     };
-  }, [zegoConfig]);
+  }, [localZegoConfig]);
   
   // ==================== TIMER ====================
   useEffect(() => {
     if (callState !== 'connected') return;
-
     durationIntervalRef.current = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - callStartTimeRef.current) / 1000);
-      setCallDuration(elapsed);
+      setCallDuration(Math.floor((Date.now() - callStartTimeRef.current) / 1000));
     }, 1000);
-    
-    return () => {
-      if (durationIntervalRef.current) {
-        clearInterval(durationIntervalRef.current);
-      }
-    };
+    return () => clearInterval(durationIntervalRef.current);
   }, [callState]);
   
+  useEffect(() => {
+  const playPendingStream = async () => {
+    if (
+      callState === 'connected' &&
+      pendingRemoteStreamRef.current &&
+      remoteVideoRef.current
+    ) {
+      console.log('▶️ Playing pending remote stream:', pendingRemoteStreamRef.current);
+      try {
+        await zegoCloudService.startPlaying(
+          pendingRemoteStreamRef.current,
+          remoteVideoRef.current
+        );
+        pendingRemoteStreamRef.current = null;
+      } catch (err) {
+        console.error('Failed to play pending stream:', err);
+      }
+    }
+  };
+
+  playPendingStream();
+}, [callState]);
+
   // ==================== AUTO-SCROLL CHAT ====================
   useEffect(() => {
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
   
-  const formatDuration = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  const cleanupZego = async () => {
+    if (!localZegoConfig) return;
+    await zegoCloudService.logoutRoom(localZegoConfig.roomID).catch(console.error);
+    zegoCloudService.destroy();
+    isInitializedRef.current = false;
   };
-  
+
   const handleToggleMute = async () => {
     try {
-      await zegoCloudService.muteAudio(!isMuted);
-      setIsMuted(!isMuted);
-    } catch (error) {
-      console.error('Failed to toggle mute:', error);
-    }
+      const next = !isMuted;
+      await zegoCloudService.muteAudio(next);
+      setIsMuted(next);
+      broadcastMediaState(isVideoOn, !next);
+    } catch (err) { console.error('Toggle mute failed:', err); }
   };
 
   const handleToggleVideo = async () => {
     try {
-      await zegoCloudService.enableCamera(!isVideoOn);
-      setIsVideoOn(!isVideoOn);
-    } catch (error) {
-      console.error('Failed to toggle video:', error);
-    }
+      const next = !isVideoOn;
+      await zegoCloudService.enableCamera(next);
+      setIsVideoOn(next);
+      broadcastMediaState(next, !isMuted);
+    } catch (err) { console.error('Toggle video failed:', err); }
   };
 
   const handleToggleSpeaker = () => {
-    setIsSpeakerOn(!isSpeakerOn);
-    // Mute/unmute remote audio playback
-    if (remoteVideoRef.current) {
-      remoteVideoRef.current.muted = !isSpeakerOn;
-    }
+    setIsSpeakerOn(prev => {
+      if (remoteVideoRef.current) remoteVideoRef.current.muted = prev; // prev=true → now off → muted
+      return !prev;
+    });
   };
   
   const handleStartRecording = async () => {
     try {
       setIsRecording(true);
-      await zegoCloudService.startRecording(`${zegoConfig.userID}_main`);
-      console.log('🔴 Recording started');
-    } catch (error) {
-      console.error('Failed to start recording:', error);
+      await zegoCloudService.startRecording(`${localZegoConfig.userID}_main`);
+      console.log('Recording started');
+    } catch (err) {
+      console.error('Start recording failed:', err);
       setIsRecording(false);
     }
   };
@@ -299,225 +386,268 @@ const VideoInterviewInterface = ({
   const handleStopRecording = () => {
     setIsRecording(false);
     console.log('⏹️ Recording stopped');
-    // ZegoCloud handles recording automatically
   };
   
   const handleSendMessage = async () => {
-    if (!messageInput.trim() || !zegoConfig) return;
-    
+    if (!messageInput.trim() || !localZegoConfig) return;
     try {
-      await zegoCloudService.sendBroadcastMessage(zegoConfig.roomID, messageInput);
-      
-      // Add to local chat (will also be received via event)
+      await zegoCloudService.sendBroadcastMessage(localZegoConfig.roomID, messageInput);
       setChatMessages(prev => [...prev, {
-        id: Date.now(),
-        sender: 'self',
-        senderName: zegoConfig.userName || 'You',
-        text: messageInput,
-        timestamp: new Date().toISOString()
+        id: Date.now(), sender: 'self',
+        senderName: localZegoConfig.userName || 'You',
+        text: messageInput, timestamp: new Date().toISOString(),
       }]);
-      
       setMessageInput('');
-    } catch (error) {
-      console.error('Failed to send message:', error);
-    }
+    } catch (err) { console.error('Send message failed:', err); }
   };
   
-  const handleSaveNotes = async () => {
-    const weights = {
-      communication: 25,
-      culture_fit: 20,
-      motivation: 15,
-      professionalism: 15,
-      problem_solving: 15,
-      team_collaboration: 10
-    };
-    
-    let totalScore = 0;
-    let totalWeight = 0;
-    
-    Object.keys(weights).forEach(key => {
-      if (notes[key].rating !== null) {
-        totalScore += notes[key].rating * (weights[key] / 100);
-        totalWeight += weights[key];
-      }
+  const toggleNoteSection = section =>
+    setNotes(p => ({ ...p, [section]: { ...p[section], expanded: !p[section].expanded } }));
+
+  const updateNoteRating = (section, rating) =>
+    setNotes(p => ({ ...p, [section]: { ...p[section], rating } }));
+
+  const updateNoteText = (section, text) =>
+    setNotes(p => ({ ...p, [section]: { ...p[section], notes: text } }));
+
+  const calcWeightedScore = () => {
+    const W = { communication: 25, culture_fit: 20, motivation: 15, professionalism: 15, problem_solving: 15, team_collaboration: 10 };
+    let total = 0, weight = 0;
+    Object.keys(W).forEach(k => {
+      if (notes[k].rating) { total += notes[k].rating * (W[k] / 100); weight += W[k]; }
     });
-    
-    const calculatedScore = totalWeight > 0 ? Math.round(totalScore) : null;
-    
+    return weight > 0 ? Math.round(total) : null;
+  };
+
+  const handleSaveNotes = () => {
     const notesData = {
-      interview_id: interview.interview_id,
-      communication_rating: notes.communication.rating,
-      communication_notes: notes.communication.notes,
-      culture_fit_rating: notes.culture_fit.rating,
-      culture_fit_notes: notes.culture_fit.notes,
-      motivation_rating: notes.motivation.rating,
-      motivation_notes: notes.motivation.notes,
-      professionalism_rating: notes.professionalism.rating,
-      professionalism_notes: notes.professionalism.notes,
-      problem_solving_rating: notes.problem_solving.rating,
-      problem_solving_notes: notes.problem_solving.notes,
+      interview_id:              interview?.interview_id,
+      communication_rating:      notes.communication.rating,
+      communication_notes:       notes.communication.notes,
+      culture_fit_rating:        notes.culture_fit.rating,
+      culture_fit_notes:         notes.culture_fit.notes,
+      motivation_rating:         notes.motivation.rating,
+      motivation_notes:          notes.motivation.notes,
+      professionalism_rating:    notes.professionalism.rating,
+      professionalism_notes:     notes.professionalism.notes,
+      problem_solving_rating:    notes.problem_solving.rating,
+      problem_solving_notes:     notes.problem_solving.notes,
       team_collaboration_rating: notes.team_collaboration.rating,
-      team_collaboration_notes: notes.team_collaboration.notes,
-      overall_impression: notes.overall_impression,
-      strengths: notes.strengths,
-      areas_for_improvement: notes.areas_for_improvement,
-      general_notes: notes.general_notes,
-      calculated_score: calculatedScore
+      team_collaboration_notes:  notes.team_collaboration.notes,
+      overall_impression:        notes.overall_impression,
+      strengths:                 notes.strengths,
+      areas_for_improvement:     notes.areas_for_improvement,
+      general_notes:             notes.general_notes,
+      calculated_score:          calcWeightedScore(),
     };
-    
-    console.log(' Saving notes:', notesData);
+    console.log('💾 Saving notes (draft):', notesData);
     alert('Notes saved successfully!');
   };
-  
-  const handleEndCall = async () => {
-    const confirmEnd = window.confirm(
-      isRecruiter 
-        ? 'Are you sure you want to end this interview? This will disconnect both parties.'
-        : 'Are you sure you want to end the interview?'
-    );
-
-    if (!confirmEnd) return;
     
+  const handleRejoin = async() => {
+    try{
+      isInitializedRef.current = false;
+      reconnectAttemptsRef.current = 0;
+      setReconnectAttempts(0);
+      setIsReconnecting(false);
+      setError(null);
+      setCandidateLeft(false);
+      zegoCloudService.reset();
+      setCallState('connecting');
+
+      const result = await dispatch(joinHRMeeting(interview.session_id)).unwrap();
+      const freshConfig = result.zegocloud_config;
+
+      if(!freshConfig?.token){
+        throw new Error('Failed ot get fresh token for rejoin');
+      }
+      setLocalZegoConfig({
+        appID: freshConfig.app_id,
+        roomID: freshConfig.room_id,
+        token: freshConfig.token,
+        userID: freshConfig.user_id,
+        userName: 'Candidate'
+      });
+    }catch(err){
+      console.error('rejoin failed', err);
+      setError(err.message ||  'Failed to rejoin interview');
+      setCallState('ended')
+    }
+  };
+
+  const handleLeaveCall = async () => {
+    if (!window.confirm('Are you sure you want to leave the interview?')) return;
     setCallState('ending');
-    
-    if (isRecording) {
-      handleStopRecording();
-    }
-    
-    const durationSeconds = Math.floor((Date.now() - callStartTimeRef.current) / 1000);
-    console.log('📞 Ending call...', { durationSeconds });
-    
     try {
-      // Logout from ZegoCloud room
-      if (zegoConfig) {
-        await zegoCloudService.logoutRoom(zegoConfig.roomID);
-      }
-    } catch (error) {
-      console.error('Error ending call:', error);
-    }
-    
-    setTimeout(() => {
-      setCallState('ended');
-      if (onCallEnd) {
-        setTimeout(onCallEnd, 2000);
-      }
-    }, 1000);
+      await cleanupZego();
+      if (onLeaveMeeting && interview?.session_id) await onLeaveMeeting(interview.session_id);
+    } catch (err) { console.error('Leave call error:', err); }
+    setCallState('left');
   };
-  
-  const toggleNoteSection = (section) => {
-    setNotes(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        expanded: !prev[section].expanded
+
+  const handleEndCall = () => {
+    if (!isRecruiter) { handleLeaveCall(); return; }
+    setShowEndModal(true);
+  };
+
+  // RECRUITER — confirmed end from modal: save notes + complete interview
+  const handleConfirmEnd = async (finalNotes, recommendation) => {
+    setIsSavingNotes(true);
+    setShowEndModal(false);
+    setCallState('ending');
+    if (isRecording) handleStopRecording();
+    try {
+      await cleanupZego();
+      if (onEndMeeting && interview?.session_id) {
+        await onEndMeeting({ session_id: interview.session_id, interview_id: interview.interview_id, notes: finalNotes, recommendation });
       }
-    }));
+    } catch (err) { console.error('Confirm end error:', err); }
+    finally { setIsSavingNotes(false); }
+    setCallState('ended');
+    if (onCallEnd) setTimeout(onCallEnd, 2000);
+  };
+
+  // RECRUITER — stop session without completing; trigger reschedule flow
+  const handleStopAndReschedule = async () => {
+    if (!window.confirm('This will end the current session without completing the interview. The candidate can be rescheduled. Continue?')) return;
+    setCallState('ending');
+    if (isRecording) handleStopRecording();
+    try {
+      await cleanupZego();
+      if (onReschedule && interview?.session_id) await onReschedule(interview.session_id);
+    } catch (err) { console.error('Stop & reschedule error:', err); }
+    setCallState('ended');
+    if (onCallEnd) setTimeout(onCallEnd, 1500);
   };
 
 
-  const updateNoteRating = (section, rating) => {
-    setNotes(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        rating
-      }
-    }));
-  };
-  
-  const updateNoteText = (section, text) => {
-    setNotes(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        notes: text
-      }
-    }));
-  };
-
-  
-  // Ended state
-  if (error) {
-    return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg max-w-md w-full p-8 text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-8 h-8 text-red-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Connection Error</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-          >
+  if (error) return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg max-w-md w-full p-8 text-center">
+        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <AlertCircle className="w-8 h-8 text-red-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Connection Error</h2>
+        <p className="text-gray-600 mb-6">{error}</p>
+        <div className="flex gap-3 justify-center">
+          <button onClick={handleRejoin} className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+            Try Again
+          </button>
+          <button onClick={onClose} className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
             Close
           </button>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
 
-  if (callState === 'ended') {
-    return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg max-w-md w-full p-8 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="w-8 h-8 text-green-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Interview Ended</h2>
-          <p className="text-gray-600 mb-4">Interview completed successfully</p>
-          <p className="text-sm text-gray-500">Duration: {formatDuration(callDuration)}</p>
-        </div>
+  if (callState === 'connecting') return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg max-w-md w-full p-8 text-center">
+        <Loader2 className="w-12 h-12 text-teal-600 animate-spin mx-auto mb-4" />
+        <p className="text-gray-600">Connecting to interview…</p>
+        <p className="text-sm text-gray-500 mt-2">Please wait</p>
       </div>
-    );
-  }
-  
-  // Ending state
-  if (callState === 'ending') {
-    return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg max-w-md w-full p-8 text-center">
-          <Loader2 className="w-12 h-12 text-teal-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Ending interview...</p>
-          <p className="text-sm text-gray-500 mt-2">Saving recording and notes</p>
-        </div>
-      </div>
-    );
-  }
+    </div>
+  );
 
-  if (callState === 'connecting') {
-    return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg max-w-md w-full p-8 text-center">
-          <Loader2 className="w-12 h-12 text-teal-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Connecting to interview...</p>
-          <p className="text-sm text-gray-500 mt-2">Please wait</p>
+  if (callState === 'ending') return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg max-w-md w-full p-8 text-center">
+        <Loader2 className="w-12 h-12 text-teal-600 animate-spin mx-auto mb-4" />
+        <p className="text-gray-600">
+          {isRecruiter ? 'Saving notes and ending interview…' : 'Leaving interview…'}
+        </p>
+        <p className="text-sm text-gray-500 mt-2">Please wait</p>
+      </div>
+    </div>
+  );
+
+  if (callState === 'ended') return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg max-w-md w-full p-8 text-center">
+        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <CheckCircle className="w-8 h-8 text-green-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Interview Ended</h2>
+        <p className="text-gray-600 mb-2">Interview completed successfully</p>
+        <p className="text-sm text-gray-500">Duration: {formatDuration(callDuration)}</p>
+      </div>
+    </div>
+  );
+
+  // Candidate has left voluntarily
+  if (callState === 'left') return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg max-w-md w-full p-8 text-center">
+        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <LogOut className="w-8 h-8 text-blue-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">You've Left the Interview</h2>
+        <p className="text-gray-600 mb-2">The recruiter may still be in the meeting.</p>
+        <p className="text-sm text-gray-500 mb-6">Duration so far: {formatDuration(callDuration)}</p>
+        <div className="flex gap-3 justify-center">
+          <button onClick={handleRejoin} className="px-6 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 flex items-center gap-2">
+            <RefreshCw className="w-4 h-4" /> Rejoin Meeting
+          </button>
+          <button onClick={onCallEnd} className="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+            Leave Permanently
+          </button>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+
+  // Network dropped and max reconnect attempts exhausted
+  if (callState === 'disconnected') return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg max-w-md w-full p-8 text-center">
+        <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <AlertCircle className="w-8 h-8 text-yellow-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Connection Lost</h2>
+        <p className="text-gray-600 mb-2">Unable to reconnect after {MAX_RECONNECT} attempts.</p>
+        <p className="text-sm text-gray-500 mb-6">Duration: {formatDuration(callDuration)}</p>
+        <div className="flex gap-3 justify-center">
+          <button onClick={handleRejoin} className="px-6 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 flex items-center gap-2">
+            <RefreshCw className="w-4 h-4" /> Try Rejoining
+          </button>
+          <button onClick={onClose} className="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+            Leave
+          </button>
+        </div>
+      </div>
+    </div>
+  )
   
   // Main interview interface
   return (
     <div className="fixed inset-0 bg-gray-900 z-50 flex flex-col">
       {/* Header Bar */}
-      <div className="bg-gray-800 text-white px-6 py-3 flex items-center justify-between">
+      <div className="bg-gray-800 text-white px-6 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            {connectionStatus === 'connected' && (
-              <>
-                <Radio className="w-4 h-4 text-green-400 animate-pulse" />
-                <span className="text-sm text-green-400">Connected</span>
-              </>
-            )}
-          </div>
-          
+
+          {/* Connection status */}
+          {connectionStatus === 'connected' && (
+            <div className="flex items-center gap-2">
+              <Radio className="w-4 h-4 text-green-400 animate-pulse" />
+              <span className="text-sm text-green-400">Connected</span>
+            </div>
+          )}
+          {connectionStatus === 'reconnecting' && (
+            <div className="flex items-center gap-2">
+              <Loader2 className="w-4 h-4 text-yellow-400 animate-spin" />
+              <span className="text-sm text-yellow-400">Reconnecting…</span>
+            </div>
+          )}
+
+          {/* Timer */}
           <div className="flex items-center gap-2 bg-gray-700 px-3 py-1.5 rounded-full">
             <Clock className="w-4 h-4" />
             <span className="font-mono text-sm">{formatDuration(callDuration)}</span>
           </div>
-          
+
+          {/* Recording badge */}
           {isRecording && (
             <div className="flex items-center gap-2 bg-red-600/20 border border-red-500 px-3 py-1.5 rounded-full">
               <Circle className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
@@ -525,22 +655,13 @@ const VideoInterviewInterface = ({
             </div>
           )}
         </div>
-        
+
         <div className="flex items-center gap-2">
-          <button
-            onClick={onMinimize}
-            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-            title="Minimize"
-          >
+          <button onClick={onMinimize} className="p-2 hover:bg-gray-700 rounded-lg transition-colors" title="Minimize">
             <Minimize2 className="w-5 h-5" />
           </button>
-          
           <button
-            onClick={() => {
-              if (window.confirm('Closing will minimize the interview. To end the interview, use the End Call button.')) {
-                onMinimize();
-              }
-            }}
+            onClick={() => { if (window.confirm('Closing will minimize the interview. To end it, use the End Call button.')) onMinimize(); }}
             className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
             title="Close window"
           >
@@ -548,33 +669,68 @@ const VideoInterviewInterface = ({
           </button>
         </div>
       </div>
-      
-      {/* Main Content Area */}
+
+      {/* ── Main content ───────────────────────────────── */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Video Area */}
+
+        {/* ── Video area ─────────────────────────────── */}
         <div className="flex-1 bg-gray-900 relative">
-          {/* Remote Video (Candidate) */}
+
+          {/* Reconnecting overlay */}
+          {isReconnecting && (
+            <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-10">
+              <div className="bg-white rounded-lg p-6 text-center">
+                <Loader2 className="w-10 h-10 text-teal-600 animate-spin mx-auto mb-3" />
+                <p className="font-semibold text-gray-900">Reconnecting…</p>
+                <p className="text-sm text-gray-500 mt-1">Attempt {reconnectAttempts}/{MAX_RECONNECT}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Candidate-left banner (recruiter only) */}
+          {isRecruiter && candidateLeft && (
+            <div className="absolute top-4 left-4 right-72 bg-yellow-500/90 text-white rounded-lg p-3 flex items-center gap-3 z-10">
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <div>
+                <p className="font-semibold text-sm">Candidate has left the meeting</p>
+                <p className="text-xs text-yellow-100">You can continue updating notes. End meeting when ready.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Remote video */}
           <div className="absolute inset-0 bg-gray-900">
             <video
               ref={remoteVideoRef}
               autoPlay
               playsInline
               className="w-full h-full object-cover"
+              style={{ 
+                display: (!remoteUserConnected && !pendingRemoteStreamRef.current) 
+                  ? 'none' 
+                  : 'block' 
+              }}
             />
-            {/* Show placeholder only when no remote user connected */}
-            {!remoteUserConnected && (
+            {(!remoteUserConnected || !remoteVideoOn) && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
                   <div className="w-32 h-32 bg-gradient-to-br from-teal-500 to-teal-700 rounded-full flex items-center justify-center mx-auto mb-4">
                     <User className="w-16 h-16 text-white" />
                   </div>
-                  <p className="text-gray-400">Waiting for {isRecruiter ? 'Candidate' : 'Recruiter'} to join...</p>
+                  <p className="text-white text-lg font-medium mb-1">
+                    {isRecruiter ? 'Candidate' : 'Recruiter'}
+                  </p>
+                  <p className="text-gray-400 text-sm">
+                    {!remoteUserConnected
+                      ? (isRecruiter && candidateLeft ? 'Candidate has left' : 'Waiting to join…')
+                      : 'Camera is off'}
+                  </p>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Local Video (Self) - Picture in Picture */}
+          {/* Local video PiP */}
           <div className="absolute top-4 right-4 w-64 h-48 bg-gray-800 rounded-lg overflow-hidden shadow-2xl border-2 border-gray-700">
             <video
               ref={localVideoRef}
@@ -584,7 +740,7 @@ const VideoInterviewInterface = ({
               className={`w-full h-full object-cover ${!isVideoOn ? 'hidden' : ''}`}
             />
             {!isVideoOn && (
-              <div className="w-full h-full bg-gray-900 flex items-center justify-center">
+              <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
                 <div className="text-center text-gray-500">
                   <CameraOff className="w-8 h-8 mx-auto mb-2" />
                   <p className="text-sm">Camera Off</p>
@@ -592,14 +748,18 @@ const VideoInterviewInterface = ({
               </div>
             )}
             <div className="absolute bottom-2 left-2">
-              <span className="text-white text-xs bg-black/50 px-2 py-1 rounded">You</span>
+              <span className="text-white text-xs bg-black/60 px-2 py-1 rounded">You</span>
             </div>
           </div>
-          
-          {/* Control Bar */}
+
+          {/* ── Control bar ──────────────────────────── */}
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
             <div className="max-w-4xl mx-auto">
+
+              {/* Primary controls */}
               <div className="flex items-center justify-center gap-4">
+
+                {/* Mute */}
                 <button
                   onClick={handleToggleMute}
                   className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
@@ -609,7 +769,8 @@ const VideoInterviewInterface = ({
                 >
                   {isMuted ? <MicOff className="w-6 h-6 text-white" /> : <Mic className="w-6 h-6 text-white" />}
                 </button>
-                
+
+                {/* Camera */}
                 <button
                   onClick={handleToggleVideo}
                   className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
@@ -619,15 +780,27 @@ const VideoInterviewInterface = ({
                 >
                   {isVideoOn ? <Camera className="w-6 h-6 text-white" /> : <CameraOff className="w-6 h-6 text-white" />}
                 </button>
-                
-                <button
-                  onClick={handleEndCall}
-                  className="w-16 h-16 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center transition-all shadow-lg"
-                  title="End Interview"
-                >
-                  <VideoOff className="w-7 h-7 text-white" />
-                </button>
-                
+
+                {/* End / Leave — role-specific */}
+                {isRecruiter ? (
+                  <button
+                    onClick={handleEndCall}
+                    className="w-16 h-16 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center transition-all shadow-lg"
+                    title="End Interview"
+                  >
+                    <VideoOff className="w-7 h-7 text-white" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleLeaveCall}
+                    className="w-16 h-16 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center transition-all shadow-lg"
+                    title="Leave Interview"
+                  >
+                    <PhoneOff className="w-7 h-7 text-white" />
+                  </button>
+                )}
+
+                {/* Speaker */}
                 <button
                   onClick={handleToggleSpeaker}
                   className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
@@ -637,9 +810,10 @@ const VideoInterviewInterface = ({
                 >
                   {isSpeakerOn ? <Volume2 className="w-6 h-6 text-white" /> : <VolumeX className="w-6 h-6 text-white" />}
                 </button>
-                
+
+                {/* Chat */}
                 <button
-                  onClick={() => setShowChat(!showChat)}
+                  onClick={() => setShowChat(p => !p)}
                   className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
                     showChat ? 'bg-teal-600 hover:bg-teal-700' : 'bg-gray-700 hover:bg-gray-600'
                   }`}
@@ -647,10 +821,11 @@ const VideoInterviewInterface = ({
                 >
                   <MessageSquare className="w-6 h-6 text-white" />
                 </button>
-                
+
+                {/* Notes (recruiter only) */}
                 {isRecruiter && (
                   <button
-                    onClick={() => setShowNotes(!showNotes)}
+                    onClick={() => setShowNotes(p => !p)}
                     className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
                       showNotes ? 'bg-teal-600 hover:bg-teal-700' : 'bg-gray-700 hover:bg-gray-600'
                     }`}
@@ -660,33 +835,40 @@ const VideoInterviewInterface = ({
                   </button>
                 )}
               </div>
-              
+
+              {/* Recruiter secondary controls */}
               {isRecruiter && (
-                <div className="flex items-center justify-center gap-3 mt-4">
+                <div className="flex items-center justify-center gap-3 mt-4 flex-wrap">
                   {!isRecording ? (
                     <button
                       onClick={handleStartRecording}
-                      className="flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 rounded-lg text-white font-medium transition-colors"
+                      className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 rounded-lg text-white text-sm font-medium transition-colors"
                     >
-                      <Circle className="w-4 h-4" />
-                      Start Recording
+                      <Circle className="w-4 h-4" /> Start Recording
                     </button>
                   ) : (
                     <button
                       onClick={handleStopRecording}
-                      className="flex items-center gap-2 px-6 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-lg text-white font-medium transition-colors"
+                      className="flex items-center gap-2 px-5 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-lg text-white text-sm font-medium transition-colors"
                     >
-                      <Circle className="w-4 h-4 fill-red-500 text-red-500" />
-                      Stop Recording
+                      <Circle className="w-4 h-4 fill-red-500 text-red-500" /> Stop Recording
                     </button>
                   )}
+
+                  <button
+                    onClick={handleStopAndReschedule}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-yellow-500 hover:bg-yellow-600 rounded-lg text-white text-sm font-medium transition-colors"
+                    title="Stop session and reschedule"
+                  >
+                    <RefreshCw className="w-4 h-4" /> Stop & Reschedule
+                  </button>
                 </div>
               )}
             </div>
           </div>
         </div>
-        
-        {/* Chat Sidebar */}
+
+        {/* ── Chat sidebar ───────────────────────────── */}
         {showChat && (
           <div className="w-96 bg-white border-l border-gray-200 flex flex-col">
             <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
@@ -695,7 +877,7 @@ const VideoInterviewInterface = ({
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {chatMessages.length === 0 ? (
                 <div className="text-center text-gray-500 text-sm py-8">
@@ -705,23 +887,12 @@ const VideoInterviewInterface = ({
                 </div>
               ) : (
                 chatMessages.map(msg => (
-                  <div
-                    key={msg.id}
-                    className={`flex ${msg.sender === (isRecruiter ? 'recruiter' : 'candidate') ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-[80%] px-4 py-2 rounded-lg ${
-                        msg.sender === (isRecruiter ? 'recruiter' : 'candidate')
-                          ? 'bg-teal-600 text-white'
-                          : 'bg-gray-100 text-gray-900'
-                      }`}
-                    >
+                  <div key={msg.id} className={`flex ${msg.sender === 'self' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[80%] px-4 py-2 rounded-lg ${
+                      msg.sender === 'self' ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-900'
+                    }`}>
                       <p className="text-sm">{msg.text}</p>
-                      <p className={`text-xs mt-1 ${
-                        msg.sender === (isRecruiter ? 'recruiter' : 'candidate')
-                          ? 'text-teal-100'
-                          : 'text-gray-500'
-                      }`}>
+                      <p className={`text-xs mt-1 ${msg.sender === 'self' ? 'text-teal-100' : 'text-gray-500'}`}>
                         {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
@@ -730,15 +901,15 @@ const VideoInterviewInterface = ({
               )}
               <div ref={chatEndRef} />
             </div>
-            
+
             <div className="p-4 border-t border-gray-200">
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  placeholder="Type a message..."
+                  onChange={e => setMessageInput(e.target.value)}
+                  onKeyPress={e => e.key === 'Enter' && handleSendMessage()}
+                  placeholder="Type a message…"
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                 />
                 <button
@@ -752,8 +923,8 @@ const VideoInterviewInterface = ({
             </div>
           </div>
         )}
-        
-        {/* Notes Sidebar (Recruiter only) */}
+
+        {/* ── Notes sidebar (recruiter only) ─────────── */}
         {isRecruiter && showNotes && (
           <div className="w-96 bg-white border-l border-gray-200 flex flex-col">
             <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
@@ -762,15 +933,17 @@ const VideoInterviewInterface = ({
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
+
+              {/* Category sections */}
               {[
-                { key: 'communication', label: 'Communication', weight: 25 },
-                { key: 'culture_fit', label: 'Culture Fit', weight: 20 },
-                { key: 'motivation', label: 'Motivation', weight: 15 },
-                { key: 'professionalism', label: 'Professionalism', weight: 15 },
-                { key: 'problem_solving', label: 'Problem Solving', weight: 15 },
-                { key: 'team_collaboration', label: 'Team Collaboration', weight: 10 }
+                { key: 'communication',      label: 'Communication',      weight: 25 },
+                { key: 'culture_fit',        label: 'Culture Fit',        weight: 20 },
+                { key: 'motivation',         label: 'Motivation',         weight: 15 },
+                { key: 'professionalism',    label: 'Professionalism',    weight: 15 },
+                { key: 'problem_solving',    label: 'Problem Solving',    weight: 15 },
+                { key: 'team_collaboration', label: 'Team Collaboration', weight: 10 },
               ].map(section => (
                 <div key={section.key} className="border border-gray-200 rounded-lg">
                   <button
@@ -780,48 +953,47 @@ const VideoInterviewInterface = ({
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-gray-900">{section.label}</span>
                       <span className="text-xs text-gray-500">({section.weight}%)</span>
+                      {notes[section.key].rating && (
+                        <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full font-medium">
+                          {notes[section.key].rating}
+                        </span>
+                      )}
                     </div>
-                    {notes[section.key].expanded ? (
-                      <ChevronUp className="w-4 h-4 text-gray-500" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 text-gray-500" />
-                    )}
+                    {notes[section.key].expanded
+                      ? <ChevronUp   className="w-4 h-4 text-gray-500" />
+                      : <ChevronDown className="w-4 h-4 text-gray-500" />
+                    }
                   </button>
-                  
+
                   {notes[section.key].expanded && (
                     <div className="px-4 pb-4 space-y-3 border-t border-gray-200">
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-2">
-                          Rating (0-100)
-                        </label>
+                        <label className="block text-xs font-medium text-gray-700 mb-2 mt-3">Rating (0-100)</label>
                         <div className="flex gap-1">
-                          {[20, 40, 60, 80, 100].map(rating => (
+                          {[20, 40, 60, 80, 100].map(r => (
                             <button
-                              key={rating}
-                              onClick={() => updateNoteRating(section.key, rating)}
+                              key={r}
+                              onClick={() => updateNoteRating(section.key, r)}
                               className={`flex-1 py-2 text-xs font-medium rounded transition-colors ${
-                                notes[section.key].rating === rating
+                                notes[section.key].rating === r
                                   ? 'bg-teal-600 text-white'
                                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                               }`}
                             >
-                              {rating}
+                              {r}
                             </button>
                           ))}
                         </div>
                         {notes[section.key].rating && (
-                          <p className="text-xs text-gray-600 mt-1">
-                            Selected: {notes[section.key].rating}/100
-                          </p>
+                          <p className="text-xs text-gray-600 mt-1">Selected: {notes[section.key].rating}/100</p>
                         )}
                       </div>
-                      
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-2">Notes</label>
                         <textarea
                           value={notes[section.key].notes}
-                          onChange={(e) => updateNoteText(section.key, e.target.value)}
-                          placeholder={`Add notes about ${section.label.toLowerCase()}...`}
+                          onChange={e => updateNoteText(section.key, e.target.value)}
+                          placeholder={`Add notes about ${section.label.toLowerCase()}…`}
                           rows={3}
                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
                         />
@@ -830,90 +1002,61 @@ const VideoInterviewInterface = ({
                   )}
                 </div>
               ))}
-              
+
+              {/* Overall assessment */}
               <div className="border border-gray-200 rounded-lg p-4 space-y-3">
                 <h4 className="font-medium text-gray-900">Overall Assessment</h4>
-                
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">Overall Impression</label>
-                  <textarea
-                    value={notes.overall_impression}
-                    onChange={(e) => setNotes(prev => ({ ...prev, overall_impression: e.target.value }))}
-                    placeholder="Overall impression of the candidate..."
-                    rows={2}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 resize-none"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">Strengths</label>
-                  <textarea
-                    value={notes.strengths}
-                    onChange={(e) => setNotes(prev => ({ ...prev, strengths: e.target.value }))}
-                    placeholder="Key strengths observed..."
-                    rows={2}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 resize-none"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">Areas for Improvement</label>
-                  <textarea
-                    value={notes.areas_for_improvement}
-                    onChange={(e) => setNotes(prev => ({ ...prev, areas_for_improvement: e.target.value }))}
-                    placeholder="Areas that need improvement..."
-                    rows={2}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 resize-none"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">General Notes</label>
-                  <textarea
-                    value={notes.general_notes}
-                    onChange={(e) => setNotes(prev => ({ ...prev, general_notes: e.target.value }))}
-                    placeholder="Any additional notes..."
-                    rows={3}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 resize-none"
-                  />
-                </div>
+                {[
+                  { key: 'overall_impression',    label: 'Overall Impression',    placeholder: 'Overall impression of the candidate…' },
+                  { key: 'strengths',             label: 'Strengths',             placeholder: 'Key strengths observed…' },
+                  { key: 'areas_for_improvement', label: 'Areas for Improvement', placeholder: 'Areas that need improvement…' },
+                  { key: 'general_notes',         label: 'General Notes',         placeholder: 'Any additional notes…', rows: 3 },
+                ].map(f => (
+                  <div key={f.key}>
+                    <label className="block text-xs font-medium text-gray-700 mb-2">{f.label}</label>
+                    <textarea
+                      value={notes[f.key]}
+                      onChange={e => setNotes(p => ({ ...p, [f.key]: e.target.value }))}
+                      placeholder={f.placeholder}
+                      rows={f.rows || 2}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 resize-none"
+                    />
+                  </div>
+                ))}
               </div>
-              
-              {Object.values(notes).slice(0, 6).some(n => n.rating !== null) && (
+
+              {/* Live weighted score */}
+              {calcWeightedScore() !== null && (
                 <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-700">Calculated Score</span>
-                    <span className="text-2xl font-bold text-teal-600">
-                      {(() => {
-                        const weights = { communication: 25, culture_fit: 20, motivation: 15, professionalism: 15, problem_solving: 15, team_collaboration: 10 };
-                        let total = 0, weight = 0;
-                        Object.keys(weights).forEach(key => {
-                          if (notes[key].rating) {
-                            total += notes[key].rating * (weights[key] / 100);
-                            weight += weights[key];
-                          }
-                        });
-                        return weight > 0 ? Math.round(total) : 0;
-                      })()}
-                    </span>
+                    <span className="text-2xl font-bold text-teal-600">{calcWeightedScore()}</span>
                   </div>
                   <p className="text-xs text-gray-600 mt-1">Based on weighted average of all ratings</p>
                 </div>
               )}
             </div>
-            
+
             <div className="p-4 border-t border-gray-200">
               <button
                 onClick={handleSaveNotes}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium transition-colors"
               >
-                <Save className="w-4 h-4" />
-                Save Notes
+                <Save className="w-4 h-4" /> Save Notes (Draft)
               </button>
             </div>
           </div>
         )}
       </div>
+      {isRecruiter && (
+        <EndMeetingModal
+          isOpen={showEndModal}
+          notes={notes}
+          onConfirm={handleConfirmEnd}
+          onCancel={() => setShowEndModal(false)}
+          isSaving={isSavingNotes}
+        />
+      )}
     </div>
   );
 };

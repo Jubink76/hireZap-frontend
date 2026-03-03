@@ -22,7 +22,7 @@ const hrRoundApi = {
     },
 
     getInterviewDetails: async (interviewId) => {
-        const res = await axiosInstance.get(`/hr-round/interview/${interviewId}/`);
+        const res = await axiosInstance.get(`/hr-round/interview/${interviewId}/detail/`);
         return res;
     },
 
@@ -80,11 +80,26 @@ const hrRoundApi = {
         return res;
     },
 
-    endMeeting: async (sessionId) => {
+    endMeeting: async (sessionId, notesData = null, recommendation = null) => {
         const res = await axiosInstance.post('/hr-round/meeting/end/', {
-            session_id: sessionId
+            session_id: sessionId,
+            notes: notesData,
+            recommendation: recommendation
         });
         return res;
+    },
+
+    leaveMeeting: async(sessionId) => {
+        const res =  await axiosInstance.post('/hr-round/meeting/leave/',{
+            session_id:sessionId
+        });
+        return res
+    },
+    resetMeetingSession: async(sessionId) => {
+        const res = await axiosInstance.post('/hr-round/meeting/reset/',{
+            session_id:sessionId
+        });
+        return res
     },
 
     // Recording Management
@@ -166,13 +181,14 @@ const hrRoundApi = {
         return res;
     },
 
-    moveToNextStage: async (interviewId, nextStageId = null) => {
-        const res = await axiosInstance.post('/hr-round/interview/move-to-next-stage/', {
-            interview_id: interviewId,
-            next_stage_id: nextStageId
+    moveToNextStage: async (interviewIds, feedback = 'Passed HR round') => {
+        const response = await axiosInstance.post('/hr-round/interview/move-to-next-stage/', {
+            interview_ids: interviewIds,
+            feedback: feedback
         });
-        return res;
-    }
+        return response;
+    },
+
 };
 
 export default hrRoundApi;

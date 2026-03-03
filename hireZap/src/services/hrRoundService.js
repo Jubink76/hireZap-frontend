@@ -74,9 +74,19 @@ const hrRoundService = {
         return res;
     },
 
-    endMeeting: async (sessionId) => {
-        const res = await hrRoundApi.endMeeting(sessionId);
+    endMeeting: async (sessionId, notesData=null, recommendation= null) => {
+        const res = await hrRoundApi.endMeeting(sessionId, notesData, recommendation);
         return res;
+    },
+
+    leaveMeeting: async(sessionId) => {
+        const res = await hrRoundApi.leaveMeeting(sessionId);
+        return res
+    },
+
+    resetMeetingSession: async(sessionId) => {
+        const res = await hrRoundApi.resetMeetingSession(sessionId);
+        return res
     },
 
     // Recording
@@ -140,7 +150,7 @@ const hrRoundService = {
     moveToNextStage: async (interviewId, nextStageId = null) => {
         const res = await hrRoundApi.moveToNextStage(interviewId, nextStageId);
         return res
-    }
+    },
 };
 
 export default hrRoundService;
