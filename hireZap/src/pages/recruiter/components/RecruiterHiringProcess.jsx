@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 
 import ResumeScreeningStage from '../stages/ResumeScreeningStage';
 import TelephoneScreeningStage from '../stages/TelephoneScreeningStage';
+import OfferStage from '../stages/OfferStage';
 
 import { getJobsByRecruiterId } from '../../../redux/slices/jobSlice';
 import { getJobSelectionProcess } from '../../../redux/slices/selectionStageSlice';
@@ -560,7 +561,11 @@ const RecruiterHiringProcess = () => {
                   setExpandedStage(jobStages[currentIndex + 1].id);
                 }
               }}/>
-          ) : (
+          ) : selectedStage?.slug === 'offer'?(
+            <OfferStage 
+              jobId={selectedJob.id}
+              onRefresh={fetchScreeningData}/>
+          ): (
             // Default stage view for other stages
             <div className="bg-white rounded-lg border border-gray-200">
               <div className="px-6 py-4 border-b border-gray-200">

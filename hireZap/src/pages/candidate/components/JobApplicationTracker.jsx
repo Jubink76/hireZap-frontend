@@ -8,6 +8,8 @@ import { joinCall } from '../../../redux/slices/telephonicSlice';
 import InterviewCallInterface from '../../../modals/InterviewCallInterface'; 
 import { useDispatch, useSelector } from 'react-redux';
 import { notify } from '../../../utils/toast';
+import OfferReceivedModal from '../../../modals/OfferReceivedModal';
+import { fetchOfferByApplication } from '../../../redux/slices/offerSlice';
 
 const JobApplicationTracker = () => {
   const { applicationId } = useParams();
@@ -29,6 +31,8 @@ const JobApplicationTracker = () => {
   const [joiningCall, setJoiningCall] = useState(false);
 
   const [interviewType, setInterviewType] = useState(null);
+  const [showOfferModal, setShowOfferModal]   = useState(false);
+  const [offerModalData, setOfferModalData]   = useState(null);
 
   const hasManuallyMinimizedRef = useRef(false);
 
@@ -45,6 +49,32 @@ const JobApplicationTracker = () => {
       return () => clearInterval(interval);
     }
   }, [applicationId, dispatch]);
+
+  useEffect(() => {
+      if (!applicationData?.stages) return;
+
+      const offerStage = applicationData.stages.find(s => s.stage_slug === 'offer');
+      if (!offerStage) return;
+
+      console.log('offerStage found:', offerStage); // ← add this to verify
+
+      // stage.status === 'offered' means offer was sent (set by backend)
+      // stage.offer_status === 'sent' is the OfferLetterModel status
+      const offerWasSent = offerStage.status === 'offered' || offerStage.offer_status === 'sent';
+
+      if (offerWasSent && !offerModalData) {
+          dispatch(fetchOfferByApplication(applicationId))
+              .unwrap()
+              .then(res => {
+                  console.log('offer fetch res:', res);
+                  const offer = res?.offer ?? res;
+                  if (offer?.id) {
+                      setOfferModalData(offer);
+                  }
+              })
+              .catch(err => console.error('offer fetch failed:', err));
+      }
+  }, [applicationData?.stages]);
 
   //auto open interface
   useEffect(() => {
@@ -151,6 +181,24 @@ const JobApplicationTracker = () => {
         setCurrentInterview(null);
         dispatch(fetchApplicationProgress(applicationId));
       }
+
+      if (data.type === 'offer_received') {
+        notify.success('🎉 You have received a job offer!');
+        // Fetch the full offer details then open modal
+        dispatch(fetchOfferByApplication(applicationId))
+            .unwrap()
+            .then(res => {
+                if (res.offer) {
+                    setOfferModalData(res.offer);
+                    setShowOfferModal(true);
+                }
+            })
+            .catch(() => {
+                // Still refresh the page data even if modal fetch fails
+                dispatch(fetchApplicationProgress(applicationId));
+            });
+        dispatch(fetchApplicationProgress(applicationId));
+      }
     };
 
     ws.onerror = (error) => {
@@ -182,6 +230,7 @@ const JobApplicationTracker = () => {
       completed: { text: 'Completed', color: 'bg-green-500 text-white', icon: CheckCircle },
       passed: { text: 'Passed', color: 'bg-green-500 text-white', icon: CheckCircle },
       in_progress: { text: 'In Progress', color: 'bg-orange-500 text-white', icon: Clock },
+      offered:     { text: 'Offer Received',  color: 'bg-amber-500 text-white',  icon: Award       },
       joined: { text: 'Interview Active', color: 'bg-green-500 text-white', icon: Phone },
       scheduled: { text: 'Scheduled', color: 'bg-blue-500 text-white', icon: Calendar },
       pending: { text: 'Pending', color: 'bg-gray-400 text-white', icon: Clock }
@@ -218,6 +267,7 @@ const JobApplicationTracker = () => {
     const bgMap = {
       completed: 'bg-teal-600',
       in_progress: 'bg-orange-500',
+      offered:     'bg-amber-500',
       joined: 'bg-green-600',
       scheduled: 'bg-blue-500',
       pending: 'bg-gray-400'
@@ -305,7 +355,7 @@ const JobApplicationTracker = () => {
   };
 
   const canJoinInterview = (stage) => {
-    return stage.status === 'in_progress' && stage.interview_id;
+    return stage.status === 'in_progress' && stage.interview_id && stage.stage_slug !== 'offer';
   };
 
   const shouldShowReminder = (stage) => {
@@ -544,8 +594,8 @@ const JobApplicationTracker = () => {
                                   </div>
                                 )}
 
-                                {/* ✅ IN PROGRESS / JOINED - show ready banner only */}
-                                {(stage.status === 'in_progress' || stage.status === 'joined') && (
+                                {/* IN PROGRESS / JOINED - show ready banner only */}
+                                {(stage.status === 'in_progress' || stage.status === 'joined') && stage.stage_slug !== 'offer' && (
                                   <div className="mt-2">
                                     {/* Show scheduled time if exists */}
                                     {stage.scheduled_at && (
@@ -572,7 +622,7 @@ const JobApplicationTracker = () => {
                                   </div>
                                 )}
 
-                                {/* ✅ COMPLETED - show completed date only, NO scheduled date */}
+                                {/* COMPLETED - show completed date only, NO scheduled date */}
                                 {(stage.status === 'completed' || stage.status === 'passed') && (
                                   <div className="mt-2">
                                     {stage.completed_at && (
@@ -630,6 +680,59 @@ const JobApplicationTracker = () => {
                               </button>
                             )}
 
+                            {stage.stage_slug === 'offer' && stage.status === 'offered' && (
+                              <div className="mt-2">
+                                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                                  <div className="flex items-start gap-2">
+                                    <div className="w-2 h-2 bg-amber-500 rounded-full mt-1.5 animate-pulse flex-shrink-0" />
+                                    <div className="flex-1">
+                                      <p className="text-xs font-semibold text-amber-900">🎉 Offer Letter Received</p>
+                                      <p className="text-xs text-amber-700 mt-1">
+                                        You have received a job offer. Review and respond before it expires.
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {stage.stage_slug === 'offer' && (stage.status === 'offered' || stage.offer_status === 'sent') && (
+                              <button
+                                  onClick={() => {
+                                      if (offerModalData) {
+                                          setShowOfferModal(true);
+                                      } else {
+                                          // Fetch then open
+                                          dispatch(fetchOfferByApplication(applicationId))
+                                              .unwrap()
+                                              .then(res => {
+                                                  const offer = res?.offer ?? res;
+                                                  if (offer?.id) {
+                                                      setOfferModalData(offer);
+                                                      setShowOfferModal(true);
+                                                  }
+                                              })
+                                              .catch(() => notify.error('Failed to load offer details'));
+                                      }
+                                  }}
+                                  className="mt-3 flex items-center gap-2 px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 transition-colors"
+                              >
+                                  <FileText className="w-4 h-4" />
+                                  View Offer Letter
+                              </button>
+                          )}
+                            {stage.stage_slug === 'offer' && stage.offer_status === 'accepted' && (
+                                <div className="mt-3 flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 text-sm font-medium rounded-lg">
+                                    <CheckCircle className="w-4 h-4" />
+                                    Offer Accepted — Welcome aboard!
+                                </div>
+                            )}
+                            {stage.stage_slug === 'offer' && stage.offer_status === 'declined' && (
+                                <div className="mt-3 flex items-center gap-2 px-4 py-2 bg-red-100 text-red-600 text-sm font-medium rounded-lg">
+                                    <XCircle className="w-4 h-4" />
+                                    Offer Declined
+                                </div>
+                            )}
                             {/* Resume button - only when joined but modal closed */}
                             {stage.status === 'joined' && currentInterview && !showCallInterface && (
                               <button
@@ -818,6 +921,17 @@ const JobApplicationTracker = () => {
           )}
         </>
       )}
+
+      <OfferReceivedModal
+        isOpen={showOfferModal}
+        onClose={() => setShowOfferModal(false)}
+        offerData={offerModalData}
+        onOfferResponded={(action) => {
+            // Refresh both progress and offer data after candidate responds
+            dispatch(fetchApplicationProgress(applicationId));
+            setOfferModalData(prev => prev ? { ...prev, status: action === 'accept' ? 'accepted' : 'declined' } : prev);
+        }}
+      />
     </div>
   );
 };

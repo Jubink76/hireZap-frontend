@@ -12,6 +12,7 @@ import subscriptionPlanReducer from './slices/subscriptionPlanSlice';
 import resumeScreeningReducer from './slices/resumeScreeningSlice';
 import telephonicReducer from './slices/telephonicSlice';
 import hrRoundReducer from './slices/hrRoundSlice';
+import offerReducer from './slices/offerSlice';
 
 const persistConfig = {
   key: 'root',
@@ -31,6 +32,7 @@ const rootReducer = combineReducers({
   resumeScreener:resumeScreeningReducer,
   telephonic:telephonicReducer,
   hrRound:hrRoundReducer,
+  offer:offerReducer,
 
 });
 
